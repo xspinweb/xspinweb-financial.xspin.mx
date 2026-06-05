@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: "pay-financial-api",
-      cwd: "/var/www/pay-financial-v2/apps/api",
+      cwd: "/var/www/xspinweb-financial.xspin.mx/apps/api",
       script: "dist/server.js",
       env: {
         NODE_ENV: "production",
@@ -11,7 +11,7 @@ module.exports = {
     },
     {
       name: "pay-financial-web",
-      cwd: "/var/www/pay-financial-v2/apps/web",
+      cwd: "/var/www/xspinweb-financial.xspin.mx/apps/web",
       script: "node_modules/next/dist/bin/next",
       args: "start -p 3000",
       env: {
