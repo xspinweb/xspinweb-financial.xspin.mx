@@ -47,6 +47,18 @@ export default function HomePage() {
     <main>
       <section className="hero">
         <div className="marketGlow" aria-hidden="true" />
+        <header className="siteHeader">
+          <a className="siteBrand" href="#">
+            <img src="/logos/xspin-logo.svg" alt="Xspin" />
+            <span>Financial</span>
+          </a>
+          <nav className="siteNav" aria-label="Navegacion principal">
+            <a href="#modelo">Modelo</a>
+            <a href="#rendimiento">Rendimiento</a>
+            <a href="#control">Control</a>
+          </nav>
+          <a className="headerAccess" href="mailto:administracion@xspin.mx">Acceso</a>
+        </header>
         <div className="heroGrid">
           <div className="heroCopy">
             <div className="brandLockup">
@@ -60,10 +72,6 @@ export default function HomePage() {
               referidos trazables y reinversiones calculadas para que cada movimiento
               tenga seguimiento operativo.
             </p>
-            <div className="heroActions">
-              <a className="primaryAction" href="#rendimiento">Ver ejemplo</a>
-              <a className="secondaryAction" href="#modelo">Como funciona</a>
-            </div>
             <p className="riskNote">
               Los ejemplos son ilustrativos. El rendimiento depende de la operacion,
               reglas vigentes y validacion administrativa de cada ciclo.
@@ -234,7 +242,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="controlSection">
+      <section className="controlSection" id="control">
         <div className="controlCopy">
           <span className="eyebrow">Operacion transparente</span>
           <h2>El atractivo esta en crecer; la confianza esta en medirlo todo.</h2>
