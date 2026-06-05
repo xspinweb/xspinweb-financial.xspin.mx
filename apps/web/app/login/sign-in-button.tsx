@@ -2,9 +2,14 @@
 
 import { signIn } from "next-auth/react";
 
-export function GoogleSignInButton() {
+export function GoogleSignInButton({ enabled }: { enabled: boolean }) {
   return (
-    <button className="googleButton" type="button" onClick={() => signIn("google", { callbackUrl: "/dashboard" })}>
+    <button
+      className="googleButton"
+      type="button"
+      disabled={!enabled}
+      onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+    >
       <span className="googleIcon" aria-hidden="true">
         <svg viewBox="0 0 24 24" role="img">
           <path

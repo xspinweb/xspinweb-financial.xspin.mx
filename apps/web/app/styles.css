@@ -797,6 +797,20 @@ a {
   transform: translateY(-2px);
 }
 
+.googleButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.loginWarning {
+  border: 1px solid rgba(240, 186, 91, 0.3);
+  border-radius: 10px;
+  background: rgba(240, 186, 91, 0.08);
+  color: #ffd38a !important;
+  padding: 12px;
+}
+
 .googleIcon {
   display: grid;
   place-items: center;

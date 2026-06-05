@@ -1,8 +1,23 @@
+const fs = require("fs");
+const path = require("path");
+
+const appDir = "/var/www/xspinweb-financial.xspin.mx";
+const envPath = path.join(appDir, ".env");
+
+if (fs.existsSync(envPath)) {
+  for (const line of fs.readFileSync(envPath, "utf8").split(/\r?\n/)) {
+    const match = line.match(/^([A-Z0-9_]+)=["']?(.*?)["']?$/);
+    if (match && process.env[match[1]] === undefined) {
+      process.env[match[1]] = match[2];
+    }
+  }
+}
+
 module.exports = {
   apps: [
     {
       name: "pay-financial-api",
-      cwd: "/var/www/xspinweb-financial.xspin.mx/apps/api",
+      cwd: `${appDir}/apps/api`,
       script: "dist/server.js",
       env: {
         NODE_ENV: "production",
@@ -13,7 +28,7 @@ module.exports = {
     },
     {
       name: "pay-financial-web",
-      cwd: "/var/www/xspinweb-financial.xspin.mx",
+      cwd: appDir,
       script: "npm",
       args: `run start -w @pay-financial/web -- -p ${process.env.WEB_PORT || "5100"}`,
       env: {

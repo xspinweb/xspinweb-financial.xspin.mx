@@ -1,15 +1,8 @@
-import { getServerSession } from "next-auth";
 import Image from "next/image";
-import { redirect } from "next/navigation";
-import { authOptions } from "../../lib/auth";
 import { GoogleSignInButton } from "./sign-in-button";
 
 export default async function LoginPage() {
-  const session = await getServerSession(authOptions);
-
-  if (session) {
-    redirect("/dashboard");
-  }
+  const googleReady = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
   return (
     <main className="loginShell">
@@ -29,7 +22,12 @@ export default async function LoginPage() {
             inversionistas, ciclos y pagos.
           </p>
         </div>
-        <GoogleSignInButton />
+        <GoogleSignInButton enabled={googleReady} />
+        {!googleReady ? (
+          <p className="loginWarning">
+            Falta configurar Google OAuth en el servidor.
+          </p>
+        ) : null}
       </section>
     </main>
   );
