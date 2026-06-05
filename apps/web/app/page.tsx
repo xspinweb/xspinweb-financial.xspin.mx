@@ -15,22 +15,22 @@ const path = [
 const scenarios = [
   {
     title: "Capital inicial",
-    amount: "$10,000",
+    amount: "Base",
     detail: "Entrada registrada dentro del ciclo operativo."
   },
   {
     title: "Retorno modelado",
-    amount: "$14,400",
+    amount: "Crecimiento",
     detail: "Calculo base del modelo antes de bonos."
   },
   {
     title: "Con referido",
-    amount: "+$500",
-    detail: "Bono ejemplo por una aportacion referida de $10,000."
+    amount: "Bono",
+    detail: "Bono ejemplo por una aportacion referida validada."
   },
   {
     title: "Capital gestionado",
-    amount: "$14,900",
+    amount: "Reinversion",
     detail: "Base para rendimiento, pago y posible reinversion."
   }
 ];
@@ -68,7 +68,7 @@ export default function HomePage() {
 
           <div className="yieldTerminal" aria-label="Ejemplo visual de rendimiento">
             <div className="terminalTop">
-              <span>PAY / MXN</span>
+              <span>PAY INDEX</span>
               <strong>Modelo activo</strong>
             </div>
             <div className="marketChart" aria-label="Grafica ascendente de capital proyectado">
@@ -76,17 +76,9 @@ export default function HomePage() {
                 <span>Capital inicial</span>
                 <strong>Ganancia proyectada</strong>
               </div>
-              <svg viewBox="0 0 520 280" role="img" aria-labelledby="chartTitle">
-                <title id="chartTitle">Grafica de crecimiento proyectado de una inversion</title>
+              <svg viewBox="0 0 620 340" role="img" aria-labelledby="chartTitle">
+                <title id="chartTitle">Grafica dinamica tipo trading con tendencia ascendente</title>
                 <defs>
-                  <linearGradient id="profitFill" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#35e0a1" stopOpacity="0.36" />
-                    <stop offset="100%" stopColor="#35e0a1" stopOpacity="0" />
-                  </linearGradient>
-                  <linearGradient id="profitStroke" x1="0" x2="1" y1="0" y2="0">
-                    <stop offset="0%" stopColor="#17c6d3" />
-                    <stop offset="100%" stopColor="#35e0a1" />
-                  </linearGradient>
                   <filter id="lineGlow" x="-20%" y="-20%" width="140%" height="140%">
                     <feGaussianBlur stdDeviation="4" result="blur" />
                     <feMerge>
@@ -96,46 +88,75 @@ export default function HomePage() {
                   </filter>
                 </defs>
                 <g className="chartGrid">
-                  <path d="M40 40H500" />
-                  <path d="M40 92H500" />
-                  <path d="M40 144H500" />
-                  <path d="M40 196H500" />
-                  <path d="M40 248H500" />
-                  <path d="M80 28V248" />
-                  <path d="M170 28V248" />
-                  <path d="M260 28V248" />
-                  <path d="M350 28V248" />
-                  <path d="M440 28V248" />
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <path key={`h-${index}`} d={`M24 ${36 + index * 36}H596`} />
+                  ))}
+                  {Array.from({ length: 12 }).map((_, index) => (
+                    <path key={`v-${index}`} d={`M${48 + index * 48} 24V312`} />
+                  ))}
                 </g>
-                <path
-                  className="chartArea"
-                  fill="url(#profitFill)"
-                  d="M40 220 C95 210 120 188 170 178 C218 168 224 134 270 126 C330 115 340 82 394 76 C444 70 462 48 500 36 L500 248 L40 248 Z"
-                />
-                <path
-                  className="chartLine"
-                  stroke="url(#profitStroke)"
-                  d="M40 220 C95 210 120 188 170 178 C218 168 224 134 270 126 C330 115 340 82 394 76 C444 70 462 48 500 36"
-                />
-                <g className="chartPoints">
-                  <circle cx="40" cy="220" r="6" />
-                  <circle cx="170" cy="178" r="6" />
-                  <circle cx="270" cy="126" r="6" />
-                  <circle cx="394" cy="76" r="6" />
-                  <circle cx="500" cy="36" r="7" />
+                <g className="volumeBars" aria-hidden="true">
+                  {[46, 62, 54, 70, 88, 58, 74, 92, 80, 110, 96, 122, 144, 116, 156, 178, 164, 198].map((height, index) => (
+                    <rect
+                      key={`vol-${index}`}
+                      x={34 + index * 31}
+                      y={310 - height}
+                      width="18"
+                      height={height}
+                      rx="2"
+                    />
+                  ))}
+                </g>
+                <g className="movingAverages" aria-hidden="true">
+                  <path d="M26 228 C82 196 118 190 154 174 C198 154 226 170 262 156 C314 136 348 116 388 126 C444 138 496 74 590 42" />
+                  <path d="M26 254 C88 224 138 216 188 196 C230 180 260 192 306 168 C352 144 390 146 430 132 C484 114 526 82 590 62" />
+                  <path d="M26 270 C92 246 152 238 212 218 C270 198 306 202 356 182 C410 160 456 148 502 126 C540 108 562 86 590 74" />
+                </g>
+                <g className="candles" aria-hidden="true">
+                  {[
+                    [40, 210, 258, 232, 246, "up"],
+                    [72, 194, 248, 210, 236, "down"],
+                    [104, 178, 238, 188, 226, "up"],
+                    [136, 160, 226, 204, 174, "down"],
+                    [168, 134, 212, 150, 194, "up"],
+                    [200, 154, 238, 216, 168, "down"],
+                    [232, 184, 246, 198, 232, "up"],
+                    [264, 160, 224, 174, 208, "up"],
+                    [296, 132, 202, 190, 146, "down"],
+                    [328, 116, 184, 132, 170, "up"],
+                    [360, 96, 166, 150, 110, "up"],
+                    [392, 82, 150, 96, 136, "up"],
+                    [424, 104, 176, 158, 118, "down"],
+                    [456, 74, 136, 86, 124, "up"],
+                    [488, 48, 118, 66, 102, "up"],
+                    [520, 36, 106, 92, 52, "down"],
+                    [552, 28, 92, 42, 76, "up"],
+                    [584, 14, 82, 28, 62, "up"]
+                  ].map(([x, high, low, open, close, direction], index) => (
+                    <g className={`candle ${String(direction)}`} key={`candle-${index}`}>
+                      <line x1={x} x2={x} y1={high} y2={low} />
+                      <rect
+                        x={Number(x) - 7}
+                        y={Math.min(Number(open), Number(close))}
+                        width="14"
+                        height={Math.max(10, Math.abs(Number(close) - Number(open)))}
+                        rx="2"
+                      />
+                    </g>
+                  ))}
                 </g>
                 <g className="chartLabels">
-                  <text x="40" y="270">Inicio</text>
-                  <text x="238" y="270">Ciclo</text>
-                  <text x="452" y="270">Cierre</text>
-                  <text x="420" y="28">+$4,900</text>
+                  <text x="34" y="330">Inicio</text>
+                  <text x="276" y="330">Ciclo</text>
+                  <text x="520" y="330">Cierre</text>
+                  <text x="472" y="28">Tendencia</text>
                 </g>
               </svg>
             </div>
             <div className="terminalValue">
               <span>Capital proyectado</span>
-              <strong>$14,900.00</strong>
-              <small>incluye retorno modelado + bono ejemplo</small>
+              <strong>Crecimiento compuesto</strong>
+              <small>retorno modelado + bono ejemplo + reinversion</small>
             </div>
             <div className="terminalGrid">
               <div>
