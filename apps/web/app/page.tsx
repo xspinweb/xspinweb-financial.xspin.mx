@@ -45,20 +45,20 @@ const controls = [
 export default function HomePage() {
   return (
     <main>
+      <header className="siteHeader">
+        <a className="siteBrand" href="#">
+          <img src="/logos/xspin-logo.svg" alt="Xspin" />
+          <span>Financial</span>
+        </a>
+        <nav className="siteNav" aria-label="Navegacion principal">
+          <a href="#modelo">Modelo</a>
+          <a href="#rendimiento">Rendimiento</a>
+          <a href="#control">Control</a>
+        </nav>
+        <a className="headerAccess" href="mailto:administracion@xspin.mx">Acceso</a>
+      </header>
       <section className="hero">
         <div className="marketGlow" aria-hidden="true" />
-        <header className="siteHeader">
-          <a className="siteBrand" href="#">
-            <img src="/logos/xspin-logo.svg" alt="Xspin" />
-            <span>Financial</span>
-          </a>
-          <nav className="siteNav" aria-label="Navegacion principal">
-            <a href="#modelo">Modelo</a>
-            <a href="#rendimiento">Rendimiento</a>
-            <a href="#control">Control</a>
-          </nav>
-          <a className="headerAccess" href="mailto:administracion@xspin.mx">Acceso</a>
-        </header>
         <div className="heroGrid">
           <div className="heroCopy">
             <div className="brandLockup">

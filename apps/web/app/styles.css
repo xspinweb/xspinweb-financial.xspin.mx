@@ -33,7 +33,7 @@ a {
 
 .hero {
   position: relative;
-  min-height: 94vh;
+  min-height: calc(100vh - 96px);
   display: grid;
   align-items: center;
   overflow: hidden;
@@ -41,16 +41,15 @@ a {
     radial-gradient(circle at 80% 20%, rgba(23, 198, 211, 0.24), transparent 28%),
     radial-gradient(circle at 18% 28%, rgba(53, 224, 161, 0.18), transparent 26%),
     linear-gradient(135deg, #050b12 0%, #091827 48%, #050b12 100%);
-  padding: 56px 28px;
+  padding: 48px 28px 64px;
 }
 
 .siteHeader {
-  position: absolute;
-  z-index: 2;
-  top: 22px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: sticky;
+  z-index: 10;
+  top: 12px;
   width: min(1220px, calc(100% - 56px));
+  margin: 12px auto -2px;
   min-height: 66px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -71,7 +70,7 @@ a {
 }
 
 .siteBrand img {
-  width: 132px;
+  width: 124px;
   height: auto;
   display: block;
 }
@@ -164,11 +163,11 @@ a {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 
 .brandLockup img {
-  width: min(210px, 58vw);
+  width: min(178px, 52vw);
   height: auto;
   display: block;
 }
@@ -773,13 +772,9 @@ a {
 
 @media (max-width: 620px) {
   .siteHeader {
-    position: relative;
-    top: auto;
-    left: auto;
-    transform: none;
-    width: 100%;
+    width: calc(100% - 24px);
     grid-template-columns: 1fr auto;
-    margin-bottom: 34px;
+    margin: 10px auto 0;
   }
 
   .siteNav {
@@ -792,7 +787,7 @@ a {
 
   .hero {
     min-height: auto;
-    padding: 54px 18px 38px;
+    padding: 36px 18px 38px;
   }
 
   .heroCopy h1 {
