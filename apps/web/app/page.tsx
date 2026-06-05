@@ -1,130 +1,165 @@
-const modelSteps = [
+const growthStats = [
+  { value: "1.44x", label: "retorno modelado por ciclo" },
+  { value: "7 dias", label: "horizonte operativo base" },
+  { value: "5%", label: "bono por referido directo" },
+  { value: "15%", label: "rendimiento sobre capital del ciclo" }
+];
+
+const path = [
+  "Aportacion inicial",
+  "Asignacion a grupo",
+  "Seguimiento del ciclo",
+  "Pago o reinversion"
+];
+
+const scenarios = [
   {
-    label: "01",
-    title: "Capital organizado por ciclos",
-    text: "Cada aportacion entra a un ciclo operativo con fecha de registro, fecha objetivo de pago y seguimiento interno."
+    title: "Capital inicial",
+    amount: "$10,000",
+    detail: "Entrada registrada dentro del ciclo operativo."
   },
   {
-    label: "02",
-    title: "Grupos controlados",
-    text: "Los participantes se ordenan en grupos para administrar captacion, compromisos y flujo de salida con mayor claridad."
+    title: "Retorno modelado",
+    amount: "$14,400",
+    detail: "Calculo base del modelo antes de bonos."
   },
   {
-    label: "03",
-    title: "Referidos con trazabilidad",
-    text: "Cuando un participante recomienda a otro, el sistema liga ambos perfiles y calcula el bono correspondiente."
+    title: "Con referido",
+    amount: "+$500",
+    detail: "Bono ejemplo por una aportacion referida de $10,000."
   },
   {
-    label: "04",
-    title: "Reinversion y liquidez",
-    text: "Al cierre del ciclo se distingue rendimiento, capital disponible, reinversion y pago registrado."
+    title: "Capital gestionado",
+    amount: "$14,900",
+    detail: "Base para rendimiento, pago y posible reinversion."
   }
 ];
 
-const metrics = [
-  { value: "7 dias", label: "ciclo operativo configurable" },
-  { value: "5%", label: "bono base por referido" },
-  { value: "6", label: "participantes por grupo" },
-  { value: "1.44x", label: "retorno base modelado" }
-];
-
 const controls = [
-  "Registro de inversionistas y referidos",
-  "Fechas de pago y estatus por ciclo",
-  "Captacion, provisionamiento e ingreso neto",
-  "Historial de reinversiones y pagos"
+  "Cada inversionista tiene codigo, grupo, ciclo y fecha objetivo.",
+  "Los referidos quedan conectados al participante que los invita.",
+  "Los pagos se separan entre rendimiento, reinversion y capital gestionado.",
+  "La operacion puede auditar captacion, provisionamiento, pagos e ingreso neto."
 ];
 
 export default function HomePage() {
   return (
     <main>
       <section className="hero">
+        <div className="marketGlow" aria-hidden="true" />
         <div className="heroGrid">
           <div className="heroCopy">
             <span className="eyebrow">Pay Financial</span>
-            <h1>Administracion clara para ciclos de inversion y referidos.</h1>
+            <h1>Haz que tu capital trabaje en ciclos cortos y medibles.</h1>
             <p>
-              Una plataforma operativa para registrar aportaciones, organizar grupos,
-              controlar fechas de pago, calcular bonos y dar seguimiento a reinversiones
-              con trazabilidad de principio a fin.
+              Un modelo de crecimiento financiero con aportaciones organizadas,
+              referidos trazables y reinversiones calculadas para que cada movimiento
+              tenga seguimiento operativo.
             </p>
             <div className="heroActions">
-              <a className="primaryAction" href="#modelo">Conocer modelo</a>
-              <a className="secondaryAction" href="#control">Ver control operativo</a>
+              <a className="primaryAction" href="#rendimiento">Ver ejemplo</a>
+              <a className="secondaryAction" href="#modelo">Como funciona</a>
             </div>
+            <p className="riskNote">
+              Los ejemplos son ilustrativos. El rendimiento depende de la operacion,
+              reglas vigentes y validacion administrativa de cada ciclo.
+            </p>
           </div>
 
-          <div className="heroVisual" aria-label="Resumen visual del modelo Pay Financial">
-            <div className="flowPanel">
-              <div className="flowHeader">
-                <span>Modelo operativo</span>
-                <strong>Activo</strong>
+          <div className="yieldTerminal" aria-label="Ejemplo visual de rendimiento">
+            <div className="terminalTop">
+              <span>PAY / MXN</span>
+              <strong>Modelo activo</strong>
+            </div>
+            <div className="chartBars" aria-hidden="true">
+              <span style={{ height: "34%" }} />
+              <span style={{ height: "48%" }} />
+              <span style={{ height: "57%" }} />
+              <span style={{ height: "68%" }} />
+              <span style={{ height: "82%" }} />
+              <span style={{ height: "96%" }} />
+            </div>
+            <div className="terminalValue">
+              <span>Capital proyectado</span>
+              <strong>$14,900.00</strong>
+              <small>incluye retorno modelado + bono ejemplo</small>
+            </div>
+            <div className="terminalGrid">
+              <div>
+                <span>Ciclo</span>
+                <strong>7D</strong>
               </div>
-              <div className="flowLine">
-                <span>Inversion</span>
-                <strong>$10,000.00</strong>
+              <div>
+                <span>Grupo</span>
+                <strong>6</strong>
               </div>
-              <div className="flowLine">
-                <span>Retorno modelado</span>
-                <strong>$14,400.00</strong>
-              </div>
-              <div className="flowLine">
-                <span>Bono referido</span>
-                <strong>$500.00</strong>
-              </div>
-              <div className="flowSplit">
-                <div>
-                  <span>Rendimiento</span>
-                  <strong>$2,235.00</strong>
-                </div>
-                <div>
-                  <span>Reinversion</span>
-                  <strong>$12,665.00</strong>
-                </div>
+              <div>
+                <span>Bono</span>
+                <strong>5%</strong>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="metricsBand" aria-label="Parametros del modelo">
-        {metrics.map((metric) => (
-          <div className="metricItem" key={metric.label}>
-            <strong>{metric.value}</strong>
-            <span>{metric.label}</span>
+      <section className="statsStrip" aria-label="Metricas del modelo">
+        {growthStats.map((stat) => (
+          <div className="stat" key={stat.label}>
+            <strong>{stat.value}</strong>
+            <span>{stat.label}</span>
           </div>
         ))}
       </section>
 
-      <section className="section" id="modelo">
-        <div className="sectionHeader">
-          <span className="eyebrow">Modelo de negocio</span>
-          <h2>Un flujo medible para captacion, pagos y crecimiento por recomendacion.</h2>
+      <section className="section split" id="modelo">
+        <div>
+          <span className="eyebrow">Modelo de crecimiento</span>
+          <h2>Un flujo simple para entrar, crecer y reinvertir con control.</h2>
           <p>
-            Pay Financial no se apoya en hojas sueltas ni calculos manuales: cada movimiento
-            queda ligado a un participante, un ciclo, un grupo y un estatus.
+            La diferencia esta en operar el capital como un sistema: cada ciclo tiene
+            reglas, fechas, grupos y estatus. Cada referido suma al modelo y cada cierre
+            se convierte en informacion accionable.
           </p>
         </div>
 
-        <div className="stepsGrid">
-          {modelSteps.map((step) => (
-            <article className="stepCard" key={step.label}>
-              <span>{step.label}</span>
-              <h3>{step.title}</h3>
-              <p>{step.text}</p>
+        <div className="pathPanel">
+          {path.map((item, index) => (
+            <div className="pathItem" key={item}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <strong>{item}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="yieldSection" id="rendimiento">
+        <div className="sectionHeader">
+          <span className="eyebrow">Ejemplo de rendimiento</span>
+          <h2>Visualiza como puede evolucionar una aportacion dentro del ciclo.</h2>
+          <p>
+            Este ejemplo usa los parametros base del sistema. Sirve para explicar la
+            mecanica del modelo, no como garantia de resultado.
+          </p>
+        </div>
+
+        <div className="scenarioGrid">
+          {scenarios.map((scenario) => (
+            <article className="scenarioCard" key={scenario.title}>
+              <span>{scenario.title}</span>
+              <strong>{scenario.amount}</strong>
+              <p>{scenario.detail}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="controlSection" id="control">
+      <section className="controlSection">
         <div className="controlCopy">
-          <span className="eyebrow">Control operativo</span>
-          <h2>Del registro al pago, todo queda en una sola linea de seguimiento.</h2>
+          <span className="eyebrow">Operacion transparente</span>
+          <h2>El atractivo esta en crecer; la confianza esta en medirlo todo.</h2>
           <p>
-            La plataforma esta pensada para operadores que necesitan ver rapidamente
-            que capital entro, quien recomendo a quien, que ciclo esta por cerrar y
-            cuanto debe provisionarse para pagos.
+            Pay Financial combina una narrativa de oportunidad con administracion real:
+            registros, calculos, pagos, reinversiones y reportes para operar con orden.
           </p>
         </div>
 
@@ -140,8 +175,8 @@ export default function HomePage() {
 
       <section className="closingBand">
         <div>
-          <span className="eyebrow">Siguiente etapa</span>
-          <h2>Una operacion financiera requiere datos confiables, no memoria.</h2>
+          <span className="eyebrow">Acceso privado</span>
+          <h2>Construye crecimiento con ciclos, referidos y reinversion inteligente.</h2>
         </div>
         <a className="primaryAction" href="mailto:administracion@xspin.mx">Solicitar acceso</a>
       </section>

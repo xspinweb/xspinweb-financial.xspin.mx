@@ -1,15 +1,15 @@
 :root {
-  color-scheme: light;
-  --ink: #101820;
-  --muted: #5d6875;
-  --line: #d8e0e7;
-  --paper: #ffffff;
-  --soft: #f4f7f9;
-  --deep: #0d1721;
-  --primary: #176b87;
-  --primary-strong: #0d536a;
-  --gold: #a7772b;
-  --green: #28745a;
+  color-scheme: dark;
+  --ink: #f6fbff;
+  --muted: #9fb2c4;
+  --line: rgba(255, 255, 255, 0.13);
+  --panel: rgba(12, 22, 33, 0.82);
+  --deep: #050b12;
+  --soft: #0a1320;
+  --cyan: #17c6d3;
+  --green: #35e0a1;
+  --gold: #f0ba5b;
+  --blue: #2563eb;
 }
 
 * {
@@ -22,7 +22,7 @@ html {
 
 body {
   margin: 0;
-  background: var(--soft);
+  background: var(--deep);
   color: var(--ink);
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -32,29 +32,65 @@ a {
 }
 
 .hero {
-  min-height: 92vh;
+  position: relative;
+  min-height: 94vh;
   display: grid;
   align-items: center;
+  overflow: hidden;
   background:
-    linear-gradient(90deg, rgba(13, 23, 33, 0.92), rgba(13, 23, 33, 0.76)),
-    url("https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=2200&q=80");
-  background-position: center;
-  background-size: cover;
-  color: #ffffff;
-  padding: 46px 28px;
+    radial-gradient(circle at 80% 20%, rgba(23, 198, 211, 0.24), transparent 28%),
+    radial-gradient(circle at 18% 28%, rgba(53, 224, 161, 0.18), transparent 26%),
+    linear-gradient(135deg, #050b12 0%, #091827 48%, #050b12 100%);
+  padding: 56px 28px;
+}
+
+.marketGlow {
+  position: absolute;
+  inset: auto -18% -28% auto;
+  width: 640px;
+  height: 640px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.25), transparent 64%);
+  pointer-events: none;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent 88%);
+  pointer-events: none;
 }
 
 .heroGrid {
-  width: min(1180px, 100%);
+  position: relative;
+  z-index: 1;
+  width: min(1220px, 100%);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.75fr);
-  gap: 42px;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.76fr);
+  gap: 52px;
   align-items: center;
 }
 
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
 .heroCopy h1,
-.sectionHeader h2,
+.section h2,
+.yieldSection h2,
 .controlCopy h2,
 .closingBand h2 {
   margin: 0;
@@ -62,34 +98,24 @@ a {
 }
 
 .heroCopy h1 {
-  max-width: 820px;
-  font-size: clamp(42px, 6vw, 76px);
-  line-height: 0.96;
+  max-width: 860px;
+  font-size: clamp(48px, 7vw, 88px);
+  line-height: 0.92;
 }
 
 .heroCopy p {
-  max-width: 690px;
-  color: #d9e5ee;
+  max-width: 700px;
+  color: #c8d7e6;
   font-size: 20px;
-  line-height: 1.6;
+  line-height: 1.62;
   margin: 24px 0 0;
-}
-
-.eyebrow {
-  display: inline-block;
-  color: #cda35e;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  margin-bottom: 14px;
-  text-transform: uppercase;
 }
 
 .heroActions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 32px;
+  margin-top: 34px;
 }
 
 .primaryAction,
@@ -97,151 +123,185 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 48px;
-  border-radius: 6px;
-  padding: 12px 18px;
-  font-weight: 700;
+  min-height: 50px;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-weight: 800;
   text-decoration: none;
 }
 
 .primaryAction {
-  background: var(--primary);
-  color: #ffffff;
-}
-
-.primaryAction:hover {
-  background: var(--primary-strong);
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  color: #031017;
+  box-shadow: 0 18px 40px rgba(23, 198, 211, 0.22);
 }
 
 .secondaryAction {
-  border: 1px solid rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   color: #ffffff;
 }
 
 .secondaryAction:hover {
-  border-color: #ffffff;
+  border-color: rgba(53, 224, 161, 0.8);
 }
 
-.heroVisual {
+.riskNote {
+  max-width: 640px !important;
+  color: #91a4b7 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+.yieldTerminal {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(16, 31, 46, 0.92), rgba(8, 15, 24, 0.94));
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.36), 0 0 80px rgba(23, 198, 211, 0.12);
+  padding: 20px;
+}
+
+.terminalTop,
+.terminalValue,
+.terminalGrid {
   display: flex;
-  justify-content: flex-end;
-}
-
-.flowPanel {
-  width: min(410px, 100%);
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
-  padding: 18px;
-}
-
-.flowHeader,
-.flowLine,
-.flowSplit {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
 }
 
-.flowHeader {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+.terminalTop {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
   padding-bottom: 14px;
-  margin-bottom: 8px;
 }
 
-.flowHeader span,
-.flowLine span,
-.flowSplit span {
-  color: #d5e0e8;
-  font-size: 14px;
+.terminalTop span {
+  color: var(--muted);
+  font-weight: 800;
 }
 
-.flowHeader strong {
-  color: #b8f0da;
+.terminalTop strong {
+  color: var(--green);
 }
 
-.flowLine {
-  min-height: 58px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+.chartBars {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  align-items: end;
+  gap: 10px;
+  height: 210px;
+  margin: 22px 0;
+  padding: 18px;
+  border-radius: 10px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 100% 25%, 20% 100%;
 }
 
-.flowLine strong,
-.flowSplit strong {
-  font-size: 22px;
+.chartBars span {
+  display: block;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, var(--green), var(--cyan));
+  box-shadow: 0 0 26px rgba(53, 224, 161, 0.28);
 }
 
-.flowSplit {
-  align-items: stretch;
-  padding-top: 16px;
+.terminalValue {
+  align-items: flex-start;
+  flex-direction: column;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px;
 }
 
-.flowSplit div {
-  width: 50%;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.12);
-  padding: 14px;
+.terminalValue span,
+.terminalValue small,
+.terminalGrid span {
+  color: var(--muted);
 }
 
-.flowSplit span,
-.flowSplit strong {
+.terminalValue strong {
+  color: #ffffff;
+  font-size: 44px;
+  line-height: 1;
+}
+
+.terminalGrid {
+  padding-top: 18px;
+}
+
+.terminalGrid div {
+  width: 33.33%;
+  border-right: 1px solid var(--line);
+}
+
+.terminalGrid div:last-child {
+  border-right: 0;
+}
+
+.terminalGrid span,
+.terminalGrid strong {
   display: block;
 }
 
-.flowSplit strong {
-  margin-top: 8px;
+.terminalGrid strong {
+  color: var(--green);
+  font-size: 24px;
+  margin-top: 6px;
 }
 
-.metricsBand {
+.statsStrip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  background: var(--paper);
+  border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.metricItem {
+.stat {
   min-height: 132px;
   border-right: 1px solid var(--line);
   padding: 28px;
 }
 
-.metricItem:last-child {
+.stat:last-child {
   border-right: 0;
 }
 
-.metricItem strong {
+.stat strong {
   display: block;
-  color: var(--primary);
-  font-size: 34px;
+  color: var(--green);
+  font-size: 36px;
   margin-bottom: 8px;
 }
 
-.metricItem span {
+.stat span {
   color: var(--muted);
-  line-height: 1.4;
+  line-height: 1.42;
 }
 
-.section {
-  width: min(1180px, calc(100% - 48px));
+.section,
+.yieldSection {
+  width: min(1220px, calc(100% - 48px));
   margin: 0 auto;
-  padding: 82px 0;
+  padding: 88px 0;
 }
 
-.sectionHeader {
-  max-width: 840px;
-  margin-bottom: 34px;
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(360px, 0.72fr);
+  gap: 48px;
+  align-items: center;
 }
 
-.sectionHeader h2,
+.section h2,
+.yieldSection h2,
 .controlCopy h2,
 .closingBand h2 {
-  font-size: clamp(30px, 4vw, 48px);
-  line-height: 1.08;
+  font-size: clamp(32px, 4.5vw, 56px);
+  line-height: 1.04;
 }
 
-.sectionHeader p,
+.section p,
+.yieldSection p,
 .controlCopy p {
   color: var(--muted);
   font-size: 18px;
@@ -249,49 +309,84 @@ a {
   margin: 18px 0 0;
 }
 
-.stepsGrid {
+.pathPanel {
+  display: grid;
+  gap: 12px;
+}
+
+.pathItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 20px;
+}
+
+.pathItem span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(53, 224, 161, 0.12);
+  color: var(--green);
+  font-weight: 900;
+}
+
+.pathItem strong {
+  font-size: 20px;
+}
+
+.sectionHeader {
+  max-width: 840px;
+  margin-bottom: 34px;
+}
+
+.scenarioGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 
-.stepCard {
-  min-height: 260px;
+.scenarioCard {
+  min-height: 230px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--paper);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(18, 34, 49, 0.9), rgba(8, 15, 24, 0.92));
   padding: 22px;
 }
 
-.stepCard span {
-  color: var(--gold);
-  font-weight: 700;
-}
-
-.stepCard h3 {
-  font-size: 22px;
-  line-height: 1.18;
-  margin: 18px 0 12px;
-}
-
-.stepCard p {
+.scenarioCard span {
   color: var(--muted);
+  font-weight: 800;
+}
+
+.scenarioCard strong {
+  display: block;
+  color: var(--green);
+  font-size: 36px;
+  margin: 24px 0 12px;
+}
+
+.scenarioCard p {
+  font-size: 15px;
   line-height: 1.55;
   margin: 0;
 }
 
 .controlSection {
   display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(360px, 0.7fr);
-  gap: 46px;
+  grid-template-columns: minmax(0, 0.92fr) minmax(360px, 0.72fr);
+  gap: 48px;
   align-items: center;
-  background: var(--deep);
-  color: #ffffff;
-  padding: 82px max(28px, calc((100vw - 1180px) / 2));
-}
-
-.controlCopy p {
-  color: #c5d1dc;
+  background:
+    radial-gradient(circle at 16% 20%, rgba(53, 224, 161, 0.13), transparent 28%),
+    #07101a;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 88px max(28px, calc((100vw - 1220px) / 2));
 }
 
 .controlList {
@@ -304,17 +399,18 @@ a {
   grid-template-columns: 14px minmax(0, 1fr);
   gap: 14px;
   align-items: start;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 18px;
 }
 
 .controlItem span {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #80d7bc;
+  background: var(--green);
+  box-shadow: 0 0 20px rgba(53, 224, 161, 0.6);
   margin-top: 6px;
 }
 
@@ -328,26 +424,23 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  background: var(--paper);
-  padding: 64px max(28px, calc((100vw - 1180px) / 2));
+  padding: 72px max(28px, calc((100vw - 1220px) / 2));
+  background: linear-gradient(135deg, rgba(23, 198, 211, 0.12), rgba(53, 224, 161, 0.08));
 }
 
 .closingBand h2 {
-  max-width: 760px;
+  max-width: 820px;
 }
 
 @media (max-width: 980px) {
   .heroGrid,
+  .split,
   .controlSection {
     grid-template-columns: 1fr;
   }
 
-  .heroVisual {
-    justify-content: flex-start;
-  }
-
-  .metricsBand,
-  .stepsGrid {
+  .statsStrip,
+  .scenarioGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -355,11 +448,11 @@ a {
 @media (max-width: 620px) {
   .hero {
     min-height: auto;
-    padding: 54px 20px 34px;
+    padding: 54px 18px 38px;
   }
 
   .heroCopy h1 {
-    font-size: 40px;
+    font-size: 42px;
   }
 
   .heroCopy p {
@@ -377,35 +470,28 @@ a {
     width: 100%;
   }
 
-  .metricsBand,
-  .stepsGrid {
+  .statsStrip,
+  .scenarioGrid {
     grid-template-columns: 1fr;
   }
 
-  .metricItem {
+  .stat {
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }
 
-  .metricItem:last-child {
-    border-bottom: 0;
-  }
-
-  .section {
-    width: min(100% - 32px, 1180px);
-    padding: 58px 0;
+  .section,
+  .yieldSection {
+    width: min(100% - 32px, 1220px);
+    padding: 62px 0;
   }
 
   .controlSection,
   .closingBand {
-    padding: 58px 18px;
+    padding: 62px 18px;
   }
 
-  .flowSplit {
-    flex-direction: column;
-  }
-
-  .flowSplit div {
-    width: 100%;
+  .terminalValue strong {
+    font-size: 36px;
   }
 }
