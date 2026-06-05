@@ -57,3 +57,20 @@ DB_PASSWORD='usa-una-contrasena-larga' bash deploy/setup-vps.sh
 El script instala/verifica paquetes generales del servidor, prepara PostgreSQL, configura `.env`, ejecuta Prisma, levanta procesos con PM2, configura Nginx y solicita SSL para `pay.xspin.mx`.
 
 Si el servidor ya tiene otros proyectos, PM2 y Nginx pueden convivir sin problema mientras cada proyecto use nombres y puertos distintos.
+
+## Google OAuth
+
+Crear credenciales OAuth 2.0 en Google Cloud y configurar este callback:
+
+```text
+https://pay.xspin.mx/api/auth/callback/google
+```
+
+Al ejecutar el deploy, pasar las credenciales:
+
+```bash
+GOOGLE_CLIENT_ID='client-id.apps.googleusercontent.com' \
+GOOGLE_CLIENT_SECRET='client-secret' \
+DB_PASSWORD='password-postgres' \
+bash deploy/setup-vps.sh
+```

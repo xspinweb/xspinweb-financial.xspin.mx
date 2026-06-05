@@ -63,11 +63,23 @@ else
   git clone "${REPO_URL}" "${APP_DIR}"
 fi
 
+if [[ -f "${APP_DIR}/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "${APP_DIR}/.env"
+  set +a
+fi
+
 echo "==> Writing production env"
-JWT_SECRET="$(openssl rand -hex 32)"
+JWT_SECRET="${JWT_SECRET:-$(openssl rand -hex 32)}"
+NEXTAUTH_SECRET="${NEXTAUTH_SECRET:-$(openssl rand -hex 32)}"
 cat > "${APP_DIR}/.env" <<EOF
 DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}?schema=public"
 JWT_SECRET="${JWT_SECRET}"
+NEXTAUTH_SECRET="${NEXTAUTH_SECRET}"
+NEXTAUTH_URL="https://${DOMAIN}"
+GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
+GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET:-}"
 API_PORT="${API_PORT}"
 WEB_PORT="${WEB_PORT}"
 PUBLIC_API_URL="https://${DOMAIN}/api"
@@ -95,7 +107,7 @@ npm run build
 echo "==> Configuring PM2"
 pm2 delete pay-financial-api >/dev/null 2>&1 || true
 pm2 delete pay-financial-web >/dev/null 2>&1 || true
-API_PORT="${API_PORT}" WEB_PORT="${WEB_PORT}" DATABASE_URL="${DATABASE_URL}" JWT_SECRET="${JWT_SECRET}" PUBLIC_API_URL="${PUBLIC_API_URL}" \
+API_PORT="${API_PORT}" WEB_PORT="${WEB_PORT}" DATABASE_URL="${DATABASE_URL}" JWT_SECRET="${JWT_SECRET}" NEXTAUTH_SECRET="${NEXTAUTH_SECRET}" NEXTAUTH_URL="${NEXTAUTH_URL}" GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID}" GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET}" PUBLIC_API_URL="${PUBLIC_API_URL}" \
 pm2 start deploy/ecosystem.config.cjs
 pm2 save
 pm2 startup systemd -u root --hp /root >/tmp/pm2-startup.txt

@@ -54,7 +54,7 @@ export default function HomePage() {
           <a href="#rendimiento">Rendimiento</a>
           <a href="#control">Control</a>
         </nav>
-        <a className="headerAccess" href="mailto:administracion@xspin.mx">Acceso</a>
+        <a className="headerAccess" href="/login">Acceso</a>
       </header>
       <section className="hero">
         <div className="marketGlow" aria-hidden="true" />
