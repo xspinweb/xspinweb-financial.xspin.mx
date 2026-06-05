@@ -13,9 +13,9 @@ module.exports = {
     },
     {
       name: "pay-financial-web",
-      cwd: "/var/www/xspinweb-financial.xspin.mx/apps/web",
-      script: "node_modules/next/dist/bin/next",
-      args: `start -p ${process.env.WEB_PORT || "5100"}`,
+      cwd: "/var/www/xspinweb-financial.xspin.mx",
+      script: "npm",
+      args: `run start -w @pay-financial/web -- -p ${process.env.WEB_PORT || "5100"}`,
       env: {
         NODE_ENV: "production",
         WEB_PORT: process.env.WEB_PORT || "5100",
