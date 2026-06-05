@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+}
+
+enum InvestorStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum GroupStatus {
+  OPEN
+  CLOSED
+}
+
+enum InvestmentStatus {
+  ACTIVE
+  DUE
+  PAID
+  REINVESTED
+  CANCELLED
+}
+
+enum ReferralStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum PaymentType {
+  YIELD
+  FULL_PAYOUT
+  BONUS
+  ADJUSTMENT
+}
+
+model User {
+  id                  String    @id @default(cuid())
+  name                String
+  lastName            String
+  phone               String?
+  username            String    @unique
+  passwordHash        String
+  role                UserRole  @default(OPERATOR)
+  failedLoginAttempts Int       @default(0)
+  lockedAt            DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model Investor {
+  id                    String           @id @default(cuid())
+  investorCode          String           @unique
+  fullName              String?
+  phone                 String?
+  email                 String?
+  status                InvestorStatus   @default(ACTIVE)
+  referredByInvestorId  String?
+  referredByInvestor    Investor?        @relation("InvestorReferrals", fields: [referredByInvestorId], references: [id])
+  referredInvestors     Investor[]       @relation("InvestorReferrals")
+  investments           Investment[]
+  referralsGiven        Referral[]       @relation("Referrer")
+  referralsReceived     Referral[]       @relation("Referred")
+  payments              Payment[]
+  reinvestments         Reinvestment[]
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+}
+
+model InvestmentGroup {
+  id          String       @id @default(cuid())
+  groupNumber Int         @unique
+  status      GroupStatus @default(OPEN)
+  openedAt    DateTime    @default(now())
+  closedAt    DateTime?
+  investments Investment[]
+}
+
+model Investment {
+  id                    String           @id @default(cuid())
+  investorId            String
+  investor              Investor         @relation(fields: [investorId], references: [id])
+  groupId               String
+  group                 InvestmentGroup  @relation(fields: [groupId], references: [id])
+  cycleNumber           Int
+  principalAmount       Decimal          @db.Decimal(14, 2)
+  returnAmount          Decimal          @db.Decimal(14, 2)
+  referralBonusAmount   Decimal          @default(0) @db.Decimal(14, 2)
+  expectedPaymentAmount Decimal          @db.Decimal(14, 2)
+  paymentDueAt          DateTime
+  status                InvestmentStatus @default(ACTIVE)
+  referralsSource       Referral[]       @relation("ReferralSourceInvestment")
+  payments              Payment[]
+  previousReinvestment  Reinvestment?    @relation("PreviousInvestment")
+  newReinvestment       Reinvestment?    @relation("NewInvestment")
+  createdAt             DateTime         @default(now())
+  paidAt                DateTime?
+
+  @@unique([investorId, cycleNumber])
+  @@index([status, paymentDueAt])
+}
+
+model Referral {
+  id                      String         @id @default(cuid())
+  referrerInvestorId      String
+  referrerInvestor        Investor       @relation("Referrer", fields: [referrerInvestorId], references: [id])
+  referredInvestorId      String
+  referredInvestor        Investor       @relation("Referred", fields: [referredInvestorId], references: [id])
+  sourceInvestmentId      String?
+  sourceInvestment        Investment?    @relation("ReferralSourceInvestment", fields: [sourceInvestmentId], references: [id])
+  bonusAmount             Decimal        @db.Decimal(14, 2)
+  status                  ReferralStatus @default(PENDING)
+  createdAt               DateTime       @default(now())
+  paidAt                  DateTime?
+}
+
+model Payment {
+  id           String       @id @default(cuid())
+  investorId   String
+  investor     Investor     @relation(fields: [investorId], references: [id])
+  investmentId String?
+  investment   Investment?  @relation(fields: [investmentId], references: [id])
+  groupId      String?
+  amount       Decimal      @db.Decimal(14, 2)
+  paymentType  PaymentType
+  paidAt       DateTime     @default(now())
+  notes        String?
+}
+
+model Reinvestment {
+  id                    String     @id @default(cuid())
+  previousInvestmentId  String     @unique
+  previousInvestment    Investment @relation("PreviousInvestment", fields: [previousInvestmentId], references: [id])
+  newInvestmentId       String     @unique
+  newInvestment         Investment @relation("NewInvestment", fields: [newInvestmentId], references: [id])
+  investorId            String
+  investor              Investor   @relation(fields: [investorId], references: [id])
+  previousCapitalAmount Decimal    @db.Decimal(14, 2)
+  paidYieldAmount       Decimal    @db.Decimal(14, 2)
+  reinvestedAmount      Decimal    @db.Decimal(14, 2)
+  createdAt             DateTime   @default(now())
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
