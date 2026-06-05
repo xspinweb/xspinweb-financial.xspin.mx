@@ -45,11 +45,10 @@ a {
 }
 
 .siteHeader {
-  position: sticky;
+  position: relative;
   z-index: 10;
-  top: 12px;
   width: min(1220px, calc(100% - 56px));
-  margin: 12px auto -2px;
+  margin: 12px auto 0;
   min-height: 66px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -785,9 +784,9 @@ a {
     width: 118px;
   }
 
-  .hero {
+.hero {
     min-height: auto;
-    padding: 36px 18px 38px;
+    padding: 34px 18px 38px;
   }
 
   .heroCopy h1 {
