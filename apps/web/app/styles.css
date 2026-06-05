@@ -184,48 +184,95 @@ a {
   color: var(--green);
 }
 
-.chartBars {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  align-items: end;
-  gap: 10px;
-  height: 210px;
+.marketChart {
+  min-height: 278px;
   margin: 22px 0;
-  padding: 18px;
-  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   background:
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 100% 25%, 20% 100%;
+    radial-gradient(circle at 78% 24%, rgba(53, 224, 161, 0.14), transparent 30%),
+    linear-gradient(180deg, rgba(6, 19, 30, 0.92), rgba(3, 10, 17, 0.92));
+  overflow: hidden;
+  padding: 14px;
 }
 
-.chartBars span {
+.chartLegend {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.chartLegend strong {
+  color: var(--green);
+}
+
+.marketChart svg {
   display: block;
-  border-radius: 6px 6px 0 0;
-  background: linear-gradient(180deg, var(--green), var(--cyan));
-  box-shadow: 0 0 26px rgba(53, 224, 161, 0.28);
-  transform-origin: bottom;
-  animation: growBar 900ms ease-out both;
+  width: 100%;
+  height: auto;
 }
 
-.chartBars span:nth-child(2) {
-  animation-delay: 70ms;
+.chartGrid path {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
 }
 
-.chartBars span:nth-child(3) {
-  animation-delay: 140ms;
+.chartArea {
+  opacity: 0;
+  animation: fadeUp 800ms ease-out 260ms both;
 }
 
-.chartBars span:nth-child(4) {
-  animation-delay: 210ms;
+.chartLine {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  filter: url("#lineGlow");
+  stroke-dasharray: 720;
+  stroke-dashoffset: 720;
+  animation: drawLine 1100ms ease-out both;
 }
 
-.chartBars span:nth-child(5) {
-  animation-delay: 280ms;
+.chartPoints circle {
+  fill: #06131e;
+  stroke: var(--green);
+  stroke-width: 4;
+  opacity: 0;
+  animation: popPoint 420ms ease-out both;
 }
 
-.chartBars span:nth-child(6) {
-  animation-delay: 350ms;
+.chartPoints circle:nth-child(1) {
+  animation-delay: 120ms;
+}
+
+.chartPoints circle:nth-child(2) {
+  animation-delay: 300ms;
+}
+
+.chartPoints circle:nth-child(3) {
+  animation-delay: 500ms;
+}
+
+.chartPoints circle:nth-child(4) {
+  animation-delay: 720ms;
+}
+
+.chartPoints circle:nth-child(5) {
+  animation-delay: 950ms;
+}
+
+.chartLabels text {
+  fill: #94a9bb;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.chartLabels text:last-child {
+  fill: var(--green);
+  font-size: 20px;
 }
 
 .terminalValue {
@@ -479,14 +526,34 @@ a {
   }
 }
 
-@keyframes growBar {
+@keyframes drawLine {
   from {
-    transform: scaleY(0.25);
-    opacity: 0.35;
+    stroke-dashoffset: 720;
   }
   to {
-    transform: scaleY(1);
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
     opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popPoint {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

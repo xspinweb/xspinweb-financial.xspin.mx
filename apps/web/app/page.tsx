@@ -71,13 +71,66 @@ export default function HomePage() {
               <span>PAY / MXN</span>
               <strong>Modelo activo</strong>
             </div>
-            <div className="chartBars" aria-hidden="true">
-              <span style={{ height: "34%" }} />
-              <span style={{ height: "48%" }} />
-              <span style={{ height: "57%" }} />
-              <span style={{ height: "68%" }} />
-              <span style={{ height: "82%" }} />
-              <span style={{ height: "96%" }} />
+            <div className="marketChart" aria-label="Grafica ascendente de capital proyectado">
+              <div className="chartLegend">
+                <span>Capital inicial</span>
+                <strong>Ganancia proyectada</strong>
+              </div>
+              <svg viewBox="0 0 520 280" role="img" aria-labelledby="chartTitle">
+                <title id="chartTitle">Grafica de crecimiento proyectado de una inversion</title>
+                <defs>
+                  <linearGradient id="profitFill" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#35e0a1" stopOpacity="0.36" />
+                    <stop offset="100%" stopColor="#35e0a1" stopOpacity="0" />
+                  </linearGradient>
+                  <linearGradient id="profitStroke" x1="0" x2="1" y1="0" y2="0">
+                    <stop offset="0%" stopColor="#17c6d3" />
+                    <stop offset="100%" stopColor="#35e0a1" />
+                  </linearGradient>
+                  <filter id="lineGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+                <g className="chartGrid">
+                  <path d="M40 40H500" />
+                  <path d="M40 92H500" />
+                  <path d="M40 144H500" />
+                  <path d="M40 196H500" />
+                  <path d="M40 248H500" />
+                  <path d="M80 28V248" />
+                  <path d="M170 28V248" />
+                  <path d="M260 28V248" />
+                  <path d="M350 28V248" />
+                  <path d="M440 28V248" />
+                </g>
+                <path
+                  className="chartArea"
+                  fill="url(#profitFill)"
+                  d="M40 220 C95 210 120 188 170 178 C218 168 224 134 270 126 C330 115 340 82 394 76 C444 70 462 48 500 36 L500 248 L40 248 Z"
+                />
+                <path
+                  className="chartLine"
+                  stroke="url(#profitStroke)"
+                  d="M40 220 C95 210 120 188 170 178 C218 168 224 134 270 126 C330 115 340 82 394 76 C444 70 462 48 500 36"
+                />
+                <g className="chartPoints">
+                  <circle cx="40" cy="220" r="6" />
+                  <circle cx="170" cy="178" r="6" />
+                  <circle cx="270" cy="126" r="6" />
+                  <circle cx="394" cy="76" r="6" />
+                  <circle cx="500" cy="36" r="7" />
+                </g>
+                <g className="chartLabels">
+                  <text x="40" y="270">Inicio</text>
+                  <text x="238" y="270">Ciclo</text>
+                  <text x="452" y="270">Cierre</text>
+                  <text x="420" y="28">+$4,900</text>
+                </g>
+              </svg>
             </div>
             <div className="terminalValue">
               <span>Capital proyectado</span>
