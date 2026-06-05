@@ -6,17 +6,17 @@ module.exports = {
       script: "dist/server.js",
       env: {
         NODE_ENV: "production",
-        API_PORT: "4000"
+        API_PORT: "4100"
       }
     },
     {
       name: "pay-financial-web",
       cwd: "/var/www/xspinweb-financial.xspin.mx/apps/web",
       script: "node_modules/next/dist/bin/next",
-      args: "start -p 3000",
+      args: "start -p 3100",
       env: {
         NODE_ENV: "production",
-        WEB_PORT: "3000"
+        WEB_PORT: "3100"
       }
     }
   ]
