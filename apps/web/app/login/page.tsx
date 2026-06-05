@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { GoogleSignInButton } from "./sign-in-button";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage() {
   const googleReady = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
