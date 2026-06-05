@@ -88,6 +88,27 @@ a {
   text-transform: uppercase;
 }
 
+.brandLockup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.brandLockup img {
+  width: min(210px, 58vw);
+  height: auto;
+  display: block;
+}
+
+.brandLockup span {
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+  color: #dfe8f2;
+  font-size: 18px;
+  font-weight: 800;
+  padding-left: 14px;
+}
+
 .heroCopy h1,
 .section h2,
 .yieldSection h2,
@@ -178,6 +199,17 @@ a {
 .terminalTop span {
   color: var(--muted);
   font-weight: 800;
+}
+
+.terminalBrand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.terminalBrand img {
+  width: 28px;
+  height: auto;
 }
 
 .terminalTop strong {
@@ -639,6 +671,17 @@ a {
 
   .heroCopy h1 {
     font-size: 42px;
+  }
+
+  .brandLockup {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .brandLockup span {
+    border-left: 0;
+    padding-left: 0;
   }
 
   .heroCopy p {

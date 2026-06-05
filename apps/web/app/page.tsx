@@ -49,7 +49,11 @@ export default function HomePage() {
         <div className="marketGlow" aria-hidden="true" />
         <div className="heroGrid">
           <div className="heroCopy">
-            <span className="eyebrow">Pay Financial</span>
+            <div className="brandLockup">
+              <img src="/logos/xspin-logo.svg" alt="Xspin" />
+              <span>Financial</span>
+            </div>
+            <span className="eyebrow">Xspin Financial</span>
             <h1>Haz que tu capital trabaje en ciclos cortos y medibles.</h1>
             <p>
               Un modelo de crecimiento financiero con aportaciones organizadas,
@@ -68,7 +72,10 @@ export default function HomePage() {
 
           <div className="yieldTerminal" aria-label="Ejemplo visual de rendimiento">
             <div className="terminalTop">
-              <span>PAY INDEX</span>
+              <span className="terminalBrand">
+                <img src="/logos/xspin-mark.svg" alt="" aria-hidden="true" />
+                XSPIN INDEX
+              </span>
               <strong>Modelo activo</strong>
             </div>
             <div className="marketChart" aria-label="Grafica ascendente de capital proyectado">

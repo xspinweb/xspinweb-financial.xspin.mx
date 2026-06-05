@@ -1,0 +1,20 @@
+<svg width="96" height="72" viewBox="0 0 96 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="xg" x1="11" y1="10" x2="75" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#CB35FF"/>
+      <stop offset="0.48" stop-color="#7E1DFF"/>
+      <stop offset="1" stop-color="#A84DFF"/>
+    </linearGradient>
+    <filter id="glow" x="0" y="0" width="96" height="72" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.4" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.58 0 0 0 0 0.14 0 0 0 0 1 0 0 0 0.7 0"/>
+      <feBlend in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <g filter="url(#glow)">
+    <path d="M9 13C8 10 10 7 14 7H33C37 7 40 9 42 12L51 25L60 12C62 9 65 7 69 7H82C87 7 89 13 86 17L66 36L87 55C90 59 87 65 82 65H63C59 65 56 63 54 60L43 45L32 60C30 63 27 65 23 65H12C7 65 5 59 8 55L29 36L9 17C8 16 8 14 9 13Z" fill="url(#xg)"/>
+    <path d="M27 34C35 20 55 16 70 25C58 21 44 23 35 31C27 38 29 46 38 50C26 48 20 42 27 34Z" fill="#050711"/>
+    <path d="M35 39C42 31 57 28 68 33C59 32 48 35 42 41C36 47 39 52 47 53C37 54 31 48 35 39Z" fill="#050711"/>
+    <path d="M25 24C34 15 51 12 66 18C48 15 31 22 23 34C18 31 20 27 25 24Z" fill="#050711"/>
+  </g>
+</svg>
