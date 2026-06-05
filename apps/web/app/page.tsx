@@ -267,7 +267,6 @@ export default function HomePage() {
           <span className="eyebrow">Acceso privado</span>
           <h2>Construye crecimiento con ciclos, referidos y reinversion inteligente.</h2>
         </div>
-        <a className="primaryAction" href="mailto:administracion@xspin.mx">Solicitar acceso</a>
       </section>
     </main>
   );
