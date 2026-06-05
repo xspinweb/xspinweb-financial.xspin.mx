@@ -21,8 +21,8 @@ npm run db:generate
 npm run dev
 ```
 
-La API queda preparada para correr en `http://localhost:4100`.
-El frontend queda preparado para correr en `http://localhost:3100`.
+La API queda preparada para correr en `http://localhost:5101`.
+El frontend queda preparado para correr en `http://localhost:5100`.
 
 ## Referencia
 

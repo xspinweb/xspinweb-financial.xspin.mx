@@ -5,8 +5,8 @@ APP_NAME="pay-financial"
 APP_DIR="/var/www/xspinweb-financial.xspin.mx"
 REPO_URL="https://github.com/xspinweb/xspinweb-financial.xspin.mx.git"
 DOMAIN="pay.xspin.mx"
-API_PORT="4100"
-WEB_PORT="3100"
+API_PORT="5101"
+WEB_PORT="5100"
 DB_NAME="pay_financial_v2"
 DB_USER="pay_financial"
 
@@ -74,6 +74,10 @@ PUBLIC_API_URL="https://${DOMAIN}/api"
 EOF
 
 chmod 600 "${APP_DIR}/.env"
+set -a
+# shellcheck disable=SC1090
+source "${APP_DIR}/.env"
+set +a
 
 echo "==> Installing app dependencies"
 cd "${APP_DIR}"
@@ -91,6 +95,7 @@ npm run build
 echo "==> Configuring PM2"
 pm2 delete pay-financial-api >/dev/null 2>&1 || true
 pm2 delete pay-financial-web >/dev/null 2>&1 || true
+API_PORT="${API_PORT}" WEB_PORT="${WEB_PORT}" DATABASE_URL="${DATABASE_URL}" JWT_SECRET="${JWT_SECRET}" PUBLIC_API_URL="${PUBLIC_API_URL}" \
 pm2 start deploy/ecosystem.config.cjs
 pm2 save
 pm2 startup systemd -u root --hp /root >/tmp/pm2-startup.txt
