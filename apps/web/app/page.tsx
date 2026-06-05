@@ -183,12 +183,14 @@ export default function HomePage() {
       </section>
 
       <section className="statsStrip" aria-label="Metricas del modelo">
-        {growthStats.map((stat) => (
-          <div className="stat" key={stat.label}>
-            <strong>{stat.value}</strong>
-            <span>{stat.label}</span>
-          </div>
-        ))}
+        <div className="statsInner">
+          {growthStats.map((stat) => (
+            <div className="stat" key={stat.label}>
+              <strong>{stat.value}</strong>
+              <span>{stat.label}</span>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="section split" id="modelo">
