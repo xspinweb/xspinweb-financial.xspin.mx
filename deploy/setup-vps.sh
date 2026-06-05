@@ -82,8 +82,8 @@ npm install
 echo "==> Generating Prisma client"
 npm run db:generate
 
-echo "==> Running database migrations"
-npm run db:migrate -- --name init
+echo "==> Syncing database schema"
+npm run db:push
 
 echo "==> Building app"
 npm run build
