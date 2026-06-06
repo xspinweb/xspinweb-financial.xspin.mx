@@ -823,6 +823,227 @@ a {
   height: 22px;
 }
 
+.appShell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  background: #07101a;
+  color: var(--ink);
+}
+
+.appSidebar {
+  border-right: 1px solid var(--line);
+  background: rgba(5, 11, 18, 0.92);
+  padding: 22px 16px;
+}
+
+.appBrand {
+  display: flex;
+  align-items: center;
+  min-height: 58px;
+  margin-bottom: 18px;
+  padding: 0 8px;
+}
+
+.appNav {
+  display: grid;
+  gap: 6px;
+}
+
+.appNav a {
+  border-radius: 10px;
+  color: #c4d2df;
+  font-weight: 750;
+  text-decoration: none;
+  padding: 13px 14px;
+}
+
+.appNav a.active,
+.appNav a:hover {
+  background: rgba(53, 224, 161, 0.11);
+  color: var(--green);
+}
+
+.appWorkspace {
+  min-width: 0;
+}
+
+.appHeader {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(8, 15, 24, 0.88);
+  padding: 16px 24px;
+}
+
+.appHeader span {
+  color: var(--muted);
+  display: block;
+  font-size: 13px;
+}
+
+.appHeader strong {
+  display: block;
+}
+
+.userBox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userAvatar,
+.userFallback {
+  border-radius: 50%;
+}
+
+.userFallback {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  background: rgba(53, 224, 161, 0.13);
+  color: var(--green);
+  font-weight: 900;
+}
+
+.signOutButton {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 9px 12px;
+}
+
+.signOutButton:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dashboardContent {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.dashboardHero,
+.dashboardCard,
+.dashboardTablePanel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(8, 15, 24, 0.8);
+}
+
+.dashboardHero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px;
+}
+
+.dashboardHero h1 {
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.05;
+  margin: 8px 0 10px;
+}
+
+.dashboardHero p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.dashboardHero button {
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  color: #031017;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  min-height: 46px;
+  padding: 10px 14px;
+}
+
+.dashboardCards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dashboardCard {
+  min-height: 118px;
+  padding: 18px;
+}
+
+.dashboardCard span {
+  color: var(--muted);
+}
+
+.dashboardCard strong {
+  display: block;
+  color: var(--green);
+  font-size: 34px;
+  margin-top: 14px;
+}
+
+.dashboardTablePanel {
+  overflow: hidden;
+}
+
+.tableHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid var(--line);
+  padding: 18px;
+}
+
+.tableHeader h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.tableHeader span {
+  color: var(--muted);
+}
+
+.dashboardTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.dashboardTable th,
+.dashboardTable td {
+  border-bottom: 1px solid var(--line);
+  padding: 14px 18px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.dashboardTable th {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.pill {
+  display: inline-flex;
+  border-radius: 999px;
+  background: rgba(53, 224, 161, 0.12);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 900;
+  padding: 6px 10px;
+}
+
 @media (max-width: 980px) {
   .heroGrid,
   .split,
@@ -832,8 +1053,22 @@ a {
 
   .statsStrip,
   .statsInner,
-  .scenarioGrid {
+  .scenarioGrid,
+  .dashboardCards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .appShell {
+    grid-template-columns: 1fr;
+  }
+
+  .appSidebar {
+    border-bottom: 1px solid var(--line);
+    border-right: 0;
+  }
+
+  .appNav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -876,7 +1111,8 @@ a {
   }
 
   .statsInner,
-  .scenarioGrid {
+  .scenarioGrid,
+  .dashboardCards {
     grid-template-columns: 1fr;
   }
 
@@ -898,6 +1134,25 @@ a {
   .controlSection,
   .closingBand {
     padding: 62px 18px;
+  }
+
+  .appHeader,
+  .dashboardHero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .userBox {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .dashboardContent {
+    padding: 16px;
+  }
+
+  .appNav {
+    grid-template-columns: 1fr;
   }
 
   .terminalValue strong {
