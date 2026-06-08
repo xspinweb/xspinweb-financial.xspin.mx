@@ -24,7 +24,9 @@
     "call-bound": "^1.0.4",
     "ee-first": "^1.1.1",
     "es-errors": "^1.3.0",
+    "forwarded": "^0.2.0",
     "get-intrinsic": "^1.3.0",
+    "ipaddr.js": "^1.9.1",
     "mime": "^1.6.0"
   },
   "devDependencies": {
