@@ -100,8 +100,8 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
     });
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-      throw new Error(payload?.error ?? "No se pudo registrar la inversion. Intenta nuevamente.");
+      const message = await getResponseErrorMessage(response);
+      throw new Error(message);
     }
 
     await loadPortfolio();
@@ -363,4 +363,25 @@ function getReferralBonus(referrals: Referral[]) {
 
     return total + (referral.amount ?? 0) * 0.05;
   }, 0);
+}
+
+async function getResponseErrorMessage(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+
+    if (payload?.error) {
+      return payload.error;
+    }
+  }
+
+  const text = await response.text().catch(() => "");
+  const cleanText = text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+
+  if (cleanText) {
+    return `Error ${response.status}: ${cleanText.slice(0, 160)}`;
+  }
+
+  return `Error ${response.status}: No se pudo registrar la inversion.`;
 }
