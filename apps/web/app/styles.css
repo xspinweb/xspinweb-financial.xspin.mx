@@ -1450,6 +1450,11 @@ a {
   color: #ff6b7f !important;
 }
 
+.statusYellow {
+  background: rgba(255, 204, 77, 0.16);
+  color: #ffcc4d !important;
+}
+
 .inviteReferralAction {
   justify-self: end;
   min-width: 58px;
@@ -1488,7 +1493,7 @@ a {
 
 .investmentDetailGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }

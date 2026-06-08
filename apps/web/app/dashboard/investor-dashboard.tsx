@@ -18,6 +18,7 @@ type Investment = {
   cycle: string;
   investedAt: string;
   nextPaymentAt: string;
+  nextPaymentAtIso?: string;
   referrals: Referral[];
 };
 
@@ -141,7 +142,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
               const referralBonus = getReferralBonus(investment.referrals);
               const referralYield = getReferralYield(investment.referrals);
               const totalGenerated = investment.amount + referralBonus + referralYield;
-              const canCollect = confirmedReferrals >= 2;
+              const paymentStatus = getPaymentStatus(investment, confirmedReferrals);
 
               return (
                 <details className="investmentItem" key={investment.id}>
@@ -167,9 +168,6 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                       <strong>{investment.nextPaymentAt}</strong>
                     </div>
                     <InviteReferralModal investmentId={investment.id} investorCode={investorCode} />
-                    <span className={canCollect ? "statusPill statusGreen" : "statusPill statusRed"}>
-                      {canCollect ? "Por cobrar" : "Pendiente"}
-                    </span>
                   </summary>
 
                   <div className="referralPanel">
@@ -189,6 +187,12 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                       <div>
                         <span>Total generado</span>
                         <strong>{formatCurrency(totalGenerated)}</strong>
+                      </div>
+                      <div>
+                        <span>Estatus</span>
+                        <strong>
+                          <span className={`statusPill ${paymentStatus.className}`}>{paymentStatus.label}</span>
+                        </strong>
                       </div>
                     </div>
                     <div className="referralHeader">
@@ -314,6 +318,7 @@ function normalizeInvestment(investment: Investment): Investment {
   return {
     ...investment,
     investedAt: formatDate(new Date(investment.investedAt)),
+    nextPaymentAtIso: investment.nextPaymentAt,
     nextPaymentAt: formatDate(new Date(investment.nextPaymentAt)),
     referrals: investment.referrals.map((referral) => ({
       ...referral,
@@ -379,6 +384,29 @@ function getReferralYield(referrals: Referral[]) {
 
     return total + (referral.amount ?? 0) * 0.5;
   }, 0);
+}
+
+function getPaymentStatus(investment: Investment, confirmedReferrals: number) {
+  if (confirmedReferrals < 2) {
+    return {
+      className: "statusRed",
+      label: "Pendiente"
+    };
+  }
+
+  const dueDate = new Date(investment.nextPaymentAtIso ?? investment.nextPaymentAt);
+
+  if (Number.isNaN(dueDate.getTime()) || dueDate > new Date()) {
+    return {
+      className: "statusYellow",
+      label: "Por cobrar"
+    };
+  }
+
+  return {
+    className: "statusGreen",
+    label: "Por cobrar"
+  };
 }
 
 async function getResponseErrorMessage(response: Response) {
