@@ -436,7 +436,7 @@ function ReinvestmentModal({
       {isOpen ? (
         <div className="modalOverlay" role="presentation">
           <section className="investmentModal reinvestmentModal" role="dialog" aria-modal="true" aria-labelledby={`reinvest-${investmentId}`}>
-            <div className="inviteModalContent">
+            <div className="reinvestmentContent">
               <div className="modalHeader">
                 <div>
                   <span className="loginEyebrow">Reinversion</span>

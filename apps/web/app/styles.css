@@ -1642,6 +1642,35 @@ a {
   width: min(560px, 100%);
 }
 
+.reinvestmentContent {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  text-align: left;
+}
+
+.reinvestmentContent .modalHeader {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 16px;
+  text-align: left;
+}
+
+.reinvestmentContent .modalHeader > div {
+  background: transparent;
+  border: 0;
+  display: block;
+  padding: 0;
+  text-align: left;
+}
+
+.reinvestmentContent .modalClose {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
 .reinvestmentText {
   color: var(--muted);
   font-weight: 700;
@@ -1650,8 +1679,12 @@ a {
 }
 
 .reinvestmentSlider {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
   display: grid;
   gap: 12px;
+  padding: 14px;
 }
 
 .reinvestmentSlider div {
@@ -1683,7 +1716,7 @@ a {
 .reinvestmentGrid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
 }
 
 .reinvestmentGrid div {
@@ -1857,8 +1890,7 @@ a {
     grid-template-columns: 1fr;
   }
 
-  .reinvestmentActions,
-  .reinvestmentGrid {
+  .reinvestmentActions {
     grid-template-columns: 1fr;
   }
 
