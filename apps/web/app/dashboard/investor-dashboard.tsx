@@ -234,18 +234,19 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                               </div>
                               <div>
                                 <span>Total generado</span>
-                                <div className="weekTotalAction">
-                                  <strong>{formatCurrency(totalGenerated)}</strong>
-                                  {week.canReinvest ? (
-                                    <ReinvestmentModal
-                                      investmentId={investment.id}
-                                      totalGenerated={totalGenerated}
-                                      weekNumber={week.weekNumber}
-                                      onCompleted={loadPortfolio}
-                                    />
-                                  ) : null}
-                                </div>
+                                <strong>{formatCurrency(totalGenerated)}</strong>
                               </div>
+                              {week.canReinvest ? (
+                                <div className="weekActionCard">
+                                  <span>Reinversion</span>
+                                  <ReinvestmentModal
+                                    investmentId={investment.id}
+                                    totalGenerated={totalGenerated}
+                                    weekNumber={week.weekNumber}
+                                    onCompleted={loadPortfolio}
+                                  />
+                                </div>
+                              ) : null}
                             </div>
                           </details>
                         ))}
@@ -418,13 +419,15 @@ function ReinvestmentModal({
       <button
         className="reinvestmentAction"
         type="button"
+        aria-label="Abrir reinversion"
+        title="Reinversion"
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
           setIsOpen(true);
         }}
       >
-        Reinversion
+        <ReinvestmentIcon />
       </button>
 
       {isOpen ? (
@@ -493,6 +496,14 @@ function ReinvestmentModal({
         </div>
       ) : null}
     </>
+  );
+}
+
+function ReinvestmentIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 3a9 9 0 0 1 8.3 5.5l-1.9.8A7 7 0 0 0 6.1 7.9H9v2H3V4h2v2.2A9 9 0 0 1 12 3Zm6.9 10.7H15v-2h6v5.9h-2v-2.2A9 9 0 0 1 3.7 15.5l1.9-.8a7 7 0 0 0 12.3 1.4h-3v-2.4h4Z" />
+    </svg>
   );
 }
 

@@ -1605,28 +1605,32 @@ a {
   color: var(--green);
 }
 
-.weekTotalAction {
-  align-items: center;
-  display: flex;
-  gap: 10px;
-  justify-content: space-between;
-  margin-top: 4px;
-}
-
-.weekTotalAction strong {
-  margin-top: 0;
-}
-
 .reinvestmentAction {
-  border: 0;
-  border-radius: 999px;
+  align-items: center;
+  border: 1px solid rgba(53, 224, 161, 0.22);
+  border-radius: 50%;
   background: rgba(53, 224, 161, 0.14);
   color: var(--green);
   cursor: pointer;
-  font-weight: 900;
-  min-height: 32px;
-  padding: 0 12px;
-  white-space: nowrap;
+  display: inline-flex;
+  height: 42px;
+  justify-content: center;
+  margin-top: 8px;
+  padding: 0;
+  width: 42px;
+}
+
+.reinvestmentAction svg {
+  height: 22px;
+  width: 22px;
+  fill: currentColor;
+}
+
+.weekActionCard {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .reinvestmentModal {
