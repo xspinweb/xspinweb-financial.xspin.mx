@@ -1082,6 +1082,9 @@ a {
 }
 
 .headerIconAction {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
   display: inline-grid;
   place-items: center;
   gap: 4px;
@@ -1089,6 +1092,7 @@ a {
   color: var(--green);
   font-size: 11px;
   font-weight: 850;
+  font-family: inherit;
   min-width: 78px;
   padding: 7px;
   text-decoration: none;
@@ -1104,6 +1108,161 @@ a {
   width: 24px;
   height: 24px;
   fill: currentColor;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: rgba(3, 8, 14, 0.72);
+  padding: 18px;
+}
+
+.investmentModal {
+  width: min(460px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #08111c;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.48);
+}
+
+.investmentModal form {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.modalHeader h2 {
+  font-size: 28px;
+  line-height: 1.05;
+  margin: 8px 0 0;
+}
+
+.modalClose {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.amountField {
+  display: grid;
+  gap: 8px;
+}
+
+.amountField > span,
+.termsCheck span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.amountField div {
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0 14px;
+}
+
+.amountField div span {
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.amountField input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 26px;
+  font-weight: 900;
+  outline: 0;
+}
+
+.amountField input::placeholder {
+  color: rgba(159, 178, 196, 0.48);
+}
+
+.formError {
+  color: #ff6b7f;
+  font-size: 13px;
+  font-weight: 800;
+  margin: -8px 0 0;
+}
+
+.termsCheck {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.termsCheck input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
+
+.paymentNotice {
+  border: 1px solid rgba(53, 224, 161, 0.22);
+  border-radius: 12px;
+  background: rgba(53, 224, 161, 0.08);
+  color: #b8ffe3;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 12px;
+}
+
+.modalActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.primaryModalAction,
+.secondaryModalAction {
+  min-height: 48px;
+  border-radius: 12px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.primaryModalAction {
+  border: 0;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  color: #031017;
+}
+
+.primaryModalAction:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.secondaryModalAction {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
 }
 
 .dashboardTable {

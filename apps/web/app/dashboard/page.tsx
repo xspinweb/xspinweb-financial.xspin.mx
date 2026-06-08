@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { getAppRole } from "../../lib/access";
 import { authOptions } from "../../lib/auth";
+import { NewInvestmentModal } from "./new-investment-modal";
 
 const adminCards = [
   { label: "Usuarios activos", value: "0" },
@@ -82,14 +83,6 @@ export default async function DashboardPage() {
   );
 }
 
-function InvestIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 18.5h16v2H3a1 1 0 0 1-1-1V4h2Zm2-2.4 4.1-4.8 3.1 2.7 5-7.2 1.6 1.1-6.3 9.1-3.2-2.8-2.8 3.3Zm12.4-3.9H22v3.6h-2v-1.6h-1.6Z" />
-    </svg>
-  );
-}
-
 function UserPlusIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -138,10 +131,7 @@ function InvestorHomePanel() {
     <section className="investmentPanel">
       <div className="tableHeader">
         <h2>Mis inversiones</h2>
-        <a className="headerIconAction" href="#" aria-label="Nueva inversion" title="Nueva inversion">
-          <InvestIcon />
-          <span>Nueva inversion</span>
-        </a>
+        <NewInvestmentModal />
       </div>
       <div className="investmentList">
         {investorRows.map((investment) => {
