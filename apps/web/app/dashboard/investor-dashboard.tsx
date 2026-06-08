@@ -139,6 +139,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
             {investments.map((investment) => {
               const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
               const referralBonus = getReferralBonus(investment.referrals);
+              const referralYield = getReferralYield(investment.referrals);
               const canCollect = confirmedReferrals >= 2;
 
               return (
@@ -183,6 +184,10 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                       <div>
                         <span>Bono por referidos</span>
                         <strong>{formatCurrency(referralBonus)}</strong>
+                      </div>
+                      <div>
+                        <span>Rendimiento</span>
+                        <strong>{formatCurrency(referralYield)}</strong>
                       </div>
                     </div>
                     <div className="referralHeader">
@@ -362,6 +367,16 @@ function getReferralBonus(referrals: Referral[]) {
     }
 
     return total + (referral.amount ?? 0) * 0.05;
+  }, 0);
+}
+
+function getReferralYield(referrals: Referral[]) {
+  return referrals.reduce((total, referral) => {
+    if (!referral.invested) {
+      return total;
+    }
+
+    return total + (referral.amount ?? 0) * 0.5;
   }, 0);
 }
 
