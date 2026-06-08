@@ -1574,14 +1574,14 @@ a {
 }
 
 .weekItem summary span,
-.weekDetailGrid span {
+.weekDetailGrid > div > span {
   color: var(--muted);
   display: block;
   font-size: 12px;
 }
 
 .weekItem summary strong,
-.weekDetailGrid strong {
+.weekDetailGrid > div > strong {
   display: block;
   margin-top: 4px;
 }
@@ -1594,7 +1594,7 @@ a {
   padding: 12px;
 }
 
-.weekDetailGrid div {
+.weekDetailGrid > div {
   align-items: center;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
@@ -1606,7 +1606,7 @@ a {
   text-align: center;
 }
 
-.weekDetailGrid strong {
+.weekDetailGrid > div > strong {
   color: var(--green);
 }
 
