@@ -270,8 +270,6 @@ function InviteReferralModal({ investmentId }: { investmentId: string }) {
                 copied={copiedValue === "code"}
                 onCopy={() => copyValue(referralCode, "code")}
               />
-
-              <p className="paymentNotice">Por cada referido confirmado ganas el 5% de la inversion que realice.</p>
             </div>
           </section>
         </div>
