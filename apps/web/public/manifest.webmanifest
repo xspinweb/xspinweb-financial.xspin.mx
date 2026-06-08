@@ -1,0 +1,19 @@
+{
+  "name": "Xspin Pay Financial",
+  "short_name": "Xspin Pay",
+  "description": "Panel operativo de inversionistas, ciclos y pagos.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050b12",
+  "theme_color": "#050b12",
+  "icons": [
+    {
+      "src": "/logos/xspin-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
