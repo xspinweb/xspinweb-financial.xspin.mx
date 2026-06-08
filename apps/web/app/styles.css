@@ -1134,6 +1134,12 @@ a {
   padding: 22px;
 }
 
+.inviteModalContent {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+}
+
 .modalHeader {
   display: flex;
   align-items: flex-start;
@@ -1265,6 +1271,50 @@ a {
   color: var(--ink);
 }
 
+.copyBox {
+  display: grid;
+  gap: 8px;
+}
+
+.copyBox > span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.copyBox div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px;
+}
+
+.copyBox strong {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copyBox button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(53, 224, 161, 0.14);
+  color: var(--green);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 0 12px;
+}
+
 .dashboardTable {
   width: 100%;
   border-collapse: collapse;
@@ -1330,7 +1380,7 @@ a {
 
 .investmentItem summary {
   display: grid;
-  grid-template-columns: 28px minmax(150px, 1.1fr) repeat(4, minmax(110px, 0.8fr)) auto;
+  grid-template-columns: 28px minmax(150px, 1.1fr) repeat(4, minmax(110px, 0.8fr)) auto auto;
   align-items: center;
   gap: 14px;
   cursor: pointer;
@@ -1400,6 +1450,36 @@ a {
   color: #ff6b7f !important;
 }
 
+.inviteReferralAction {
+  justify-self: end;
+  min-width: 58px;
+  min-height: 52px;
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--green);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 850;
+  padding: 6px;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.inviteReferralAction:hover {
+  background: rgba(53, 224, 161, 0.12);
+  transform: translateY(-1px);
+}
+
+.inviteReferralAction svg {
+  width: 23px;
+  height: 23px;
+  fill: currentColor;
+}
+
 .referralPanel {
   border-top: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.035);
@@ -1408,7 +1488,7 @@ a {
 
 .investmentDetailGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -1480,6 +1560,10 @@ a {
     justify-self: start;
   }
 
+  .inviteReferralAction {
+    justify-self: start;
+  }
+
   .appWorkspace {
     width: 100%;
   }
@@ -1534,7 +1618,8 @@ a {
   }
 
   .investmentItem summary > div,
-  .investmentItem summary > .statusPill {
+  .investmentItem summary > .statusPill,
+  .investmentItem summary > .inviteReferralAction {
     grid-column: 2;
   }
 

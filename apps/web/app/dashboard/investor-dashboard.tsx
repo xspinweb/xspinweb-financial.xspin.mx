@@ -7,6 +7,7 @@ type Referral = {
   name: string;
   invested: boolean;
   investedAt: string;
+  amount?: number;
 };
 
 type Investment = {
@@ -111,6 +112,7 @@ export function InvestorDashboard({ userName }: InvestorDashboardProps) {
           <div className="investmentList">
             {investments.map((investment) => {
               const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
+              const referralBonus = getReferralBonus(investment.referrals);
               const canCollect = confirmedReferrals >= 2;
 
               return (
@@ -136,6 +138,7 @@ export function InvestorDashboard({ userName }: InvestorDashboardProps) {
                       <span>Proximo pago</span>
                       <strong>{investment.nextPaymentAt}</strong>
                     </div>
+                    <InviteReferralModal investmentId={investment.id} />
                     <span className={canCollect ? "statusPill statusGreen" : "statusPill statusRed"}>
                       {canCollect ? "Por cobrar" : "Pendiente"}
                     </span>
@@ -150,6 +153,10 @@ export function InvestorDashboard({ userName }: InvestorDashboardProps) {
                       <div>
                         <span>Condicion para cobrar</span>
                         <strong>2 referidos confirmados</strong>
+                      </div>
+                      <div>
+                        <span>Bono por referidos</span>
+                        <strong>{formatCurrency(referralBonus)}</strong>
                       </div>
                     </div>
                     <div className="referralHeader">
@@ -184,6 +191,117 @@ export function InvestorDashboard({ userName }: InvestorDashboardProps) {
   );
 }
 
+function InviteReferralModal({ investmentId }: { investmentId: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [copiedValue, setCopiedValue] = useState<"link" | "code" | null>(null);
+  const [origin, setOrigin] = useState("");
+  const referralCode = useMemo(() => `XSPIN-${investmentId.slice(-6).toUpperCase()}`, [investmentId]);
+  const referralLink = `${origin || "https://pay.xspin.mx"}/dashboard?ref=${referralCode}`;
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeModal();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  function closeModal() {
+    setIsOpen(false);
+    setCopiedValue(null);
+  }
+
+  async function copyValue(value: string, type: "link" | "code") {
+    await navigator.clipboard.writeText(value);
+    setCopiedValue(type);
+  }
+
+  return (
+    <>
+      <button
+        className="inviteReferralAction"
+        type="button"
+        aria-label="Invitar referido"
+        title="Invitar referido"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsOpen(true);
+        }}
+      >
+        <InviteIcon />
+        <span>Invitar</span>
+      </button>
+
+      {isOpen ? (
+        <div className="modalOverlay" role="presentation">
+          <section className="investmentModal" role="dialog" aria-modal="true" aria-labelledby={`invite-${investmentId}`}>
+            <div className="inviteModalContent">
+              <div className="modalHeader">
+                <div>
+                  <span className="loginEyebrow">Referidos</span>
+                  <h2 id={`invite-${investmentId}`}>Invitar referido</h2>
+                </div>
+                <button className="modalClose" type="button" aria-label="Cerrar" onClick={closeModal}>
+                  x
+                </button>
+              </div>
+
+              <CopyBox
+                label="Link de invitacion"
+                value={referralLink}
+                copied={copiedValue === "link"}
+                onCopy={() => copyValue(referralLink, "link")}
+              />
+              <CopyBox
+                label="Codigo de referido"
+                value={referralCode}
+                copied={copiedValue === "code"}
+                onCopy={() => copyValue(referralCode, "code")}
+              />
+
+              <p className="paymentNotice">Por cada referido confirmado ganas el 5% de la inversion que realice.</p>
+            </div>
+          </section>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function CopyBox({ copied, label, onCopy, value }: { copied: boolean; label: string; onCopy: () => void; value: string }) {
+  return (
+    <div className="copyBox">
+      <span>{label}</span>
+      <div>
+        <strong>{value}</strong>
+        <button type="button" onClick={onCopy}>
+          {copied ? "Copiado" : "Copiar"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function InviteIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9.5 11.4a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 2.3c-4.1 0-7.3 2.1-7.3 4.8V20h10.2a6.3 6.3 0 0 1-.4-2.2c0-1.4.5-2.8 1.3-3.8-1.1-.2-2.4-.3-3.8-.3Zm8.4-1a5.1 5.1 0 1 0 0 10.2 5.1 5.1 0 0 0 0-10.2Zm.8 2.5v2h2v1.6h-2v2h-1.6v-2h-2v-1.6h2v-2Z" />
+    </svg>
+  );
+}
+
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat("es-MX", {
     day: "2-digit",
@@ -199,4 +317,14 @@ function formatCurrency(amount: number) {
     currency: "MXN",
     style: "currency"
   }).format(amount);
+}
+
+function getReferralBonus(referrals: Referral[]) {
+  return referrals.reduce((total, referral) => {
+    if (!referral.invested) {
+      return total;
+    }
+
+    return total + (referral.amount ?? 0) * 0.05;
+  }, 0);
 }
