@@ -995,16 +995,42 @@ a {
   margin: 0;
 }
 
-.dashboardHero button {
+.quickActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quickActions button {
+  width: 74px;
+  min-height: 74px;
+  display: grid;
+  place-items: center;
+  gap: 5px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 16px;
   background: linear-gradient(135deg, var(--green), var(--cyan));
   color: #031017;
   cursor: pointer;
   font: inherit;
   font-weight: 900;
-  min-height: 46px;
-  padding: 10px 14px;
+  padding: 10px;
+  transition: filter 180ms ease, transform 180ms ease;
+}
+
+.quickActions button:hover {
+  filter: brightness(1.05);
+  transform: translateY(-2px);
+}
+
+.quickActions svg {
+  width: 25px;
+  height: 25px;
+  fill: currentColor;
+}
+
+.quickActions span {
+  font-size: 11px;
 }
 
 .dashboardCards {
@@ -1316,6 +1342,10 @@ a {
   .dashboardHero {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .quickActions {
+    justify-content: flex-start;
   }
 
   .userBox {

@@ -58,7 +58,25 @@ export default async function DashboardPage() {
               : "Consulta tus inversiones, ganancias, pagos, referidos y bonos desde un solo lugar."}
           </p>
         </div>
-        <button type="button">{isSuperAdmin ? "Nuevo usuario" : "Invitar"}</button>
+        <div className="quickActions" aria-label="Acciones rapidas">
+          {isSuperAdmin ? (
+            <button type="button" aria-label="Nuevo usuario" title="Nuevo usuario">
+              <UserPlusIcon />
+              <span>Usuario</span>
+            </button>
+          ) : (
+            <>
+              <button type="button" aria-label="Invertir" title="Invertir">
+                <InvestIcon />
+                <span>Invertir</span>
+              </button>
+              <button type="button" aria-label="Invitar" title="Invitar">
+                <InviteIcon />
+                <span>Invitar</span>
+              </button>
+            </>
+          )}
+        </div>
       </section>
 
       <section className="dashboardCards">
@@ -72,6 +90,30 @@ export default async function DashboardPage() {
 
       {isSuperAdmin ? <AdminActivityPanel /> : <InvestorHomePanel />}
     </div>
+  );
+}
+
+function InvestIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 18.5h16v2H3a1 1 0 0 1-1-1V4h2Zm2-2.4 4.1-4.8 3.1 2.7 5-7.2 1.6 1.1-6.3 9.1-3.2-2.8-2.8 3.3Zm12.4-3.9H22v3.6h-2v-1.6h-1.6Z" />
+    </svg>
+  );
+}
+
+function InviteIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9.5 11.4a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 2.3c-4.1 0-7.3 2.1-7.3 4.8V20h10.2a6.3 6.3 0 0 1-.4-2.2c0-1.4.5-2.8 1.3-3.8-1.1-.2-2.4-.3-3.8-.3Zm8.4-1a5.1 5.1 0 1 0 0 10.2 5.1 5.1 0 0 0 0-10.2Zm.8 2.5v2h2v1.6h-2v2h-1.6v-2h-2v-1.6h2v-2Z" />
+    </svg>
+  );
+}
+
+function UserPlusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9.8 11.2a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2.4c-3.9 0-7 2-7 4.4v1.1c0 .7.5 1.2 1.2 1.2h8.4a6.5 6.5 0 0 1-.4-2.2c0-1.4.4-2.8 1.2-3.8-1-.4-2.1-.7-3.4-.7Zm7.9-1.2a5.2 5.2 0 1 0 0 10.4 5.2 5.2 0 0 0 0-10.4Zm.8 2.6v2.2h2.2v1.7h-2.2v2.2h-1.7v-2.2h-2.2v-1.7h2.2V15Z" />
+    </svg>
   );
 }
 
