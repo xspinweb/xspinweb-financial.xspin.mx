@@ -10,10 +10,34 @@ const adminCards = [
 ];
 
 const userCards = [
-  { label: "Capital activo", value: "0" },
-  { label: "Ganancias acumuladas", value: "0" },
-  { label: "Referidos activos", value: "0" },
-  { label: "Bonos disponibles", value: "0" }
+  { label: "Inversiones activas", value: "1" },
+  { label: "Referidos confirmados", value: "2" },
+  { label: "Proximo pago", value: "7 dias" },
+  { label: "Estatus actual", value: "Por cobrar" }
+];
+
+const investorRows = [
+  {
+    id: "INV-001",
+    name: "Roecx",
+    group: "Grupo 1",
+    cycle: "Semana 1 de 12",
+    investedAt: "08 Jun 2026",
+    nextPaymentAt: "15 Jun 2026",
+    referrals: [
+      { name: "Referido 1", invested: true, investedAt: "08 Jun 2026" },
+      { name: "Referido 2", invested: true, investedAt: "08 Jun 2026" }
+    ]
+  },
+  {
+    id: "INV-002",
+    name: "Roecx",
+    group: "Grupo 2",
+    cycle: "Semana 1 de 12",
+    investedAt: "08 Jun 2026",
+    nextPaymentAt: "15 Jun 2026",
+    referrals: [{ name: "Referido pendiente", invested: false, investedAt: "-" }]
+  }
 ];
 
 export default async function DashboardPage() {
@@ -46,34 +70,109 @@ export default async function DashboardPage() {
         ))}
       </section>
 
-      <section className="dashboardTablePanel">
-        <div className="tableHeader">
-          <h2>{isSuperAdmin ? "Actividad por atender" : "Mis movimientos recientes"}</h2>
-          <span>{isSuperAdmin ? "Operacion" : "Cuenta"}</span>
-        </div>
-        <table className="dashboardTable">
-          <thead>
-            <tr>
-              <th>{isSuperAdmin ? "Usuario" : "Movimiento"}</th>
-              <th>{isSuperAdmin ? "Grupo" : "Tipo"}</th>
-              <th>Ciclo</th>
-              <th>Fecha</th>
-              <th>{isSuperAdmin ? "Referidos" : "Detalle"}</th>
-              <th>Estatus</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Pendiente</td>
-              <td>-</td>
-              <td>-</td>
-              <td>-</td>
-              <td>-</td>
-              <td><span className="pill">Sin datos</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+      {isSuperAdmin ? <AdminActivityPanel /> : <InvestorHomePanel />}
     </div>
+  );
+}
+
+function AdminActivityPanel() {
+  return (
+    <section className="dashboardTablePanel">
+      <div className="tableHeader">
+        <h2>Actividad por atender</h2>
+        <span>Operacion</span>
+      </div>
+      <table className="dashboardTable">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Grupo</th>
+            <th>Ciclo</th>
+            <th>Fecha</th>
+            <th>Referidos</th>
+            <th>Estatus</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Pendiente</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>
+              <span className="pill">Sin datos</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+function InvestorHomePanel() {
+  return (
+    <section className="investmentPanel">
+      <div className="tableHeader">
+        <h2>Mis inversiones</h2>
+        <span>Inicio</span>
+      </div>
+      <div className="investmentList">
+        {investorRows.map((investment) => {
+          const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
+          const canCollect = confirmedReferrals >= 2;
+
+          return (
+            <details className="investmentItem" key={investment.id}>
+              <summary>
+                <div className="investmentSummaryMain">
+                  <span>{investment.name}</span>
+                  <strong>{investment.group}</strong>
+                </div>
+                <div>
+                  <span>Ciclo</span>
+                  <strong>{investment.cycle}</strong>
+                </div>
+                <div>
+                  <span>Fecha</span>
+                  <strong>{investment.investedAt}</strong>
+                </div>
+                <div>
+                  <span>Referidos</span>
+                  <strong>{confirmedReferrals}</strong>
+                </div>
+                <div>
+                  <span>Proximo pago</span>
+                  <strong>{investment.nextPaymentAt}</strong>
+                </div>
+                <span className={canCollect ? "statusPill statusGreen" : "statusPill statusRed"}>
+                  {canCollect ? "Por cobrar" : "Pendiente"}
+                </span>
+              </summary>
+
+              <div className="referralPanel">
+                <div className="referralHeader">
+                  <strong>Referidos</strong>
+                  <span>Se requieren al menos 2 referidos con inversion confirmada.</span>
+                </div>
+                <div className="referralList">
+                  {investment.referrals.map((referral) => (
+                    <div className="referralItem" key={`${investment.id}-${referral.name}`}>
+                      <div>
+                        <strong>{referral.name}</strong>
+                        <span>{referral.investedAt}</span>
+                      </div>
+                      <span className={referral.invested ? "statusPill statusGreen" : "statusPill statusRed"}>
+                        {referral.invested ? "Confirmado" : "Pendiente"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </details>
+          );
+        })}
+      </div>
+    </section>
   );
 }

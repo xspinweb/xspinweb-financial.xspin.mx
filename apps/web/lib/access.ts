@@ -3,7 +3,7 @@ export type AppRole = "SUPER_ADMIN" | "USER";
 export type NavItem = {
   label: string;
   href: string;
-  icon: "home" | "users" | "wallet" | "grid" | "chart" | "gift" | "profile";
+  icon: "home" | "users" | "wallet" | "grid" | "chart" | "gift" | "profile" | "history";
 };
 
 const superAdminEmails = new Set(["carlos.rosado.escobar@gmail.com"]);
@@ -33,9 +33,8 @@ export function getNavItems(role: AppRole): NavItem[] {
 
   return [
     { label: "Inicio", href: "/dashboard", icon: "home" },
-    { label: "Invertir", href: "#", icon: "wallet" },
-    { label: "Referidos", href: "#", icon: "users" },
-    { label: "Bonos", href: "#", icon: "gift" },
+    { label: "Historial", href: "#", icon: "history" },
+    { label: "Cartera", href: "#", icon: "wallet" },
     { label: "Perfil", href: "#", icon: "profile" }
   ];
 }

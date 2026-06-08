@@ -29,6 +29,14 @@ function NavIcon({ name }: { name: string }) {
     );
   }
 
+  if (name === "history") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3a9 9 0 1 1-8.2 5.3l1.9.8A7 7 0 1 0 12 5a6.9 6.9 0 0 0-5 2.1H10v2H3V2h2v3.5A9 9 0 0 1 12 3Zm1 4v5.2l4 2.4-1 1.7-5-3V7Z" />
+      </svg>
+    );
+  }
+
   if (name === "grid") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
