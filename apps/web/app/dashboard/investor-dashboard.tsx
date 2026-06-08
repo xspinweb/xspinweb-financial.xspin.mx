@@ -173,26 +173,29 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                   </summary>
 
                   <div className="referralPanel">
-                    <div className="referralHeader">
-                      <strong>Referidos</strong>
-                    </div>
-                    {investment.referrals.length === 0 ? (
-                      <p className="emptyReferralText">Aun no hay referidos vinculados a esta inversion.</p>
-                    ) : (
-                      <div className="referralList">
-                        {investment.referrals.map((referral) => (
-                          <div className="referralItem" key={`${investment.id}-${referral.name}`}>
-                            <div>
-                              <strong>{referral.name}</strong>
-                              <span>{referral.investedAt}</span>
+                    <details className="referralsAccordion">
+                      <summary>
+                        <strong>Referidos</strong>
+                        <span>{investment.referrals.length}</span>
+                      </summary>
+                      {investment.referrals.length === 0 ? (
+                        <p className="emptyReferralText">Aun no hay referidos vinculados a esta inversion.</p>
+                      ) : (
+                        <div className="referralList">
+                          {investment.referrals.map((referral) => (
+                            <div className="referralItem" key={`${investment.id}-${referral.name}`}>
+                              <div>
+                                <strong>{referral.name}</strong>
+                                <span>{referral.investedAt}</span>
+                              </div>
+                              <span className={referral.invested ? "statusPill statusGreen" : "statusPill statusRed"}>
+                                {referral.invested ? "Confirmado" : "Pendiente"}
+                              </span>
                             </div>
-                            <span className={referral.invested ? "statusPill statusGreen" : "statusPill statusRed"}>
-                              {referral.invested ? "Confirmado" : "Pendiente"}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      )}
+                    </details>
                     <div className="weeksSection">
                       <div className="referralHeader">
                         <strong>Semanas</strong>
