@@ -2,7 +2,6 @@ import Image from "next/image";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "../../lib/auth";
-import { SignOutButton } from "./sign-out-button";
 
 const navItems = [
   "Dashboard",
@@ -47,7 +46,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
           <div className="userBox">
             {avatar ? (
-              <Image src={avatar} alt="" width={38} height={38} className="userAvatar" />
+              <img
+                src={avatar}
+                alt=""
+                width={38}
+                height={38}
+                className="userAvatar"
+                referrerPolicy="no-referrer"
+              />
             ) : (
               <span className="userFallback">{userName.charAt(0)}</span>
             )}
@@ -55,7 +61,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <strong>{userName}</strong>
               <span>{userEmail}</span>
             </div>
-            <SignOutButton />
           </div>
         </header>
         {children}

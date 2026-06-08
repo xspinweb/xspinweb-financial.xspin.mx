@@ -900,6 +900,11 @@ a {
   border-radius: 50%;
 }
 
+.userAvatar {
+  display: block;
+  object-fit: cover;
+}
+
 .userFallback {
   display: grid;
   place-items: center;
@@ -908,21 +913,6 @@ a {
   background: rgba(53, 224, 161, 0.13);
   color: var(--green);
   font-weight: 900;
-}
-
-.signOutButton {
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #ffffff;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 800;
-  padding: 9px 12px;
-}
-
-.signOutButton:hover {
-  background: rgba(255, 255, 255, 0.08);
 }
 
 .dashboardContent {
