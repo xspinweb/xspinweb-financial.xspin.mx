@@ -58,19 +58,14 @@ export default async function DashboardPage() {
               : "Consulta tus inversiones, ganancias, pagos, referidos y bonos desde un solo lugar."}
           </p>
         </div>
-        <div className="quickActions" aria-label="Acciones rapidas">
-          {isSuperAdmin ? (
+        {isSuperAdmin ? (
+          <div className="quickActions" aria-label="Acciones rapidas">
             <a href="#" aria-label="Nuevo usuario" title="Nuevo usuario">
               <UserPlusIcon />
               <span>Usuario</span>
             </a>
-          ) : (
-            <a href="#" aria-label="Invertir" title="Invertir">
-              <InvestIcon />
-              <span>Invertir</span>
-            </a>
-          )}
-        </div>
+          </div>
+        ) : null}
       </section>
 
       <section className="dashboardCards">
@@ -143,7 +138,10 @@ function InvestorHomePanel() {
     <section className="investmentPanel">
       <div className="tableHeader">
         <h2>Mis inversiones</h2>
-        <span>Inicio</span>
+        <a className="headerIconAction" href="#" aria-label="Nueva inversion" title="Nueva inversion">
+          <InvestIcon />
+          <span>Nueva inversion</span>
+        </a>
       </div>
       <div className="investmentList">
         {investorRows.map((investment) => {
