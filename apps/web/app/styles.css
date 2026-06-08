@@ -1299,6 +1299,27 @@ a {
   display: grid;
 }
 
+.emptyInvestments {
+  display: grid;
+  gap: 8px;
+  padding: 34px 18px;
+  text-align: center;
+}
+
+.emptyInvestments strong {
+  font-size: 20px;
+}
+
+.emptyInvestments span,
+.emptyReferralText,
+.investmentDetailGrid span {
+  color: var(--muted);
+}
+
+.emptyReferralText {
+  margin: 0;
+}
+
 .investmentItem {
   border-bottom: 1px solid var(--line);
 }
@@ -1383,6 +1404,30 @@ a {
   border-top: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.035);
   padding: 16px 18px 18px;
+}
+
+.investmentDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.investmentDetailGrid div {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(5, 11, 18, 0.62);
+  padding: 12px;
+}
+
+.investmentDetailGrid span,
+.investmentDetailGrid strong {
+  display: block;
+}
+
+.investmentDetailGrid strong {
+  color: var(--green);
+  margin-top: 6px;
 }
 
 .referralHeader {
@@ -1497,6 +1542,10 @@ a {
   .referralItem {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .investmentDetailGrid {
+    grid-template-columns: 1fr;
   }
 
   .statsStrip {

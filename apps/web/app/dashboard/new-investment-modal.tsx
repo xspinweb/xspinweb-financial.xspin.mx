@@ -5,17 +5,20 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 const minInvestment = 20;
 const maxInvestment = 2000;
 
-export function NewInvestmentModal() {
+type NewInvestmentModalProps = {
+  onInvestmentCreated: (amount: number) => void;
+};
+
+export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [isPreparingPayment, setIsPreparingPayment] = useState(false);
 
   const numericAmount = useMemo(() => Number(amount), [amount]);
   const hasAmount = amount.trim().length > 0;
   const hasValidAmount = hasAmount && numericAmount >= minInvestment && numericAmount <= maxInvestment;
   const showAmountError = hasAmount && !hasValidAmount;
-  const canSubmit = hasValidAmount && acceptedTerms && !isPreparingPayment;
+  const canSubmit = hasValidAmount && acceptedTerms;
 
   useEffect(() => {
     if (!isOpen) {
@@ -40,7 +43,6 @@ export function NewInvestmentModal() {
     setIsOpen(false);
     setAmount("");
     setAcceptedTerms(false);
-    setIsPreparingPayment(false);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -50,7 +52,8 @@ export function NewInvestmentModal() {
       return;
     }
 
-    setIsPreparingPayment(true);
+    onInvestmentCreated(numericAmount);
+    closeModal();
   }
 
   return (
@@ -98,10 +101,6 @@ export function NewInvestmentModal() {
                 <input checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} type="checkbox" />
                 <span>Acepto terminos y condiciones.</span>
               </label>
-
-              {isPreparingPayment ? (
-                <p className="paymentNotice">Preparando pasarela de pago. Al confirmar el pago, la inversion aparecera en tu tablero.</p>
-              ) : null}
 
               <div className="modalActions">
                 <button className="secondaryModalAction" type="button" onClick={closeModal}>

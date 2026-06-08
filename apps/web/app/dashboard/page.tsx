@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { getAppRole } from "../../lib/access";
 import { authOptions } from "../../lib/auth";
-import { NewInvestmentModal } from "./new-investment-modal";
+import { InvestorDashboard } from "./investor-dashboard";
 
 const adminCards = [
   { label: "Usuarios activos", value: "0" },
@@ -10,42 +10,11 @@ const adminCards = [
   { label: "Reportes pendientes", value: "0" }
 ];
 
-const userCards = [
-  { label: "Inversiones activas", value: "1" },
-  { label: "Referidos confirmados", value: "2" },
-  { label: "Proximo pago", value: "7 dias" },
-  { label: "Estatus actual", value: "Por cobrar" }
-];
-
-const investorRows = [
-  {
-    id: "INV-001",
-    name: "Roecx",
-    group: "Grupo 1",
-    cycle: "Semana 1 de 12",
-    investedAt: "08 Jun 2026",
-    nextPaymentAt: "15 Jun 2026",
-    referrals: [
-      { name: "Referido 1", invested: true, investedAt: "08 Jun 2026" },
-      { name: "Referido 2", invested: true, investedAt: "08 Jun 2026" }
-    ]
-  },
-  {
-    id: "INV-002",
-    name: "Roecx",
-    group: "Grupo 2",
-    cycle: "Semana 1 de 12",
-    investedAt: "08 Jun 2026",
-    nextPaymentAt: "15 Jun 2026",
-    referrals: [{ name: "Referido pendiente", invested: false, investedAt: "-" }]
-  }
-];
-
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const role = getAppRole(session?.user?.email);
   const isSuperAdmin = role === "SUPER_ADMIN";
-  const cards = isSuperAdmin ? adminCards : userCards;
+  const userName = session?.user?.name ?? "Usuario";
 
   return (
     <div className="dashboardContent">
@@ -69,16 +38,21 @@ export default async function DashboardPage() {
         ) : null}
       </section>
 
-      <section className="dashboardCards">
-        {cards.map((card) => (
-          <article className="dashboardCard" key={card.label}>
-            <span>{card.label}</span>
-            <strong>{card.value}</strong>
-          </article>
-        ))}
-      </section>
-
-      {isSuperAdmin ? <AdminActivityPanel /> : <InvestorHomePanel />}
+      {isSuperAdmin ? (
+        <>
+          <section className="dashboardCards">
+            {adminCards.map((card) => (
+              <article className="dashboardCard" key={card.label}>
+                <span>{card.label}</span>
+                <strong>{card.value}</strong>
+              </article>
+            ))}
+          </section>
+          <AdminActivityPanel />
+        </>
+      ) : (
+        <InvestorDashboard userName={userName} />
+      )}
     </div>
   );
 }
@@ -122,73 +96,6 @@ function AdminActivityPanel() {
           </tr>
         </tbody>
       </table>
-    </section>
-  );
-}
-
-function InvestorHomePanel() {
-  return (
-    <section className="investmentPanel">
-      <div className="tableHeader">
-        <h2>Mis inversiones</h2>
-        <NewInvestmentModal />
-      </div>
-      <div className="investmentList">
-        {investorRows.map((investment) => {
-          const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
-          const canCollect = confirmedReferrals >= 2;
-
-          return (
-            <details className="investmentItem" key={investment.id}>
-              <summary>
-                <div className="investmentSummaryMain">
-                  <span>{investment.name}</span>
-                  <strong>{investment.group}</strong>
-                </div>
-                <div>
-                  <span>Ciclo</span>
-                  <strong>{investment.cycle}</strong>
-                </div>
-                <div>
-                  <span>Fecha</span>
-                  <strong>{investment.investedAt}</strong>
-                </div>
-                <div>
-                  <span>Referidos</span>
-                  <strong>{confirmedReferrals}</strong>
-                </div>
-                <div>
-                  <span>Proximo pago</span>
-                  <strong>{investment.nextPaymentAt}</strong>
-                </div>
-                <span className={canCollect ? "statusPill statusGreen" : "statusPill statusRed"}>
-                  {canCollect ? "Por cobrar" : "Pendiente"}
-                </span>
-              </summary>
-
-              <div className="referralPanel">
-                <div className="referralHeader">
-                  <strong>Referidos</strong>
-                  <span>Se requieren al menos 2 referidos con inversion confirmada.</span>
-                </div>
-                <div className="referralList">
-                  {investment.referrals.map((referral) => (
-                    <div className="referralItem" key={`${investment.id}-${referral.name}`}>
-                      <div>
-                        <strong>{referral.name}</strong>
-                        <span>{referral.investedAt}</span>
-                      </div>
-                      <span className={referral.invested ? "statusPill statusGreen" : "statusPill statusRed"}>
-                        {referral.invested ? "Confirmado" : "Pendiente"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </details>
-          );
-        })}
-      </div>
     </section>
   );
 }
