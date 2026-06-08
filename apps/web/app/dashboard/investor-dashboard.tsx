@@ -22,31 +22,46 @@ type Investment = {
 };
 
 type InvestorDashboardProps = {
+  userEmail: string;
   userName: string;
 };
 
-const storageKey = "pay-financial-investments";
+type PortfolioResponse = {
+  investor: {
+    code: string;
+  } | null;
+  investments: Investment[];
+};
 
-export function InvestorDashboard({ userName }: InvestorDashboardProps) {
+export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProps) {
   const [investments, setInvestments] = useState<Investment[]>([]);
+  const [investorCode, setInvestorCode] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(storageKey);
+    void loadPortfolio();
+    const interval = window.setInterval(() => {
+      void loadPortfolio();
+    }, 10000);
 
-    if (!stored) {
+    return () => window.clearInterval(interval);
+  }, [userEmail]);
+
+  async function loadPortfolio() {
+    if (!userEmail) {
+      setIsLoading(false);
       return;
     }
 
-    try {
-      setInvestments(JSON.parse(stored) as Investment[]);
-    } catch {
-      window.localStorage.removeItem(storageKey);
-    }
-  }, []);
+    const response = await fetch(`/api/investments/portfolio?email=${encodeURIComponent(userEmail)}`, {
+      cache: "no-store"
+    });
+    const portfolio = (await response.json()) as PortfolioResponse;
 
-  useEffect(() => {
-    window.localStorage.setItem(storageKey, JSON.stringify(investments));
-  }, [investments]);
+    setInvestorCode(portfolio.investor?.code ?? "");
+    setInvestments(portfolio.investments.map(normalizeInvestment));
+    setIsLoading(false);
+  }
 
   const cards = useMemo(() => {
     const confirmedReferrals = investments.reduce(
@@ -64,26 +79,27 @@ export function InvestorDashboard({ userName }: InvestorDashboardProps) {
     ];
   }, [investments]);
 
-  function handleInvestmentCreated(amount: number) {
-    setInvestments((currentInvestments) => {
-      const groupNumber = Math.floor(currentInvestments.length / 16) + 1;
-      const now = new Date();
-      const nextPaymentDate = new Date(now);
-      nextPaymentDate.setDate(now.getDate() + 7);
-
-      const nextInvestment: Investment = {
-        id: crypto.randomUUID(),
-        name: userName,
+  async function handleInvestmentCreated(amount: number) {
+    const params = new URLSearchParams(window.location.search);
+    const response = await fetch("/api/investments", {
+      body: JSON.stringify({
         amount,
-        group: `Grupo ${groupNumber}`,
-        cycle: "Semana 1 de 12",
-        investedAt: formatDate(now),
-        nextPaymentAt: formatDate(nextPaymentDate),
-        referrals: []
-      };
-
-      return [nextInvestment, ...currentInvestments];
+        email: userEmail,
+        fullName: userName,
+        referredByCode: params.get("ref") ?? undefined,
+        sourceInvestmentId: params.get("inv") ?? undefined
+      }),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "POST"
     });
+
+    if (!response.ok) {
+      throw new Error("No se pudo crear la inversion");
+    }
+
+    await loadPortfolio();
   }
 
   return (
@@ -103,7 +119,12 @@ export function InvestorDashboard({ userName }: InvestorDashboardProps) {
           <NewInvestmentModal onInvestmentCreated={handleInvestmentCreated} />
         </div>
 
-        {investments.length === 0 ? (
+        {isLoading ? (
+          <div className="emptyInvestments">
+            <strong>Cargando inversiones</strong>
+            <span>Estamos consultando tu tablero.</span>
+          </div>
+        ) : investments.length === 0 ? (
           <div className="emptyInvestments">
             <strong>Sin inversiones activas</strong>
             <span>Cuando realices una nueva inversion, aparecera aqui con su grupo, ciclo y fecha de proximo pago.</span>
@@ -138,7 +159,7 @@ export function InvestorDashboard({ userName }: InvestorDashboardProps) {
                       <span>Proximo pago</span>
                       <strong>{investment.nextPaymentAt}</strong>
                     </div>
-                    <InviteReferralModal investmentId={investment.id} />
+                    <InviteReferralModal investmentId={investment.id} investorCode={investorCode} />
                     <span className={canCollect ? "statusPill statusGreen" : "statusPill statusRed"}>
                       {canCollect ? "Por cobrar" : "Pendiente"}
                     </span>
@@ -191,12 +212,12 @@ export function InvestorDashboard({ userName }: InvestorDashboardProps) {
   );
 }
 
-function InviteReferralModal({ investmentId }: { investmentId: string }) {
+function InviteReferralModal({ investmentId, investorCode }: { investmentId: string; investorCode: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [copiedValue, setCopiedValue] = useState<"link" | "code" | null>(null);
   const [origin, setOrigin] = useState("");
-  const referralCode = useMemo(() => `XSPIN-${investmentId.slice(-6).toUpperCase()}`, [investmentId]);
-  const referralLink = `${origin || "https://pay.xspin.mx"}/dashboard?ref=${referralCode}`;
+  const referralCode = investorCode || "PENDIENTE";
+  const referralLink = `${origin || "https://pay.xspin.mx"}/dashboard?ref=${referralCode}&inv=${investmentId}`;
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -276,6 +297,18 @@ function InviteReferralModal({ investmentId }: { investmentId: string }) {
       ) : null}
     </>
   );
+}
+
+function normalizeInvestment(investment: Investment): Investment {
+  return {
+    ...investment,
+    investedAt: formatDate(new Date(investment.investedAt)),
+    nextPaymentAt: formatDate(new Date(investment.nextPaymentAt)),
+    referrals: investment.referrals.map((referral) => ({
+      ...referral,
+      investedAt: formatDate(new Date(referral.investedAt))
+    }))
+  };
 }
 
 function CopyBox({ copied, label, onCopy, value }: { copied: boolean; label: string; onCopy: () => void; value: string }) {

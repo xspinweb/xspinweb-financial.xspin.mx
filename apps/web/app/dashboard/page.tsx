@@ -15,6 +15,7 @@ export default async function DashboardPage() {
   const role = getAppRole(session?.user?.email);
   const isSuperAdmin = role === "SUPER_ADMIN";
   const userName = session?.user?.name ?? "Usuario";
+  const userEmail = session?.user?.email ?? "";
 
   return (
     <div className="dashboardContent">
@@ -51,7 +52,7 @@ export default async function DashboardPage() {
           <AdminActivityPanel />
         </>
       ) : (
-        <InvestorDashboard userName={userName} />
+        <InvestorDashboard userEmail={userEmail} userName={userName} />
       )}
     </div>
   );

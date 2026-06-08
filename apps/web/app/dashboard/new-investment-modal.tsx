@@ -6,19 +6,21 @@ const minInvestment = 20;
 const maxInvestment = 2000;
 
 type NewInvestmentModalProps = {
-  onInvestmentCreated: (amount: number) => void;
+  onInvestmentCreated: (amount: number) => Promise<void>;
 };
 
 export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const numericAmount = useMemo(() => Number(amount), [amount]);
   const hasAmount = amount.trim().length > 0;
   const hasValidAmount = hasAmount && numericAmount >= minInvestment && numericAmount <= maxInvestment;
   const showAmountError = hasAmount && !hasValidAmount;
-  const canSubmit = hasValidAmount && acceptedTerms;
+  const canSubmit = hasValidAmount && acceptedTerms && !isSubmitting;
 
   useEffect(() => {
     if (!isOpen) {
@@ -43,17 +45,26 @@ export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalPr
     setIsOpen(false);
     setAmount("");
     setAcceptedTerms(false);
+    setIsSubmitting(false);
+    setSubmitError("");
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!canSubmit) {
       return;
     }
 
-    onInvestmentCreated(numericAmount);
-    closeModal();
+    try {
+      setIsSubmitting(true);
+      setSubmitError("");
+      await onInvestmentCreated(numericAmount);
+      closeModal();
+    } catch {
+      setSubmitError("No se pudo registrar la inversion. Intenta nuevamente.");
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -96,6 +107,7 @@ export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalPr
               </label>
 
               {showAmountError ? <p className="formError">Monto permitido: de $20 a $2,000 MXN.</p> : null}
+              {submitError ? <p className="formError">{submitError}</p> : null}
 
               <label className="termsCheck">
                 <input checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} type="checkbox" />
@@ -107,7 +119,7 @@ export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalPr
                   Cancelar
                 </button>
                 <button className="primaryModalAction" disabled={!canSubmit} type="submit">
-                  Invertir
+                  {isSubmitting ? "Registrando" : "Invertir"}
                 </button>
               </div>
             </form>

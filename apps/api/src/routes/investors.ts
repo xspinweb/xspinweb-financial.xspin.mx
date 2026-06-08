@@ -39,7 +39,7 @@ investorsRouter.post("/", async (req, res, next) => {
     const input = createInvestorSchema.parse(req.body);
     const rules = config.defaultBusinessRules;
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const group = await getOrCreateOpenGroup(tx, rules.groupSize);
       const investorCode = await createUniqueInvestorCode(tx);
 

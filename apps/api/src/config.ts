@@ -7,7 +7,7 @@ export const config = {
     returnMultiplier: 1.44,
     referralBonusRate: 0.05,
     cycleDays: 7,
-    groupSize: 6,
+    groupSize: 16,
     yieldRate: 0.15
   }
 };
