@@ -234,7 +234,17 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                               </div>
                               <div>
                                 <span>Total generado</span>
-                                <strong>{formatCurrency(totalGenerated)}</strong>
+                                <div className="weekTotalAction">
+                                  <strong>{formatCurrency(totalGenerated)}</strong>
+                                  {week.canReinvest ? (
+                                    <ReinvestmentModal
+                                      investmentId={investment.id}
+                                      totalGenerated={totalGenerated}
+                                      weekNumber={week.weekNumber}
+                                      onCompleted={loadPortfolio}
+                                    />
+                                  ) : null}
+                                </div>
                               </div>
                             </div>
                           </details>
@@ -331,6 +341,153 @@ function InviteReferralModal({ investmentId, investorCode }: { investmentId: str
                 copied={copiedValue === "code"}
                 onCopy={() => copyValue(referralCode, "code")}
               />
+            </div>
+          </section>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function ReinvestmentModal({
+  investmentId,
+  onCompleted,
+  totalGenerated,
+  weekNumber
+}: {
+  investmentId: string;
+  onCompleted: () => Promise<void>;
+  totalGenerated: number;
+  weekNumber: number;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [percent, setPercent] = useState(82);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const reinvestAmount = totalGenerated * (percent / 100);
+  const withdrawalAmount = totalGenerated - reinvestAmount;
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeModal();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  function closeModal() {
+    setIsOpen(false);
+    setError("");
+    setIsSubmitting(false);
+  }
+
+  async function submitReinvestment() {
+    setError("");
+    setIsSubmitting(true);
+
+    const response = await fetch(`/api/investments/${investmentId}/reinvest`, {
+      body: JSON.stringify({
+        reinvestPercent: percent,
+        weekNumber
+      }),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "POST"
+    });
+
+    if (!response.ok) {
+      setError(await getResponseErrorMessage(response));
+      setIsSubmitting(false);
+      return;
+    }
+
+    await onCompleted();
+    closeModal();
+  }
+
+  return (
+    <>
+      <button
+        className="reinvestmentAction"
+        type="button"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsOpen(true);
+        }}
+      >
+        Reinversion
+      </button>
+
+      {isOpen ? (
+        <div className="modalOverlay" role="presentation">
+          <section className="investmentModal reinvestmentModal" role="dialog" aria-modal="true" aria-labelledby={`reinvest-${investmentId}`}>
+            <div className="inviteModalContent">
+              <div className="modalHeader">
+                <div>
+                  <span className="loginEyebrow">Reinversion</span>
+                  <h2 id={`reinvest-${investmentId}`}>Ciclo {weekNumber} concluido</h2>
+                </div>
+                <button className="modalClose" type="button" aria-label="Cerrar" onClick={closeModal}>
+                  x
+                </button>
+              </div>
+
+              <p className="reinvestmentText">
+                Se dara inicio al ciclo {weekNumber + 1}. La reinversion minima es del 82% y puedes seleccionar hasta el 100%.
+              </p>
+
+              <div className="reinvestmentSlider">
+                <div>
+                  <span>Porcentaje de reinversion</span>
+                  <strong>{percent}%</strong>
+                </div>
+                <input
+                  type="range"
+                  min="82"
+                  max="100"
+                  step="1"
+                  value={percent}
+                  onChange={(event) => setPercent(Number(event.target.value))}
+                />
+              </div>
+
+              <div className="reinvestmentGrid">
+                <div>
+                  <span>Total generado</span>
+                  <strong>{formatCurrency(totalGenerated)}</strong>
+                </div>
+                <div>
+                  <span>Reinversion</span>
+                  <strong>{formatCurrency(reinvestAmount)}</strong>
+                </div>
+                <div>
+                  <span>Retiro disponible</span>
+                  <strong>{formatCurrency(withdrawalAmount)}</strong>
+                </div>
+              </div>
+
+              {error ? <p className="modalError">{error}</p> : null}
+
+              <div className="modalActions reinvestmentActions">
+                <button className="secondaryModalAction" type="button" onClick={closeModal} disabled={isSubmitting}>
+                  Cancelar
+                </button>
+                <button className="secondaryModalAction" type="button" disabled={isSubmitting || withdrawalAmount <= 0} onClick={submitReinvestment}>
+                  Retiro
+                </button>
+                <button className="primaryModalAction" type="button" onClick={submitReinvestment} disabled={isSubmitting}>
+                  {isSubmitting ? "Procesando" : "Reinvertir"}
+                </button>
+              </div>
             </div>
           </section>
         </div>
@@ -437,9 +594,10 @@ function getInvestmentWeeks(investment: Investment, confirmedReferrals: number) 
     const canCollect = confirmedReferrals >= 2 && today >= paymentDate;
 
     return {
+      canReinvest: canCollect && !isPaid,
       paymentLabel: formatDate(paymentDate),
       startLabel: formatDate(weekStart),
-      statusClass: isPaid ? "statusGreen" : canCollect ? "statusYellow" : isCurrent ? "statusYellow" : isComplete ? "statusRed" : "statusMuted",
+      statusClass: isPaid ? "statusGreen" : canCollect ? "statusGreen" : isCurrent ? "statusYellow" : isComplete ? "statusRed" : "statusMuted",
       statusLabel: isPaid ? "Cobrada" : canCollect ? "Por cobrar" : isCurrent ? "En curso" : isComplete ? "Pendiente" : "Programada",
       weekNumber
     };

@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { calculateInitialInvestment, generateInvestorCode } from "./business/rules.js";
+import { addDays, calculateInitialInvestment, generateInvestorCode, roundMoney } from "./business/rules.js";
 import { config } from "./config.js";
 import { prisma } from "./db.js";
 
@@ -11,6 +11,11 @@ const createInvestmentSchema = z.object({
   fullName: z.string().optional(),
   referredByCode: z.string().optional(),
   sourceInvestmentId: z.string().optional()
+});
+
+const reinvestSchema = z.object({
+  reinvestPercent: z.number().min(82).max(100),
+  weekNumber: z.number().int().min(1).max(12).optional()
 });
 
 type PortfolioInvestment = {
@@ -32,6 +37,15 @@ type PortfolioInvestment = {
       }>;
     };
   }>;
+};
+
+type ReinvestReferral = {
+  bonusAmount: unknown;
+  referredInvestor: {
+    investments: Array<{
+      principalAmount: unknown;
+    }>;
+  };
 };
 
 const server = createServer(async (req, res) => {
@@ -96,6 +110,15 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   if (req.method === "POST" && url.pathname === "/investments") {
     const input = createInvestmentSchema.parse(await readJson(req));
     const result = await createInvestment(input);
+    sendJson(res, 201, result);
+    return;
+  }
+
+  const reinvestMatch = url.pathname.match(/^\/investments\/([^/]+)\/reinvest$/);
+
+  if (req.method === "POST" && reinvestMatch) {
+    const input = reinvestSchema.parse(await readJson(req));
+    const result = await reinvestInvestment(reinvestMatch[1], input);
     sendJson(res, 201, result);
     return;
   }
@@ -252,6 +275,91 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
 
     return { investor, investment };
   });
+}
+
+async function reinvestInvestment(investmentId: string, input: z.infer<typeof reinvestSchema>) {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const investment = await tx.investment.findUniqueOrThrow({
+      where: { id: investmentId },
+      include: {
+        referralsSource: {
+          include: {
+            referredInvestor: {
+              include: {
+                investments: {
+                  orderBy: { createdAt: "desc" },
+                  take: 1
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+    const paidWeeks = await tx.payment.count({
+      where: { investmentId }
+    });
+    const weekNumber = input.weekNumber ?? paidWeeks + 1;
+
+    if (weekNumber !== paidWeeks + 1) {
+      throw new Error("La semana seleccionada no esta disponible para reinversion.");
+    }
+
+    const referrals = investment.referralsSource as ReinvestReferral[];
+    const confirmedReferrals = referrals.filter((referral: ReinvestReferral) => Boolean(referral.referredInvestor.investments[0])).length;
+    const paymentDate = addDays(investment.createdAt, weekNumber * config.defaultBusinessRules.cycleDays);
+
+    if (paidWeeks >= 12) {
+      throw new Error("Esta inversion ya concluyo sus 12 semanas.");
+    }
+
+    if (confirmedReferrals < 2) {
+      throw new Error("La reinversion requiere al menos 2 referidos confirmados.");
+    }
+
+    if (new Date() < paymentDate) {
+      throw new Error("La fecha de pago de esta semana aun no ha llegado.");
+    }
+
+    const totalGenerated = getTotalGenerated({
+      principalAmount: Number(investment.principalAmount),
+      referrals: referrals.map((referral: ReinvestReferral) => ({
+        bonusAmount: Number(referral.bonusAmount),
+        referredAmount: referral.referredInvestor.investments[0]
+          ? Number(referral.referredInvestor.investments[0].principalAmount)
+          : 0
+      }))
+    });
+    const reinvestedAmount = roundMoney(totalGenerated * (input.reinvestPercent / 100));
+    const withdrawalAmount = roundMoney(totalGenerated - reinvestedAmount);
+
+    const payment = await tx.payment.create({
+      data: {
+        investorId: investment.investorId,
+        investmentId: investment.id,
+        groupId: investment.groupId,
+        amount: withdrawalAmount,
+        paymentType: "YIELD",
+        notes: `Semana ${weekNumber}: reinversion ${input.reinvestPercent}%, reinvertido ${reinvestedAmount}, retiro ${withdrawalAmount}`
+      }
+    });
+
+    return {
+      payment,
+      reinvestedAmount,
+      totalGenerated,
+      withdrawalAmount,
+      weekNumber
+    };
+  });
+}
+
+function getTotalGenerated(input: { principalAmount: number; referrals: Array<{ bonusAmount: number; referredAmount: number }> }) {
+  const referralBonus = roundMoney(input.referrals.reduce((total, referral) => total + referral.bonusAmount, 0));
+  const rawYield = roundMoney(input.referrals.reduce((total, referral) => total + referral.referredAmount * 0.5, 0));
+  const referralYield = rawYield > input.principalAmount ? roundMoney(input.principalAmount * 0.75) : rawYield;
+
+  return roundMoney(input.principalAmount + referralBonus + referralYield);
 }
 
 async function getOrCreateInvestor(tx: Prisma.TransactionClient, input: { email: string; fullName?: string }) {

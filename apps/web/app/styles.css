@@ -1239,6 +1239,13 @@ a {
   padding: 12px;
 }
 
+.modalError {
+  color: #ff6b7f;
+  font-weight: 900;
+  line-height: 1.4;
+  margin: 0;
+}
+
 .modalActions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1269,6 +1276,15 @@ a {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.05);
   color: var(--ink);
+}
+
+.secondaryModalAction:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.reinvestmentActions {
+  grid-template-columns: 1fr 1fr 1fr;
 }
 
 .copyBox {
@@ -1589,6 +1605,85 @@ a {
   color: var(--green);
 }
 
+.weekTotalAction {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.weekTotalAction strong {
+  margin-top: 0;
+}
+
+.reinvestmentAction {
+  border: 0;
+  border-radius: 999px;
+  background: rgba(53, 224, 161, 0.14);
+  color: var(--green);
+  cursor: pointer;
+  font-weight: 900;
+  min-height: 32px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.reinvestmentModal {
+  width: min(560px, 100%);
+}
+
+.reinvestmentText {
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.reinvestmentSlider {
+  display: grid;
+  gap: 12px;
+}
+
+.reinvestmentSlider div {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reinvestmentSlider span,
+.reinvestmentGrid span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.reinvestmentSlider strong,
+.reinvestmentGrid strong {
+  color: var(--green);
+  display: block;
+  margin-top: 5px;
+}
+
+.reinvestmentSlider input {
+  accent-color: var(--green);
+  width: 100%;
+}
+
+.reinvestmentGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.reinvestmentGrid div {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(5, 11, 18, 0.62);
+  padding: 12px;
+}
+
 .referralHeader {
   display: flex;
   align-items: center;
@@ -1713,6 +1808,11 @@ a {
   }
 
   .weekItem summary {
+    grid-template-columns: 1fr;
+  }
+
+  .reinvestmentActions,
+  .reinvestmentGrid {
     grid-template-columns: 1fr;
   }
 
