@@ -140,6 +140,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
               const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
               const referralBonus = getReferralBonus(investment.referrals);
               const referralYield = getReferralYield(investment.referrals);
+              const totalGenerated = investment.amount + referralBonus + referralYield;
               const canCollect = confirmedReferrals >= 2;
 
               return (
@@ -178,16 +179,16 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                         <strong>{formatCurrency(investment.amount)}</strong>
                       </div>
                       <div>
-                        <span>Condicion para cobrar</span>
-                        <strong>2 referidos confirmados</strong>
-                      </div>
-                      <div>
                         <span>Bono por referidos</span>
                         <strong>{formatCurrency(referralBonus)}</strong>
                       </div>
                       <div>
                         <span>Rendimiento</span>
                         <strong>{formatCurrency(referralYield)}</strong>
+                      </div>
+                      <div>
+                        <span>Total generado</span>
+                        <strong>{formatCurrency(totalGenerated)}</strong>
                       </div>
                     </div>
                     <div className="referralHeader">
