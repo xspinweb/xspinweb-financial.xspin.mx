@@ -61,8 +61,8 @@ export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalPr
       setSubmitError("");
       await onInvestmentCreated(numericAmount);
       closeModal();
-    } catch {
-      setSubmitError("No se pudo registrar la inversion. Intenta nuevamente.");
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "No se pudo registrar la inversion. Intenta nuevamente.");
       setIsSubmitting(false);
     }
   }

@@ -80,6 +80,10 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   }, [investments]);
 
   async function handleInvestmentCreated(amount: number) {
+    if (!userEmail) {
+      throw new Error("No se encontro el correo de tu sesion. Vuelve a iniciar sesion.");
+    }
+
     const params = new URLSearchParams(window.location.search);
     const response = await fetch("/api/investments", {
       body: JSON.stringify({
@@ -96,7 +100,8 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
     });
 
     if (!response.ok) {
-      throw new Error("No se pudo crear la inversion");
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(payload?.error ?? "No se pudo registrar la inversion. Intenta nuevamente.");
     }
 
     await loadPortfolio();
