@@ -888,6 +888,17 @@ a {
   font-weight: 900;
 }
 
+.roleBadge {
+  border: 1px solid rgba(53, 224, 161, 0.28);
+  border-radius: 999px;
+  background: rgba(53, 224, 161, 0.1);
+  color: var(--green) !important;
+  font-size: 11px !important;
+  font-weight: 900;
+  padding: 6px 9px;
+  white-space: nowrap;
+}
+
 .bottomNav {
   position: fixed;
   left: 0;
@@ -1191,6 +1202,10 @@ a {
 
   .userBox div {
     display: none;
+  }
+
+  .roleBadge {
+    display: none !important;
   }
 
   .bottomNav {

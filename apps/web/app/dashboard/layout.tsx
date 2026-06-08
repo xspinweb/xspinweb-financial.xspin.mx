@@ -1,35 +1,8 @@
 import Image from "next/image";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { getAppRole, getNavItems, getRoleLabel } from "../../lib/access";
 import { authOptions } from "../../lib/auth";
-
-const navItems = [
-  {
-    label: "Inicio",
-    href: "/dashboard",
-    icon: "home"
-  },
-  {
-    label: "Inversores",
-    href: "#",
-    icon: "users"
-  },
-  {
-    label: "Pagos",
-    href: "#",
-    icon: "wallet"
-  },
-  {
-    label: "Grupos",
-    href: "#",
-    icon: "grid"
-  },
-  {
-    label: "Reportes",
-    href: "#",
-    icon: "chart"
-  }
-];
 
 function NavIcon({ name }: { name: string }) {
   if (name === "home") {
@@ -64,6 +37,22 @@ function NavIcon({ name }: { name: string }) {
     );
   }
 
+  if (name === "gift") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7.2 3.4c1.5 0 2.7.9 3.6 2.5.9-1.6 2.1-2.5 3.6-2.5 2 0 3.4 1.4 3.4 3.2 0 .7-.2 1.3-.5 1.8H21v5h-1.5V21h-17v-7.6H1v-5h3.7a3.3 3.3 0 0 1-.5-1.8c0-1.8 1.4-3.2 3-3.2Zm2 5c-.5-1.8-1.1-2.8-2-2.8-.6 0-1 .4-1 1s.4 1.8 3 1.8Zm5.2-2.8c-.9 0-1.5 1-2 2.8 2.6 0 3-.9 3-1.8 0-.6-.4-1-1-1Zm-5 7.8H4.7v5.4h4.7Zm6.9 0h-4.7v5.4h4.7ZM9.4 10.6H3.2v.8h6.2Zm9.4 0h-7.2v.8h7.2Z" />
+      </svg>
+    );
+  }
+
+  if (name === "profile") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 12.2a4.6 4.6 0 1 0 0-9.2 4.6 4.6 0 0 0 0 9.2Zm0 2.4c-4.5 0-8 2.3-8 5.1V21h16v-1.3c0-2.8-3.5-5.1-8-5.1Z" />
+      </svg>
+    );
+  }
+
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M5 19h16v2H4a1 1 0 0 1-1-1V4h2Zm2.4-3.4 3.5-4.4 3.3 2.6 4.1-6.2 1.7 1.1-5.3 8-3.4-2.7-3.7 4.6Z" />
@@ -81,6 +70,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const userName = session.user?.name ?? "Usuario";
   const userEmail = session.user?.email ?? "";
   const avatar = session.user?.image;
+  const role = getAppRole(userEmail);
+  const navItems = getNavItems(role);
 
   return (
     <main className="appShell">
@@ -104,6 +95,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <strong>{userName}</strong>
               <span>{userEmail}</span>
             </div>
+            <span className="roleBadge">{getRoleLabel(role)}</span>
           </div>
         </header>
         {children}
