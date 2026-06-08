@@ -20,6 +20,7 @@ type Investment = {
   investedAtIso?: string;
   nextPaymentAt: string;
   nextPaymentAtIso?: string;
+  paidWeeks?: number;
   referrals: Referral[];
 };
 
@@ -143,7 +144,6 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
               const referralBonus = getReferralBonus(investment.referrals);
               const referralYield = getReferralYield(investment);
               const totalGenerated = investment.amount + referralBonus + referralYield;
-              const paymentStatus = getPaymentStatus(investment, confirmedReferrals);
               const weeks = getInvestmentWeeks(investment, confirmedReferrals);
 
               return (
@@ -173,30 +173,6 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                   </summary>
 
                   <div className="referralPanel">
-                    <div className="investmentDetailGrid">
-                      <div>
-                        <span>Monto invertido</span>
-                        <strong>{formatCurrency(investment.amount)}</strong>
-                      </div>
-                      <div>
-                        <span>Bono por referidos</span>
-                        <strong>{formatCurrency(referralBonus)}</strong>
-                      </div>
-                      <div>
-                        <span>Rendimiento</span>
-                        <strong>{formatCurrency(referralYield)}</strong>
-                      </div>
-                      <div>
-                        <span>Total generado</span>
-                        <strong>{formatCurrency(totalGenerated)}</strong>
-                      </div>
-                      <div>
-                        <span>Estatus</span>
-                        <strong>
-                          <span className={`statusPill ${paymentStatus.className}`}>{paymentStatus.label}</span>
-                        </strong>
-                      </div>
-                    </div>
                     <div className="weeksSection">
                       <div className="referralHeader">
                         <strong>Semanas</strong>
@@ -442,41 +418,20 @@ function getReferralYield(investment: Investment) {
   return referralYield;
 }
 
-function getPaymentStatus(investment: Investment, confirmedReferrals: number) {
-  if (confirmedReferrals < 2) {
-    return {
-      className: "statusRed",
-      label: "Pendiente"
-    };
-  }
-
-  const dueDate = new Date(investment.nextPaymentAtIso ?? investment.nextPaymentAt);
-
-  if (Number.isNaN(dueDate.getTime()) || dueDate > new Date()) {
-    return {
-      className: "statusYellow",
-      label: "Por cobrar"
-    };
-  }
-
-  return {
-    className: "statusGreen",
-    label: "Por cobrar"
-  };
-}
-
 function getInvestmentWeeks(investment: Investment, confirmedReferrals: number) {
   const startDate = new Date(investment.investedAtIso ?? investment.investedAt);
   const today = new Date();
+  const visibleWeeks = Math.min(12, Math.max(1, (investment.paidWeeks ?? 0) + 1));
 
   if (Number.isNaN(startDate.getTime())) {
     return [];
   }
 
-  return Array.from({ length: 12 }, (_, index) => {
+  return Array.from({ length: visibleWeeks }, (_, index) => {
     const weekNumber = index + 1;
     const weekStart = addDays(startDate, index * 7);
     const paymentDate = addDays(weekStart, 7);
+    const isPaid = weekNumber <= (investment.paidWeeks ?? 0);
     const isCurrent = today >= weekStart && today < paymentDate;
     const isComplete = today >= paymentDate;
     const canCollect = confirmedReferrals >= 2 && today >= paymentDate;
@@ -484,8 +439,8 @@ function getInvestmentWeeks(investment: Investment, confirmedReferrals: number) 
     return {
       paymentLabel: formatDate(paymentDate),
       startLabel: formatDate(weekStart),
-      statusClass: canCollect ? "statusGreen" : isCurrent ? "statusYellow" : isComplete ? "statusRed" : "statusMuted",
-      statusLabel: canCollect ? "Por cobrar" : isCurrent ? "En curso" : isComplete ? "Pendiente" : "Programada",
+      statusClass: isPaid ? "statusGreen" : canCollect ? "statusYellow" : isCurrent ? "statusYellow" : isComplete ? "statusRed" : "statusMuted",
+      statusLabel: isPaid ? "Cobrada" : canCollect ? "Por cobrar" : isCurrent ? "En curso" : isComplete ? "Pendiente" : "Programada",
       weekNumber
     };
   });

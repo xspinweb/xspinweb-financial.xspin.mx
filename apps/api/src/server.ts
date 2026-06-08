@@ -20,6 +20,7 @@ type PortfolioInvestment = {
   cycleNumber: number;
   createdAt: Date;
   paymentDueAt: Date;
+  payments: Array<{ id: string }>;
   referralsSource: Array<{
     createdAt: Date;
     bonusAmount: unknown;
@@ -141,6 +142,11 @@ async function getPortfolio(email: string) {
                 }
               }
             }
+          },
+          payments: {
+            select: {
+              id: true
+            }
           }
         },
         orderBy: { createdAt: "desc" }
@@ -172,6 +178,7 @@ async function getPortfolio(email: string) {
       cycle: `Semana ${investment.cycleNumber} de 12`,
       investedAt: investment.createdAt,
       nextPaymentAt: investment.paymentDueAt,
+      paidWeeks: investment.payments.length,
       referrals: investment.referralsSource.map((referral: PortfolioInvestment["referralsSource"][number]) => {
         const referredInvestment = referral.referredInvestor.investments[0];
 
