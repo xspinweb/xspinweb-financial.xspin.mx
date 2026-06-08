@@ -17,6 +17,7 @@ type Investment = {
   group: string;
   cycle: string;
   investedAt: string;
+  investedAtIso?: string;
   nextPaymentAt: string;
   nextPaymentAtIso?: string;
   referrals: Referral[];
@@ -143,6 +144,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
               const referralYield = getReferralYield(investment);
               const totalGenerated = investment.amount + referralBonus + referralYield;
               const paymentStatus = getPaymentStatus(investment, confirmedReferrals);
+              const weeks = getInvestmentWeeks(investment, confirmedReferrals);
 
               return (
                 <details className="investmentItem" key={investment.id}>
@@ -193,6 +195,54 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                         <strong>
                           <span className={`statusPill ${paymentStatus.className}`}>{paymentStatus.label}</span>
                         </strong>
+                      </div>
+                    </div>
+                    <div className="weeksSection">
+                      <div className="referralHeader">
+                        <strong>Semanas</strong>
+                      </div>
+                      <div className="weekList">
+                        {weeks.map((week) => (
+                          <details className="weekItem" key={`${investment.id}-week-${week.weekNumber}`}>
+                            <summary>
+                              <div>
+                                <span>Semana</span>
+                                <strong>{week.weekNumber} de 12</strong>
+                              </div>
+                              <div>
+                                <span>Inicio</span>
+                                <strong>{week.startLabel}</strong>
+                              </div>
+                              <div>
+                                <span>Pago</span>
+                                <strong>{week.paymentLabel}</strong>
+                              </div>
+                              <span className={`statusPill ${week.statusClass}`}>{week.statusLabel}</span>
+                            </summary>
+                            <div className="weekDetailGrid">
+                              <div>
+                                <span>Monto base</span>
+                                <strong>{formatCurrency(investment.amount)}</strong>
+                              </div>
+                              <div>
+                                <span>Referidos confirmados</span>
+                                <strong>{confirmedReferrals}</strong>
+                              </div>
+                              <div>
+                                <span>Bono acumulado</span>
+                                <strong>{formatCurrency(referralBonus)}</strong>
+                              </div>
+                              <div>
+                                <span>Rendimiento calculado</span>
+                                <strong>{formatCurrency(referralYield)}</strong>
+                              </div>
+                              <div>
+                                <span>Total generado</span>
+                                <strong>{formatCurrency(totalGenerated)}</strong>
+                              </div>
+                            </div>
+                          </details>
+                        ))}
                       </div>
                     </div>
                     <div className="referralHeader">
@@ -316,6 +366,7 @@ function InviteReferralModal({ investmentId, investorCode }: { investmentId: str
 function normalizeInvestment(investment: Investment): Investment {
   return {
     ...investment,
+    investedAtIso: investment.investedAt,
     investedAt: formatDate(new Date(investment.investedAt)),
     nextPaymentAtIso: investment.nextPaymentAt,
     nextPaymentAt: formatDate(new Date(investment.nextPaymentAt)),
@@ -412,6 +463,38 @@ function getPaymentStatus(investment: Investment, confirmedReferrals: number) {
     className: "statusGreen",
     label: "Por cobrar"
   };
+}
+
+function getInvestmentWeeks(investment: Investment, confirmedReferrals: number) {
+  const startDate = new Date(investment.investedAtIso ?? investment.investedAt);
+  const today = new Date();
+
+  if (Number.isNaN(startDate.getTime())) {
+    return [];
+  }
+
+  return Array.from({ length: 12 }, (_, index) => {
+    const weekNumber = index + 1;
+    const weekStart = addDays(startDate, index * 7);
+    const paymentDate = addDays(weekStart, 7);
+    const isCurrent = today >= weekStart && today < paymentDate;
+    const isComplete = today >= paymentDate;
+    const canCollect = confirmedReferrals >= 2 && today >= paymentDate;
+
+    return {
+      paymentLabel: formatDate(paymentDate),
+      startLabel: formatDate(weekStart),
+      statusClass: canCollect ? "statusGreen" : isCurrent ? "statusYellow" : isComplete ? "statusRed" : "statusMuted",
+      statusLabel: canCollect ? "Por cobrar" : isCurrent ? "En curso" : isComplete ? "Pendiente" : "Programada",
+      weekNumber
+    };
+  });
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
 }
 
 async function getResponseErrorMessage(response: Response) {
