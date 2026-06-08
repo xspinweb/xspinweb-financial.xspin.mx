@@ -197,7 +197,6 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                     </div>
                     <div className="referralHeader">
                       <strong>Referidos</strong>
-                      <span>Se requieren al menos 2 referidos con inversion confirmada.</span>
                     </div>
                     {investment.referrals.length === 0 ? (
                       <p className="emptyReferralText">Aun no hay referidos vinculados a esta inversion.</p>
