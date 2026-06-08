@@ -20,7 +20,8 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0"
+    "@prisma/client": "^5.22.0",
+    "ee-first": "^1.1.1"
   },
   "devDependencies": {
     "prisma": "^5.22.0"
