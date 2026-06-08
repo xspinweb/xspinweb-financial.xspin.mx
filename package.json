@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "call-bound": "^1.0.4",
     "ee-first": "^1.1.1",
     "es-errors": "^1.3.0",
     "get-intrinsic": "^1.3.0"
