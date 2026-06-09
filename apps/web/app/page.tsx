@@ -1,5 +1,5 @@
 const growthStats = [
-  { value: "35%", label: "rendimiento por inversion referida" },
+  { value: "27%", label: "rendimiento por inversion referida" },
   { value: "7 dias", label: "horizonte operativo base" },
   { value: "5%", label: "bono por referido directo" },
   { value: "12", label: "semanas por ciclo completo" }

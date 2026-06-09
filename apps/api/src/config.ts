@@ -6,7 +6,7 @@ export const config = {
   defaultBusinessRules: {
     returnMultiplier: 1.44,
     referralBonusRate: 0.05,
-    referralYieldRate: 0.35,
+    referralYieldRate: 0.27,
     cycleDays: 7,
     groupSize: 16,
     yieldRate: 0.15

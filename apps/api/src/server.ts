@@ -374,6 +374,10 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
       throw new Error("Esta inversion ya concluyo sus 12 semanas.");
     }
 
+    if (weekNumber >= 12) {
+      throw new Error("La semana 12 es cierre final y no permite reinversion.");
+    }
+
     if (confirmedReferrals < 2) {
       throw new Error("La reinversion requiere al menos 2 referidos confirmados.");
     }

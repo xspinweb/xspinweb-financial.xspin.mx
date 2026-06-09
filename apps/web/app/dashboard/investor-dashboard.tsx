@@ -586,7 +586,7 @@ function normalizeInvestmentWeek(week: InvestmentWeek, paidWeeks: number): Inves
   const isPaid = week.weekNumber <= paidWeeks;
   const isCurrent = today >= startDate && today < paymentDate;
   const isComplete = today >= paymentDate;
-  const canReinvest = week.canCollect && isComplete && !isPaid;
+  const canReinvest = week.weekNumber < 12 && week.canCollect && isComplete && !isPaid;
 
   return {
     ...week,

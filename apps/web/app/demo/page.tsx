@@ -3,7 +3,7 @@ const referralCount = 2;
 const reinvestPercent = 82;
 const cycleDays = 7;
 const referralBonusRate = 0.05;
-const referralYieldRate = 0.35;
+const referralYieldRate = 0.27;
 
 type DemoWeek = {
   baseAmount: number;
@@ -111,10 +111,17 @@ export default function DemoPage() {
                     <span>Total generado</span>
                     <strong>{formatCurrency(week.totalGenerated)}</strong>
                   </div>
-                  <div>
-                    <span>Reinversion {reinvestPercent}%</span>
-                    <strong>{formatCurrency(week.reinvestedAmount)}</strong>
-                  </div>
+                  {week.weekNumber < 12 ? (
+                    <div>
+                      <span>Reinversion {reinvestPercent}%</span>
+                      <strong>{formatCurrency(week.reinvestedAmount)}</strong>
+                    </div>
+                  ) : (
+                    <div>
+                      <span>Reinversion</span>
+                      <strong>Cierre final</strong>
+                    </div>
+                  )}
                   <div>
                     <span>Retiro disponible</span>
                     <strong>{formatCurrency(week.withdrawalAmount)}</strong>
@@ -149,7 +156,7 @@ function buildDemoWeeks() {
     const yieldWasCapped = rawYield > baseAmount;
     const yieldAmount = yieldWasCapped ? roundMoney(baseAmount * 0.75) : rawYield;
     const totalGenerated = roundMoney(baseAmount + bonusAmount + yieldAmount);
-    const reinvestedAmount = roundMoney(totalGenerated * (reinvestPercent / 100));
+    const reinvestedAmount = weekNumber < 12 ? roundMoney(totalGenerated * (reinvestPercent / 100)) : 0;
     const withdrawalAmount = roundMoney(totalGenerated - reinvestedAmount);
     const weekStart = addDays(startDate, index * cycleDays);
     const paymentDate = addDays(startDate, weekNumber * cycleDays);
@@ -169,8 +176,10 @@ function buildDemoWeeks() {
       weekNumber
     });
 
-    baseAmount = reinvestedAmount;
-    referralWeeklyAmount = reinvestedAmount;
+    if (weekNumber < 12) {
+      baseAmount = reinvestedAmount;
+      referralWeeklyAmount = reinvestedAmount;
+    }
   }
 
   return weeks;
