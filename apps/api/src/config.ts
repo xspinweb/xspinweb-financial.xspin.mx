@@ -5,8 +5,8 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET ?? "dev-only-change-me",
   defaultBusinessRules: {
     returnMultiplier: 1.44,
-    referralBonusRate: 0.035,
-    referralYieldRate: 0.265,
+    referralBonusRate: 0.05,
+    referralYieldRate: 0.35,
     cycleDays: 7,
     groupSize: 16,
     yieldRate: 0.15

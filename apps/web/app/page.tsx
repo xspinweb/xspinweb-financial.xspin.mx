@@ -1,7 +1,7 @@
 const growthStats = [
-  { value: "26.5%", label: "rendimiento por inversion referida" },
+  { value: "35%", label: "rendimiento por inversion referida" },
   { value: "7 dias", label: "horizonte operativo base" },
-  { value: "3.5%", label: "bono por referido directo" },
+  { value: "5%", label: "bono por referido directo" },
   { value: "12", label: "semanas por ciclo completo" }
 ];
 
@@ -175,7 +175,7 @@ export default function HomePage() {
               </div>
               <div>
                 <span>Bono</span>
-                <strong>3.5%</strong>
+                <strong>5%</strong>
               </div>
             </div>
           </div>

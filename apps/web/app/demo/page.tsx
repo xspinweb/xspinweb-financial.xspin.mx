@@ -2,8 +2,8 @@ const initialAmount = 50;
 const referralCount = 2;
 const reinvestPercent = 82;
 const cycleDays = 7;
-const referralBonusRate = 0.035;
-const referralYieldRate = 0.265;
+const referralBonusRate = 0.05;
+const referralYieldRate = 0.35;
 
 type DemoWeek = {
   baseAmount: number;
