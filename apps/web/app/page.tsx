@@ -1,8 +1,8 @@
 const growthStats = [
-  { value: "1.44x", label: "retorno modelado por ciclo" },
+  { value: "26.5%", label: "rendimiento por inversion referida" },
   { value: "7 dias", label: "horizonte operativo base" },
-  { value: "5%", label: "bono por referido directo" },
-  { value: "15%", label: "rendimiento sobre capital del ciclo" }
+  { value: "3.5%", label: "bono por referido directo" },
+  { value: "12", label: "semanas por ciclo completo" }
 ];
 
 const path = [
@@ -175,7 +175,7 @@ export default function HomePage() {
               </div>
               <div>
                 <span>Bono</span>
-                <strong>5%</strong>
+                <strong>3.5%</strong>
               </div>
             </div>
           </div>

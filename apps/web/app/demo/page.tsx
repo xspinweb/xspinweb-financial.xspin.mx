@@ -2,7 +2,8 @@ const initialAmount = 50;
 const referralCount = 2;
 const reinvestPercent = 82;
 const cycleDays = 7;
-const referralBonusRate = 0.05;
+const referralBonusRate = 0.035;
+const referralYieldRate = 0.265;
 
 type DemoWeek = {
   baseAmount: number;
@@ -51,12 +52,12 @@ export default function DemoPage() {
             <strong>{referralCount}</strong>
           </article>
           <article className="dashboardCard">
-            <span>Reinversion minima</span>
-            <strong>{reinvestPercent}%</strong>
+            <span>Bono por referido</span>
+            <strong>{formatPercent(referralBonusRate)}</strong>
           </article>
           <article className="dashboardCard">
-            <span>Ciclo completo</span>
-            <strong>12 semanas</strong>
+            <span>Rendimiento referido</span>
+            <strong>{formatPercent(referralYieldRate)}</strong>
           </article>
         </section>
 
@@ -111,7 +112,7 @@ export default function DemoPage() {
                     <strong>{formatCurrency(week.totalGenerated)}</strong>
                   </div>
                   <div>
-                    <span>Reinversion 82%</span>
+                    <span>Reinversion {reinvestPercent}%</span>
                     <strong>{formatCurrency(week.reinvestedAmount)}</strong>
                   </div>
                   <div>
@@ -144,7 +145,7 @@ function buildDemoWeeks() {
     const weekNumber = index + 1;
     const weeklyReferralAmount = roundMoney(referralWeeklyAmount * referralCount);
     const bonusAmount = roundMoney(weeklyReferralAmount * referralBonusRate);
-    const rawYield = roundMoney(weeklyReferralAmount * 0.5);
+    const rawYield = roundMoney(weeklyReferralAmount * referralYieldRate);
     const yieldWasCapped = rawYield > baseAmount;
     const yieldAmount = yieldWasCapped ? roundMoney(baseAmount * 0.75) : rawYield;
     const totalGenerated = roundMoney(baseAmount + bonusAmount + yieldAmount);
@@ -200,4 +201,11 @@ function formatCurrency(amount: number) {
     currency: "MXN",
     style: "currency"
   }).format(amount);
+}
+
+function formatPercent(rate: number) {
+  return new Intl.NumberFormat("es-MX", {
+    maximumFractionDigits: 1,
+    style: "percent"
+  }).format(rate);
 }
