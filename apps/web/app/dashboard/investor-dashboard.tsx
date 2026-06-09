@@ -213,7 +213,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                     </details>
                     <div className="weeksSection">
                       <div className="referralHeader">
-                        <strong>Semanas</strong>
+                        <strong>Historial semanal</strong>
                       </div>
                       <div className="weekList">
                         {weeks.map((week) => (

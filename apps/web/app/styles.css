@@ -833,7 +833,7 @@ a {
 
 .appWorkspace {
   min-width: 0;
-  width: min(1220px, 100%);
+  width: min(1440px, 100%);
   margin: 0 auto;
 }
 
@@ -964,34 +964,41 @@ a {
 
 .dashboardContent {
   display: grid;
-  gap: 18px;
-  padding: 24px;
+  gap: 20px;
+  padding: 24px clamp(16px, 2.4vw, 34px);
 }
 
 .dashboardHero,
 .dashboardCard,
 .dashboardTablePanel {
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 16px;
   background: rgba(8, 15, 24, 0.8);
 }
 
 .dashboardHero {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  padding: 24px;
+  gap: 22px;
+  min-height: 142px;
+  padding: clamp(22px, 3vw, 34px);
+  background:
+    radial-gradient(circle at 92% 18%, rgba(53, 224, 161, 0.11), transparent 30%),
+    rgba(8, 15, 24, 0.82);
 }
 
 .dashboardHero h1 {
-  font-size: clamp(30px, 4vw, 44px);
+  font-size: clamp(32px, 4.2vw, 52px);
   line-height: 1.05;
   margin: 8px 0 10px;
 }
 
 .dashboardHero p {
   color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
   margin: 0;
 }
 
@@ -1032,24 +1039,36 @@ a {
 
 .dashboardCards {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 14px;
 }
 
 .dashboardCard {
-  min-height: 118px;
-  padding: 18px;
+  min-height: 110px;
+  padding: 18px 20px;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
 }
 
 .dashboardCard span {
   color: var(--muted);
+  display: block;
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .dashboardCard strong {
   display: block;
   color: var(--green);
-  font-size: 34px;
+  font-size: clamp(25px, 3vw, 34px);
+  line-height: 1.05;
   margin-top: 14px;
+  overflow-wrap: anywhere;
+}
+
+.dashboardCard:hover {
+  border-color: rgba(53, 224, 161, 0.26);
+  background: rgba(12, 24, 35, 0.88);
+  transform: translateY(-1px);
 }
 
 .dashboardTablePanel {
@@ -1058,8 +1077,9 @@ a {
 
 .investmentPanel {
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 18px;
   background: rgba(8, 15, 24, 0.8);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
   overflow: hidden;
 }
 
@@ -1067,14 +1087,15 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 18px;
   border-bottom: 1px solid var(--line);
-  padding: 18px;
+  min-height: 86px;
+  padding: 18px 22px;
 }
 
 .tableHeader h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .tableHeader span {
@@ -1083,18 +1104,19 @@ a {
 
 .headerIconAction {
   border: 0;
-  background: transparent;
+  background: rgba(53, 224, 161, 0.08);
   cursor: pointer;
   display: inline-grid;
   place-items: center;
   gap: 4px;
-  border-radius: 12px;
+  border-radius: 14px;
   color: var(--green);
   font-size: 11px;
   font-weight: 850;
   font-family: inherit;
-  min-width: 78px;
-  padding: 7px;
+  min-width: 88px;
+  min-height: 58px;
+  padding: 9px;
   text-decoration: none;
   transition: background 180ms ease, transform 180ms ease;
 }
@@ -1363,6 +1385,7 @@ a {
 
 .investmentList {
   display: grid;
+  gap: 0;
 }
 
 .emptyInvestments {
@@ -1396,12 +1419,14 @@ a {
 
 .investmentItem summary {
   display: grid;
-  grid-template-columns: 28px minmax(150px, 1.1fr) repeat(4, minmax(110px, 0.8fr)) auto auto;
+  grid-template-columns: 30px minmax(170px, 1.25fr) repeat(4, minmax(120px, 1fr)) minmax(72px, auto);
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   cursor: pointer;
   list-style: none;
-  padding: 18px;
+  min-height: 84px;
+  padding: 18px 22px;
+  transition: background 180ms ease;
 }
 
 .investmentItem summary::-webkit-details-marker {
@@ -1412,8 +1437,8 @@ a {
   content: "+";
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   color: var(--green);
@@ -1422,6 +1447,11 @@ a {
 
 .investmentItem[open] summary::before {
   content: "-";
+}
+
+.investmentItem summary:hover,
+.investmentItem[open] > summary {
+  background: rgba(255, 255, 255, 0.035);
 }
 
 .investmentItem summary > div {
@@ -1434,12 +1464,14 @@ a {
   color: var(--muted);
   display: block;
   font-size: 12px;
+  line-height: 1.25;
 }
 
 .investmentItem summary strong,
 .referralItem strong {
   display: block;
   margin-top: 4px;
+  line-height: 1.2;
 }
 
 .investmentSummaryMain strong {
@@ -1478,8 +1510,8 @@ a {
 
 .inviteReferralAction {
   justify-self: end;
-  min-width: 58px;
-  min-height: 52px;
+  min-width: 64px;
+  min-height: 58px;
   display: grid;
   place-items: center;
   gap: 3px;
@@ -1508,8 +1540,10 @@ a {
 
 .referralPanel {
   border-top: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.035);
-  padding: 16px 18px 18px;
+  background: rgba(255, 255, 255, 0.028);
+  display: grid;
+  gap: 14px;
+  padding: 18px 22px 22px;
 }
 
 .investmentDetailGrid {
@@ -1537,20 +1571,18 @@ a {
 }
 
 .weeksSection {
-  border-top: 1px solid var(--line);
-  margin-top: 16px;
-  padding-top: 16px;
+  display: grid;
+  gap: 12px;
 }
 
 .weekList {
   display: grid;
   gap: 10px;
-  margin-bottom: 16px;
 }
 
 .weekItem {
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 14px;
   background: rgba(5, 11, 18, 0.42);
   overflow: hidden;
 }
@@ -1559,10 +1591,12 @@ a {
   align-items: center;
   cursor: pointer;
   display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(90px, 0.8fr) repeat(2, minmax(120px, 1fr)) auto;
+  gap: 16px;
+  grid-template-columns: minmax(110px, 0.7fr) repeat(2, minmax(140px, 1fr)) minmax(88px, auto);
   list-style: none;
-  padding: 12px;
+  min-height: 64px;
+  padding: 13px 14px;
+  transition: background 180ms ease;
 }
 
 .weekItem summary::-webkit-details-marker {
@@ -1571,6 +1605,11 @@ a {
 
 .weekItem summary::before {
   display: none !important;
+}
+
+.weekItem summary:hover,
+.weekItem[open] > summary {
+  background: rgba(255, 255, 255, 0.035);
 }
 
 .weekItem summary span,
@@ -1589,20 +1628,21 @@ a {
 .weekDetailGrid {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  padding: 12px;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  padding: 14px;
 }
 
 .weekDetailGrid > div {
   align-items: center;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.035);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 10px;
+  min-height: 74px;
+  padding: 12px;
   text-align: center;
 }
 
@@ -1731,13 +1771,13 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  margin-bottom: 12px;
 }
 
 .referralsAccordion {
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 16px;
-  padding-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(5, 11, 18, 0.38);
+  overflow: hidden;
 }
 
 .referralsAccordion summary {
@@ -1747,7 +1787,9 @@ a {
   justify-content: space-between;
   gap: 14px;
   list-style: none;
-  margin-bottom: 12px;
+  min-height: 58px;
+  padding: 14px 16px;
+  transition: background 180ms ease;
 }
 
 .referralsAccordion summary::-webkit-details-marker {
@@ -1756,6 +1798,11 @@ a {
 
 .referralsAccordion summary::before {
   display: none !important;
+}
+
+.referralsAccordion summary:hover,
+.referralsAccordion[open] > summary {
+  background: rgba(255, 255, 255, 0.035);
 }
 
 .referralsAccordion summary span {
@@ -1774,6 +1821,7 @@ a {
 .referralList {
   display: grid;
   gap: 10px;
+  padding: 0 14px 14px;
 }
 
 .referralItem {
