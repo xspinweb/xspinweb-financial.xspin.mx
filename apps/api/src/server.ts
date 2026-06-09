@@ -25,7 +25,12 @@ type PortfolioInvestment = {
   cycleNumber: number;
   createdAt: Date;
   paymentDueAt: Date;
-  payments: Array<{ id: string }>;
+  payments: Array<{
+    id: string;
+    amount: unknown;
+    notes: string | null;
+    paidAt: Date;
+  }>;
   referralsSource: Array<{
     createdAt: Date;
     bonusAmount: unknown;
@@ -34,6 +39,30 @@ type PortfolioInvestment = {
       investments: Array<{
         createdAt: Date;
         principalAmount: unknown;
+        payments: Array<{
+          notes: string | null;
+          paidAt: Date;
+        }>;
+      }>;
+    };
+  }>;
+};
+
+type WeeklyInvestmentInput = {
+  createdAt: Date;
+  principalAmount: unknown;
+  payments: Array<{
+    notes: string | null;
+    paidAt: Date;
+  }>;
+  referralsSource: Array<{
+    referredInvestor: {
+      investments: Array<{
+        principalAmount: unknown;
+        payments: Array<{
+          notes: string | null;
+          paidAt: Date;
+        }>;
       }>;
     };
   }>;
@@ -44,6 +73,10 @@ type ReinvestReferral = {
   referredInvestor: {
     investments: Array<{
       principalAmount: unknown;
+      payments: Array<{
+        notes: string | null;
+        paidAt: Date;
+      }>;
     }>;
   };
 };
@@ -159,6 +192,15 @@ async function getPortfolio(email: string) {
               referredInvestor: {
                 include: {
                   investments: {
+                    include: {
+                      payments: {
+                        orderBy: { paidAt: "asc" },
+                        select: {
+                          notes: true,
+                          paidAt: true
+                        }
+                      }
+                    },
                     orderBy: { createdAt: "desc" },
                     take: 1
                   }
@@ -167,8 +209,12 @@ async function getPortfolio(email: string) {
             }
           },
           payments: {
+            orderBy: { paidAt: "asc" },
             select: {
-              id: true
+              id: true,
+              amount: true,
+              notes: true,
+              paidAt: true
             }
           }
         },
@@ -202,6 +248,7 @@ async function getPortfolio(email: string) {
       investedAt: investment.createdAt,
       nextPaymentAt: investment.paymentDueAt,
       paidWeeks: investment.payments.length,
+      weeks: buildInvestmentWeeks(investment),
       referrals: investment.referralsSource.map((referral: PortfolioInvestment["referralsSource"][number]) => {
         const referredInvestment = referral.referredInvestor.investments[0];
 
@@ -282,23 +329,37 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
     const investment = await tx.investment.findUniqueOrThrow({
       where: { id: investmentId },
       include: {
+        payments: {
+          orderBy: { paidAt: "asc" },
+          select: {
+            notes: true,
+            paidAt: true
+          }
+        },
         referralsSource: {
           include: {
             referredInvestor: {
               include: {
-                investments: {
-                  orderBy: { createdAt: "desc" },
-                  take: 1
-                }
+                  investments: {
+                    include: {
+                      payments: {
+                        orderBy: { paidAt: "asc" },
+                        select: {
+                          notes: true,
+                          paidAt: true
+                        }
+                      }
+                    },
+                    orderBy: { createdAt: "desc" },
+                    take: 1
+                  }
               }
             }
           }
         }
       }
     });
-    const paidWeeks = await tx.payment.count({
-      where: { investmentId }
-    });
+    const paidWeeks = investment.payments.length;
     const weekNumber = input.weekNumber ?? paidWeeks + 1;
 
     if (weekNumber !== paidWeeks + 1) {
@@ -321,15 +382,17 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
       throw new Error("La fecha de pago de esta semana aun no ha llegado.");
     }
 
-    const totalGenerated = getTotalGenerated({
-      principalAmount: Number(investment.principalAmount),
-      referrals: referrals.map((referral: ReinvestReferral) => ({
-        bonusAmount: Number(referral.bonusAmount),
-        referredAmount: referral.referredInvestor.investments[0]
-          ? Number(referral.referredInvestor.investments[0].principalAmount)
-          : 0
-      }))
-    });
+    const week = buildInvestmentWeeks(investment)[weekNumber - 1];
+
+    if (!week || week.baseAmount <= 0) {
+      throw new Error("Esta semana no tiene capital base para reinversion.");
+    }
+
+    if (!week.canCollect) {
+      throw new Error("Esta semana requiere al menos 2 referidos con reinversion confirmada.");
+    }
+
+    const totalGenerated = week.totalGenerated;
     const reinvestedAmount = roundMoney(totalGenerated * (input.reinvestPercent / 100));
     const withdrawalAmount = roundMoney(totalGenerated - reinvestedAmount);
 
@@ -360,6 +423,52 @@ function getTotalGenerated(input: { principalAmount: number; referrals: Array<{ 
   const referralYield = rawYield > input.principalAmount ? roundMoney(input.principalAmount * 0.75) : rawYield;
 
   return roundMoney(input.principalAmount + referralBonus + referralYield);
+}
+
+function buildInvestmentWeeks(investment: WeeklyInvestmentInput) {
+  const paidWeeks = investment.payments.length;
+  const visibleWeeks = Math.min(12, Math.max(1, paidWeeks + 1));
+
+  return Array.from({ length: visibleWeeks }, (_, index) => {
+    const weekNumber = index + 1;
+    const baseAmount =
+      weekNumber === 1 ? Number(investment.principalAmount) : getReinvestedAmount(investment.payments[weekNumber - 2]?.notes);
+    const weeklyReferralAmounts = investment.referralsSource.map((referral) => {
+      const referredInvestment = referral.referredInvestor.investments[0];
+
+      if (!referredInvestment) {
+        return 0;
+      }
+
+      if (weekNumber === 1) {
+        return Number(referredInvestment.principalAmount);
+      }
+
+      return getReinvestedAmount(referredInvestment.payments[weekNumber - 2]?.notes);
+    });
+    const weeklyQualifiedReferrals = weeklyReferralAmounts.filter((amount) => amount > 0).length;
+    const weeklyBonus = roundMoney(weeklyReferralAmounts.reduce((total, amount) => total + amount * config.defaultBusinessRules.referralBonusRate, 0));
+    const rawYield = roundMoney(weeklyReferralAmounts.reduce((total, amount) => total + amount * 0.5, 0));
+    const weeklyYield = rawYield > baseAmount ? roundMoney(baseAmount * 0.75) : rawYield;
+    const totalGenerated = roundMoney(baseAmount + weeklyBonus + weeklyYield);
+
+    return {
+      baseAmount,
+      canCollect: baseAmount > 0 && weeklyQualifiedReferrals >= 2,
+      paymentAt: addDays(investment.createdAt, weekNumber * config.defaultBusinessRules.cycleDays),
+      startAt: addDays(investment.createdAt, (weekNumber - 1) * config.defaultBusinessRules.cycleDays),
+      totalGenerated,
+      weeklyBonus,
+      weeklyQualifiedReferrals,
+      weeklyYield,
+      weekNumber
+    };
+  });
+}
+
+function getReinvestedAmount(notes?: string | null) {
+  const match = notes?.match(/reinvertido\s+([0-9]+(?:\.[0-9]+)?)/i);
+  return match ? Number(match[1]) : 0;
 }
 
 async function getOrCreateInvestor(tx: Prisma.TransactionClient, input: { email: string; fullName?: string }) {

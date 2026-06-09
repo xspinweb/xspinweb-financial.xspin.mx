@@ -10,6 +10,23 @@ type Referral = {
   amount?: number;
 };
 
+type InvestmentWeek = {
+  baseAmount: number;
+  canCollect: boolean;
+  canReinvest?: boolean;
+  paymentAt: string;
+  paymentLabel?: string;
+  startAt: string;
+  startLabel?: string;
+  statusClass?: string;
+  statusLabel?: string;
+  totalGenerated: number;
+  weeklyBonus: number;
+  weeklyQualifiedReferrals: number;
+  weeklyYield: number;
+  weekNumber: number;
+};
+
 type Investment = {
   id: string;
   name: string;
@@ -22,6 +39,7 @@ type Investment = {
   nextPaymentAtIso?: string;
   paidWeeks?: number;
   referrals: Referral[];
+  weeks?: InvestmentWeek[];
 };
 
 type InvestorDashboardProps = {
@@ -141,10 +159,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
           <div className="investmentList">
             {investments.map((investment) => {
               const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
-              const referralBonus = getReferralBonus(investment.referrals);
-              const referralYield = getReferralYield(investment);
-              const totalGenerated = investment.amount + referralBonus + referralYield;
-              const weeks = getInvestmentWeeks(investment, confirmedReferrals);
+              const weeks = investment.weeks ?? [];
 
               return (
                 <details className="investmentItem" key={investment.id}>
@@ -221,30 +236,30 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                             <div className="weekDetailGrid">
                               <div>
                                 <span>Monto base</span>
-                                <strong>{formatCurrency(investment.amount)}</strong>
+                                <strong>{formatCurrency(week.baseAmount)}</strong>
                               </div>
                               <div>
                                 <span>Referidos confirmados</span>
                                 <strong>{confirmedReferrals}</strong>
                               </div>
                               <div>
-                                <span>Bono acumulado</span>
-                                <strong>{formatCurrency(referralBonus)}</strong>
+                                <span>Bono semanal</span>
+                                <strong>{formatCurrency(week.weeklyBonus)}</strong>
                               </div>
                               <div>
                                 <span>Rendimiento calculado</span>
-                                <strong>{formatCurrency(referralYield)}</strong>
+                                <strong>{formatCurrency(week.weeklyYield)}</strong>
                               </div>
                               <div>
                                 <span>Total generado</span>
-                                <strong>{formatCurrency(totalGenerated)}</strong>
+                                <strong>{formatCurrency(week.totalGenerated)}</strong>
                               </div>
                               {week.canReinvest ? (
                                 <div className="weekActionCard">
                                   <span>Reinversion</span>
                                   <ReinvestmentModal
                                     investmentId={investment.id}
-                                    totalGenerated={totalGenerated}
+                                    totalGenerated={week.totalGenerated}
                                     weekNumber={week.weekNumber}
                                     onCompleted={loadPortfolio}
                                   />
@@ -520,7 +535,8 @@ function normalizeInvestment(investment: Investment): Investment {
     referrals: investment.referrals.map((referral) => ({
       ...referral,
       investedAt: formatDate(new Date(referral.investedAt))
-    }))
+    })),
+    weeks: investment.weeks?.map((week) => normalizeInvestmentWeek(week, investment.paidWeeks ?? 0))
   };
 }
 
@@ -563,65 +579,23 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
-function getReferralBonus(referrals: Referral[]) {
-  return referrals.reduce((total, referral) => {
-    if (!referral.invested) {
-      return total;
-    }
-
-    return total + (referral.amount ?? 0) * 0.05;
-  }, 0);
-}
-
-function getReferralYield(investment: Investment) {
-  const referralYield = investment.referrals.reduce((total, referral) => {
-    if (!referral.invested) {
-      return total;
-    }
-
-    return total + (referral.amount ?? 0) * 0.5;
-  }, 0);
-
-  if (referralYield > investment.amount) {
-    return investment.amount * 0.75;
-  }
-
-  return referralYield;
-}
-
-function getInvestmentWeeks(investment: Investment, confirmedReferrals: number) {
-  const startDate = new Date(investment.investedAtIso ?? investment.investedAt);
+function normalizeInvestmentWeek(week: InvestmentWeek, paidWeeks: number): InvestmentWeek {
+  const startDate = new Date(week.startAt);
+  const paymentDate = new Date(week.paymentAt);
   const today = new Date();
-  const visibleWeeks = Math.min(12, Math.max(1, (investment.paidWeeks ?? 0) + 1));
+  const isPaid = week.weekNumber <= paidWeeks;
+  const isCurrent = today >= startDate && today < paymentDate;
+  const isComplete = today >= paymentDate;
+  const canReinvest = week.canCollect && isComplete && !isPaid;
 
-  if (Number.isNaN(startDate.getTime())) {
-    return [];
-  }
-
-  return Array.from({ length: visibleWeeks }, (_, index) => {
-    const weekNumber = index + 1;
-    const weekStart = addDays(startDate, index * 7);
-    const paymentDate = addDays(weekStart, 7);
-    const isPaid = weekNumber <= (investment.paidWeeks ?? 0);
-    const isCurrent = today >= weekStart && today < paymentDate;
-    const isComplete = today >= paymentDate;
-    const canCollect = confirmedReferrals >= 2 && today >= paymentDate;
-
-    return {
-      canReinvest: canCollect && !isPaid,
-      paymentLabel: formatDate(paymentDate),
-      startLabel: formatDate(weekStart),
-      statusClass: isPaid ? "statusGreen" : canCollect ? "statusGreen" : isCurrent ? "statusYellow" : isComplete ? "statusRed" : "statusMuted",
-      statusLabel: isPaid ? "Cobrada" : canCollect ? "Por cobrar" : isCurrent ? "En curso" : isComplete ? "Pendiente" : "Programada",
-      weekNumber
-    };
-  });
-}
-
-function addDays(date: Date, days: number) {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
+  return {
+    ...week,
+    canReinvest,
+    paymentLabel: formatDate(paymentDate),
+    startLabel: formatDate(startDate),
+    statusClass: isPaid ? "statusGreen" : canReinvest ? "statusGreen" : isCurrent ? "statusYellow" : isComplete ? "statusRed" : "statusMuted",
+    statusLabel: isPaid ? "Cobrada" : canReinvest ? "Por cobrar" : isCurrent ? "En curso" : isComplete ? "Pendiente" : "Programada"
+  };
 }
 
 async function getResponseErrorMessage(response: Response) {
