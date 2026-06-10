@@ -844,19 +844,22 @@ a {
 .appHeader {
   position: absolute;
   top: 18px;
+  left: clamp(16px, 2.4vw, 34px);
   right: clamp(16px, 2.4vw, 34px);
   z-index: 20;
   min-height: 48px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 14px;
   background: transparent;
   padding: 0;
 }
 
 .appHeader > img {
-  display: none;
+  display: block;
+  height: auto;
+  width: 126px;
 }
 
 .appHeader span {
@@ -973,7 +976,7 @@ a {
 .dashboardContent {
   display: grid;
   gap: 14px;
-  padding: 18px clamp(16px, 2.4vw, 34px) 24px;
+  padding: 88px clamp(16px, 2.4vw, 34px) 24px;
 }
 
 .dashboardHero,
@@ -2408,7 +2411,8 @@ a {
   }
 
   .appHeader img:first-child {
-    width: 96px;
+    display: block;
+    width: 104px;
     height: auto;
   }
 
