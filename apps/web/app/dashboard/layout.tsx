@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { getAppRole, getNavItems, getRoleLabel } from "../../lib/access";
+import { getAppRole, getNavItems } from "../../lib/access";
 import { authOptions } from "../../lib/auth";
 
 function NavIcon({ name }: { name: string }) {
@@ -101,9 +101,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             )}
             <div>
               <strong>{userName}</strong>
-              <span>{userEmail}</span>
             </div>
-            <span className="roleBadge">{getRoleLabel(role)}</span>
           </div>
         </header>
         {children}

@@ -21,8 +21,8 @@ export default async function DashboardPage() {
     <div className="dashboardContent">
       <section className="dashboardHero">
         <div>
-          <span className="loginEyebrow">{isSuperAdmin ? "Super admin" : "Mi cuenta"}</span>
-          <h1>{isSuperAdmin ? "Resumen global" : "Mi tablero financiero"}</h1>
+          <span className="loginEyebrow">{isSuperAdmin ? "Super admin" : "Bienvenido de nuevo"}</span>
+          <h1>{isSuperAdmin ? "Resumen global" : "Mi tablero"}</h1>
           <p>
             {isSuperAdmin
               ? "Vista general para controlar usuarios, ciclos, pagos, referidos y reportes."
