@@ -434,24 +434,31 @@ function InviteReferralModal({ investmentId, investorCode }: { investmentId: str
 }
 
 function GrowthSparkline({ weeks }: { weeks: InvestmentWeek[] }) {
-  const width = 460;
-  const height = 210;
-  const values = getVisualChartValues(weeks);
-  const points = getChartPoints(values, width, height, { bottom: 18, left: 8, right: 18, top: 18 });
+  const width = 560;
+  const height = 260;
+  const values = getHeroChartValues(weeks);
+  const points = getChartPoints(values, width, height, { bottom: 28, left: 18, right: 30, top: 26 });
   const path = getSmoothPath(points);
   const last = points.at(-1);
-  const areaPath = path ? `${path} L ${width - 18} ${height - 18} L 8 ${height - 18} Z` : "";
+  const areaPath = path ? `${path} L ${width - 30} ${height - 28} L 18 ${height - 28} Z` : "";
 
   return (
     <svg className="growthSparkline" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
       <defs>
         <linearGradient id="growthFill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="rgba(53, 224, 161, 0.5)" />
-          <stop offset="62%" stopColor="rgba(53, 224, 161, 0.16)" />
+          <stop offset="0%" stopColor="rgba(53, 224, 161, 0.58)" />
+          <stop offset="52%" stopColor="rgba(53, 224, 161, 0.2)" />
           <stop offset="100%" stopColor="rgba(53, 224, 161, 0)" />
         </linearGradient>
         <filter id="growthGlow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="5" result="blur" />
+          <feGaussianBlur stdDeviation="6" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <filter id="pointGlow" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="4" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
@@ -461,14 +468,18 @@ function GrowthSparkline({ weeks }: { weeks: InvestmentWeek[] }) {
       {path ? (
         <>
           <path d={areaPath} fill="url(#growthFill)" />
+          <path className="growthLineHalo" d={path} fill="none" stroke="#35e0a1" strokeLinecap="round" strokeLinejoin="round" />
           <path d={path} fill="none" filter="url(#growthGlow)" stroke="#35e0a1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
           {points.map((point, index) => (
-            <circle cx={point.x} cy={point.y} fill="#f6fbff" key={`growth-point-${index}`} r={index === points.length - 1 ? 5 : 3.4} />
+            <g filter="url(#pointGlow)" key={`growth-point-${index}`}>
+              <circle cx={point.x} cy={point.y} fill="#35e0a1" opacity="0.28" r={index === points.length - 1 ? 10 : 7} />
+              <circle cx={point.x} cy={point.y} fill="#f6fbff" r={index === points.length - 1 ? 5 : 3.3} />
+            </g>
           ))}
           {last ? (
-            <g>
-              <rect x={last.x - 34} y={Math.max(6, last.y - 38)} width="68" height="26" rx="8" />
-              <text x={last.x} y={Math.max(23, last.y - 20)} textAnchor="middle">
+            <g className="growthCallout">
+              <rect x={last.x - 42} y={Math.max(8, last.y - 42)} width="84" height="28" rx="8" />
+              <text x={last.x} y={Math.max(26, last.y - 23)} textAnchor="middle">
                 {formatCurrency(weeks.at(-1)?.totalGenerated ?? 0)}
               </text>
             </g>
@@ -477,6 +488,20 @@ function GrowthSparkline({ weeks }: { weeks: InvestmentWeek[] }) {
       ) : null}
     </svg>
   );
+}
+
+function getHeroChartValues(weeks: InvestmentWeek[]) {
+  const realValues = weeks.map((week) => week.totalGenerated);
+  const end = realValues.at(-1) ?? 0;
+
+  if (end <= 0) {
+    return [];
+  }
+
+  const start = Math.max(end * 0.06, Math.min(realValues[0] ?? end, end * 0.36));
+  const shape = [0, 0.03, 0.08, 0.16, 0.31, 0.45, 0.42, 0.58, 0.64, 0.62, 0.73, 0.8, 0.91, 1];
+
+  return shape.map((progress) => start + (end - start) * progress);
 }
 
 function ProjectionChart({ weeks }: { weeks: InvestmentWeek[] }) {
