@@ -84,6 +84,14 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
     setIsLoading(false);
   }
 
+  const primaryInvestment = investments[0];
+  const primaryWeeks = primaryInvestment?.weeks ?? [];
+  const projectedBalance = primaryWeeks.at(-1)?.totalGenerated ?? primaryInvestment?.amount ?? 0;
+  const projectedReturn =
+    primaryInvestment?.amount && projectedBalance > primaryInvestment.amount
+      ? Math.round(((projectedBalance - primaryInvestment.amount) / primaryInvestment.amount) * 100)
+      : 0;
+
   const cards = useMemo(() => {
     const confirmedReferrals = investments.reduce(
       (total, investment) => total + investment.referrals.filter((referral) => referral.invested).length,
@@ -93,10 +101,10 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
     const hasCollectable = investments.some((investment) => investment.referrals.filter((referral) => referral.invested).length >= 2);
 
     return [
-      { label: "Inversiones activas", value: String(investments.length) },
-      { label: "Referidos confirmados", value: String(confirmedReferrals) },
-      { label: "Proximo pago", value: nextPayment },
-      { label: "Estatus actual", value: hasCollectable ? "Por cobrar" : investments.length > 0 ? "Pendiente" : "-" }
+      { icon: "chart", label: "Inversiones activas", link: "Ver detalles", value: String(investments.length) },
+      { icon: "users", label: "Referidos confirmados", link: "Ver referidos", value: String(confirmedReferrals) },
+      { icon: "calendar", label: "Proximo pago", link: "Ver calendario", value: nextPayment },
+      { icon: "wallet", label: "Estatus actual", link: "Ver historial", tone: "warning", value: hasCollectable ? "Por cobrar" : investments.length > 0 ? "Pendiente" : "-" }
     ];
   }, [investments]);
 
@@ -130,152 +138,207 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
 
   return (
     <>
-      <section className="dashboardCards">
+      <section className="dashboardGrowthGrid">
+        <article className="growthBalanceCard">
+          <div>
+            <h2>Tu inversion esta creciendo</h2>
+            <span>Saldo proyectado</span>
+            <strong>{formatCurrency(projectedBalance)} <small>MXN</small></strong>
+            <em>+{projectedReturn}% de rendimiento esperado</em>
+          </div>
+          <GrowthSparkline weeks={primaryWeeks} />
+        </article>
+
+        <article className="projectionPanel">
+          <div className="panelTitle">
+            <h2>Proyeccion de crecimiento</h2>
+            <span>{primaryWeeks.length || 0} semanas visibles</span>
+          </div>
+          <div className="projectionContent">
+            <ProjectionChart weeks={primaryWeeks} />
+            <div className="projectionList">
+              {primaryWeeks.length === 0 ? (
+                <span className="emptyProjection">Sin semanas disponibles</span>
+              ) : (
+                primaryWeeks.map((week) => (
+                  <div key={`projection-${week.weekNumber}`}>
+                    <span>Semana {week.weekNumber}</span>
+                    <strong>{formatCurrency(week.totalGenerated)}</strong>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section className="dashboardCards metricCards">
         {cards.map((card) => (
-          <article className="dashboardCard" key={card.label}>
-            <span>{card.label}</span>
-            <strong>{card.value}</strong>
+          <article className={`dashboardCard metricCard ${card.tone === "warning" ? "metricWarning" : ""}`} key={card.label}>
+            <div className="metricIcon">
+              <MetricIcon name={card.icon} />
+            </div>
+            <div>
+              <span>{card.label}</span>
+              <strong>{card.value}</strong>
+              <small>{card.link} &rarr;</small>
+            </div>
           </article>
         ))}
       </section>
 
-      <section className="investmentPanel">
-        <div className="tableHeader">
-          <h2>Mis inversiones</h2>
-          <NewInvestmentModal onInvestmentCreated={handleInvestmentCreated} />
-        </div>
-
-        {isLoading ? (
-          <div className="emptyInvestments">
-            <strong>Cargando inversiones</strong>
-            <span>Estamos consultando tu tablero.</span>
+      <section className="dashboardMainGrid">
+        <section className="investmentPanel">
+          <div className="tableHeader">
+            <div className="panelTitle">
+              <ChartIcon />
+              <h2>Mis inversiones</h2>
+            </div>
+            <NewInvestmentModal onInvestmentCreated={handleInvestmentCreated} />
           </div>
-        ) : investments.length === 0 ? (
-          <div className="emptyInvestments">
-            <strong>Sin inversiones activas</strong>
-            <span>Cuando realices una nueva inversion, aparecera aqui con su grupo, ciclo y fecha de proximo pago.</span>
-          </div>
-        ) : (
-          <div className="investmentList">
-            {investments.map((investment) => {
-              const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
-              const weeks = investment.weeks ?? [];
 
-              return (
-                <details className="investmentItem" key={investment.id}>
-                  <summary>
-                    <div className="investmentSummaryMain">
-                      <span>{investment.name}</span>
-                      <strong>{investment.group}</strong>
-                    </div>
-                    <div>
-                      <span>Ciclo</span>
-                      <strong>{investment.cycle}</strong>
-                    </div>
-                    <div>
-                      <span>Fecha</span>
-                      <strong>{investment.investedAt}</strong>
-                    </div>
-                    <div>
-                      <span>Referidos</span>
-                      <strong>{confirmedReferrals}</strong>
-                    </div>
-                    <div>
-                      <span>Proximo pago</span>
-                      <strong>{investment.nextPaymentAt}</strong>
-                    </div>
-                    <InviteReferralModal investmentId={investment.id} investorCode={investorCode} />
-                  </summary>
+          {isLoading ? (
+            <div className="emptyInvestments">
+              <strong>Cargando inversiones</strong>
+              <span>Estamos consultando tu tablero.</span>
+            </div>
+          ) : investments.length === 0 ? (
+            <div className="emptyInvestments">
+              <strong>Sin inversiones activas</strong>
+              <span>Cuando realices una nueva inversion, aparecera aqui con su grupo, ciclo y fecha de proximo pago.</span>
+            </div>
+          ) : (
+            <div className="investmentList">
+              {investments.map((investment) => {
+                const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
 
-                  <div className="referralPanel">
-                    <details className="referralsAccordion">
-                      <summary>
-                        <strong>Referidos</strong>
-                        <span>{investment.referrals.length}</span>
-                      </summary>
-                      {investment.referrals.length === 0 ? (
-                        <p className="emptyReferralText">Aun no hay referidos vinculados a esta inversion.</p>
-                      ) : (
-                        <div className="referralList">
-                          {investment.referrals.map((referral) => (
-                            <div className="referralItem" key={`${investment.id}-${referral.name}`}>
-                              <div>
-                                <strong>{referral.name}</strong>
-                                <span>{referral.investedAt}</span>
-                              </div>
-                              <span className={referral.invested ? "statusPill statusGreen" : "statusPill statusRed"}>
-                                {referral.invested ? "Confirmado" : "Pendiente"}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </details>
-                    <div className="weeksSection">
-                      <div className="referralHeader">
-                        <strong>Historial semanal</strong>
+                return (
+                  <details className="investmentItem" key={investment.id} open>
+                    <summary>
+                      <div className="investmentSummaryMain">
+                        <span>{investment.name}</span>
+                        <strong>{investment.group}</strong>
                       </div>
-                      <div className="weekList">
-                        {weeks.map((week) => (
-                          <details className="weekItem" key={`${investment.id}-week-${week.weekNumber}`}>
-                            <summary>
-                              <div>
-                                <span>Semana</span>
-                                <strong>{week.weekNumber} de 12</strong>
-                              </div>
-                              <div>
-                                <span>Inicio</span>
-                                <strong>{week.startLabel}</strong>
-                              </div>
-                              <div>
-                                <span>Pago</span>
-                                <strong>{week.paymentLabel}</strong>
-                              </div>
-                              <span className={`statusPill ${week.statusClass}`}>{week.statusLabel}</span>
-                            </summary>
-                            <div className="weekDetailGrid">
-                              <div>
-                                <span>Monto base</span>
-                                <strong>{formatCurrency(week.baseAmount)}</strong>
-                              </div>
-                              <div>
-                                <span>Referidos confirmados</span>
-                                <strong>{confirmedReferrals}</strong>
-                              </div>
-                              <div>
-                                <span>Bono semanal</span>
-                                <strong>{formatCurrency(week.weeklyBonus)}</strong>
-                              </div>
-                              <div>
-                                <span>Rendimiento calculado</span>
-                                <strong>{formatCurrency(week.weeklyYield)}</strong>
-                              </div>
-                              <div>
-                                <span>Total generado</span>
-                                <strong>{formatCurrency(week.totalGenerated)}</strong>
-                              </div>
-                              {week.canReinvest ? (
-                                <div className="weekActionCard">
-                                  <span>Reinversion</span>
-                                  <ReinvestmentModal
-                                    investmentId={investment.id}
-                                    totalGenerated={week.totalGenerated}
-                                    weekNumber={week.weekNumber}
-                                    onCompleted={loadPortfolio}
-                                  />
+                      <div>
+                        <span>Ciclo</span>
+                        <strong>{investment.cycle}</strong>
+                      </div>
+                      <div>
+                        <span>Fecha</span>
+                        <strong>{investment.investedAt}</strong>
+                      </div>
+                      <div>
+                        <span>Referidos</span>
+                        <strong>{confirmedReferrals}</strong>
+                      </div>
+                      <div>
+                        <span>Proximo pago</span>
+                        <strong>{investment.nextPaymentAt}</strong>
+                      </div>
+                      <InviteReferralModal investmentId={investment.id} investorCode={investorCode} />
+                    </summary>
+
+                    <div className="referralPanel">
+                      <details className="referralsAccordion" open>
+                        <summary>
+                          <strong>Referidos</strong>
+                          <span>{investment.referrals.length}</span>
+                        </summary>
+                        {investment.referrals.length === 0 ? (
+                          <p className="emptyReferralText">Aun no hay referidos vinculados a esta inversion.</p>
+                        ) : (
+                          <div className="referralList">
+                            {investment.referrals.map((referral) => (
+                              <div className="referralItem" key={`${investment.id}-${referral.name}`}>
+                                <div>
+                                  <strong>{referral.name}</strong>
+                                  <span>{referral.investedAt}</span>
                                 </div>
-                              ) : null}
-                            </div>
-                          </details>
-                        ))}
-                      </div>
+                                <span className={referral.invested ? "statusPill statusGreen" : "statusPill statusRed"}>
+                                  {referral.invested ? "Confirmado" : "Pendiente"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </details>
                     </div>
+                  </details>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="investmentPanel weeklyPanel">
+          <div className="tableHeader">
+            <div className="panelTitle">
+              <CalendarIcon />
+              <h2>Historial semanal</h2>
+            </div>
+          </div>
+          <div className="weekList">
+            {primaryWeeks.length === 0 ? (
+              <div className="emptyInvestments">
+                <strong>Sin historial semanal</strong>
+                <span>Las semanas apareceran cuando exista una inversion activa.</span>
+              </div>
+            ) : (
+              primaryWeeks.map((week) => (
+                <details className="weekItem" key={`${primaryInvestment?.id}-week-${week.weekNumber}`} open={week.weekNumber === 1}>
+                  <summary>
+                    <div>
+                      <span>Semana</span>
+                      <strong>{week.weekNumber} de 12</strong>
+                    </div>
+                    <div>
+                      <span>Inicio</span>
+                      <strong>{week.startLabel}</strong>
+                    </div>
+                    <div>
+                      <span>Pago</span>
+                      <strong>{week.paymentLabel}</strong>
+                    </div>
+                    <span className={`statusPill ${week.statusClass}`}>{week.statusLabel}</span>
+                  </summary>
+                  <div className="weekDetailGrid">
+                    <div>
+                      <span>Monto base</span>
+                      <strong>{formatCurrency(week.baseAmount)}</strong>
+                    </div>
+                    <div>
+                      <span>Referidos confirmados</span>
+                      <strong>{primaryInvestment?.referrals.filter((referral) => referral.invested).length ?? 0}</strong>
+                    </div>
+                    <div>
+                      <span>Bono semanal</span>
+                      <strong>{formatCurrency(week.weeklyBonus)}</strong>
+                    </div>
+                    <div>
+                      <span>Rendimiento calculado</span>
+                      <strong>{formatCurrency(week.weeklyYield)}</strong>
+                    </div>
+                    <div>
+                      <span>Total generado</span>
+                      <strong>{formatCurrency(week.totalGenerated)}</strong>
+                    </div>
+                    {week.canReinvest && primaryInvestment ? (
+                      <div className="weekActionCard">
+                        <span>Reinversion</span>
+                        <ReinvestmentModal
+                          investmentId={primaryInvestment.id}
+                          totalGenerated={week.totalGenerated}
+                          weekNumber={week.weekNumber}
+                          onCompleted={loadPortfolio}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 </details>
-              );
-            })}
+              ))
+            )}
           </div>
-        )}
+        </section>
       </section>
     </>
   );
@@ -365,6 +428,110 @@ function InviteReferralModal({ investmentId, investorCode }: { investmentId: str
         </div>
       ) : null}
     </>
+  );
+}
+
+function GrowthSparkline({ weeks }: { weeks: InvestmentWeek[] }) {
+  const points = getChartPoints(weeks, 420, 170);
+  const path = points.length > 0 ? `M ${points.map((point) => `${point.x} ${point.y}`).join(" L ")}` : "";
+  const last = points.at(-1);
+
+  return (
+    <svg className="growthSparkline" viewBox="0 0 420 170" aria-hidden="true">
+      <defs>
+        <linearGradient id="growthFill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="rgba(53, 224, 161, 0.48)" />
+          <stop offset="100%" stopColor="rgba(53, 224, 161, 0)" />
+        </linearGradient>
+      </defs>
+      {path ? (
+        <>
+          <path d={`${path} L 420 170 L 0 170 Z`} fill="url(#growthFill)" />
+          <path d={path} fill="none" stroke="#35e0a1" strokeLinecap="round" strokeWidth="4" />
+          {last ? <circle cx={last.x} cy={last.y} fill="#f6fbff" r="5" /> : null}
+        </>
+      ) : null}
+    </svg>
+  );
+}
+
+function ProjectionChart({ weeks }: { weeks: InvestmentWeek[] }) {
+  const points = getChartPoints(weeks, 420, 210);
+  const path = points.length > 0 ? `M ${points.map((point) => `${point.x} ${point.y}`).join(" L ")}` : "";
+
+  return (
+    <svg className="projectionChart" viewBox="0 0 420 210" role="img" aria-label="Proyeccion de crecimiento semanal">
+      <g className="projectionGrid" aria-hidden="true">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <path d={`M 0 ${20 + index * 40} H 420`} key={`grid-h-${index}`} />
+        ))}
+        {Array.from({ length: 6 }).map((_, index) => (
+          <path d={`M ${40 + index * 70} 12 V 188`} key={`grid-v-${index}`} />
+        ))}
+      </g>
+      {path ? (
+        <>
+          <path d={`${path} L 420 188 L 0 188 Z`} fill="rgba(53, 224, 161, 0.18)" />
+          <path d={path} fill="none" stroke="#35e0a1" strokeLinecap="round" strokeWidth="4" />
+          {points.map((point) => (
+            <circle cx={point.x} cy={point.y} fill="#f6fbff" key={`${point.x}-${point.y}`} r="4" />
+          ))}
+        </>
+      ) : null}
+    </svg>
+  );
+}
+
+function getChartPoints(weeks: InvestmentWeek[], width: number, height: number) {
+  if (weeks.length === 0) {
+    return [];
+  }
+
+  const values = weeks.map((week) => week.totalGenerated);
+  const min = Math.min(0, ...values);
+  const max = Math.max(...values, 1);
+  const usableWidth = width - 28;
+  const usableHeight = height - 34;
+
+  return values.map((value, index) => ({
+    x: 14 + (weeks.length === 1 ? usableWidth : (index / (weeks.length - 1)) * usableWidth),
+    y: 12 + usableHeight - ((value - min) / (max - min || 1)) * usableHeight
+  }));
+}
+
+function MetricIcon({ name }: { name: string }) {
+  if (name === "users") {
+    return <InviteIcon />;
+  }
+
+  if (name === "calendar") {
+    return <CalendarIcon />;
+  }
+
+  if (name === "wallet") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H20v3H6c-.6 0-1 .4-1 1s.4 1 1 1h14a2 2 0 0 1 2 2v5a2.5 2.5 0 0 1-2.5 2.5h-14A2.5 2.5 0 0 1 3 17Zm14.7 6.2a1.6 1.6 0 1 0 0 3.2H20v-3.2Z" />
+      </svg>
+    );
+  }
+
+  return <ChartIcon />;
+}
+
+function ChartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 19h16v2H3V4h2Zm2-3.2 3.2-4 3 2.4 4.6-6.8 1.7 1.1-5.8 8.6-3.2-2.6-3.5 4.3Z" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 2h2v3h6V2h2v3h3a1 1 0 0 1 1 1v15H3V6a1 1 0 0 1 1-1h3Zm12 8H5v9h14ZM5 8h14V7H5Zm2 4h3v3H7Zm5 0h3v3h-3Z" />
+    </svg>
   );
 }
 
