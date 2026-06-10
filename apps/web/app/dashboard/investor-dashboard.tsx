@@ -365,26 +365,21 @@ function buildTwelveWeekProjection(investment?: Investment): ProjectionWeek[] {
   const visibleWeeks = investment.weeks ?? [];
   const weeksByNumber = new Map(visibleWeeks.map((week) => [week.weekNumber, week]));
   const initialBase = investment.amount || visibleWeeks[0]?.baseAmount || 0;
-  const firstVisibleWeek = visibleWeeks[0];
-  let baseAmount = initialBase;
-  let referralMovement =
-    firstVisibleWeek && firstVisibleWeek.weeklyBonus > 0
-      ? roundMoney(firstVisibleWeek.weeklyBonus / projectionReferralBonusRate)
-      : roundMoney(initialBase * 2);
+  let baseAmount = roundMoney(initialBase);
+  let referralMovement = getInitialReferralMovement(investment, visibleWeeks, initialBase);
 
   return Array.from({ length: projectionWeeks }, (_, index) => {
     const weekNumber = index + 1;
     const actualWeek = weeksByNumber.get(weekNumber);
 
     if (actualWeek) {
-      baseAmount = weekNumber < projectionWeeks ? roundMoney(actualWeek.totalGenerated * projectionReinvestRate) : 0;
-
       if (actualWeek.weeklyBonus > 0) {
         referralMovement = roundMoney(actualWeek.weeklyBonus / projectionReferralBonusRate);
       }
 
       if (weekNumber < projectionWeeks) {
-        referralMovement = roundMoney(referralMovement * projectionReinvestRate);
+        baseAmount = roundMoney(actualWeek.totalGenerated * projectionReinvestRate);
+        referralMovement = projectNextReferralMovement(referralMovement);
       }
 
       return {
@@ -393,13 +388,11 @@ function buildTwelveWeekProjection(investment?: Investment): ProjectionWeek[] {
       };
     }
 
-    const weeklyBonus = roundMoney(referralMovement * projectionReferralBonusRate);
-    const weeklyYield = roundMoney(referralMovement * projectionReferralYieldRate);
-    const totalGenerated = roundMoney(baseAmount + weeklyBonus + weeklyYield);
+    const totalGenerated = calculateProjectedWeekTotal(baseAmount, referralMovement);
 
     if (weekNumber < projectionWeeks) {
       baseAmount = roundMoney(totalGenerated * projectionReinvestRate);
-      referralMovement = roundMoney(referralMovement * projectionReinvestRate);
+      referralMovement = projectNextReferralMovement(referralMovement);
     }
 
     return {
@@ -407,6 +400,35 @@ function buildTwelveWeekProjection(investment?: Investment): ProjectionWeek[] {
       weekNumber
     };
   });
+}
+
+function getInitialReferralMovement(investment: Investment, visibleWeeks: InvestmentWeek[], initialBase: number) {
+  const weekWithBonus = visibleWeeks.find((week) => week.weeklyBonus > 0);
+
+  if (weekWithBonus) {
+    return roundMoney(weekWithBonus.weeklyBonus / projectionReferralBonusRate);
+  }
+
+  const confirmedReferralAmount = investment.referrals
+    .filter((referral) => referral.invested)
+    .reduce((total, referral) => total + (referral.amount ?? initialBase), 0);
+
+  return roundMoney(confirmedReferralAmount > 0 ? confirmedReferralAmount : initialBase * 2);
+}
+
+function calculateProjectedWeekTotal(baseAmount: number, referralMovement: number) {
+  const weeklyBonus = roundMoney(referralMovement * projectionReferralBonusRate);
+  const rawYield = roundMoney(referralMovement * projectionReferralYieldRate);
+  const cappedYield = rawYield > baseAmount ? roundMoney(baseAmount * 0.75) : rawYield;
+
+  return roundMoney(baseAmount + weeklyBonus + cappedYield);
+}
+
+function projectNextReferralMovement(referralMovement: number) {
+  const referralBasePerInvestor = roundMoney(referralMovement / 2);
+  const referredInvestorTotal = calculateProjectedWeekTotal(referralBasePerInvestor, referralMovement);
+
+  return roundMoney(referredInvestorTotal * projectionReinvestRate * 2);
 }
 
 function InviteReferralModal({ investmentId, investorCode }: { investmentId: string; investorCode: string }) {
