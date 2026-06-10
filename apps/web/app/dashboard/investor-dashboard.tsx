@@ -159,7 +159,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
             </strong>
             <em>+{projectedReturn}% de rendimiento esperado</em>
           </div>
-          <GrowthSparkline weeks={primaryWeeks} />
+          <GrowthSparkline weeks={projectedWeeks} />
         </article>
 
         <article className="projectionPanel">
@@ -518,7 +518,7 @@ function InviteReferralModal({ investmentId, investorCode }: { investmentId: str
   );
 }
 
-function GrowthSparkline({ weeks }: { weeks: InvestmentWeek[] }) {
+function GrowthSparkline({ weeks }: { weeks: ProjectionWeek[] }) {
   const width = 560;
   const height = 260;
   const values = getHeroChartValues(weeks);
@@ -575,18 +575,14 @@ function GrowthSparkline({ weeks }: { weeks: InvestmentWeek[] }) {
   );
 }
 
-function getHeroChartValues(weeks: InvestmentWeek[]) {
-  const realValues = weeks.map((week) => week.totalGenerated);
-  const end = realValues.at(-1) ?? 0;
+function getHeroChartValues(weeks: ProjectionWeek[]) {
+  const projectedValues = weeks.map((week) => week.totalGenerated);
 
-  if (end <= 0) {
+  if (projectedValues.length === 0) {
     return [];
   }
 
-  const start = Math.max(end * 0.06, Math.min(realValues[0] ?? end, end * 0.36));
-  const shape = [0, 0.03, 0.08, 0.16, 0.31, 0.45, 0.42, 0.58, 0.64, 0.62, 0.73, 0.8, 0.91, 1];
-
-  return shape.map((progress) => start + (end - start) * progress);
+  return [0, ...projectedValues];
 }
 
 function ProjectionChart({ weeks }: { weeks: ProjectionWeek[] }) {
