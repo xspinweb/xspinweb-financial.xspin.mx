@@ -1592,7 +1592,7 @@ a {
   cursor: pointer;
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(110px, 0.7fr) repeat(2, minmax(140px, 1fr)) minmax(88px, auto);
+  grid-template-columns: 30px minmax(110px, 0.7fr) repeat(2, minmax(140px, 1fr)) minmax(88px, auto);
   list-style: none;
   min-height: 64px;
   padding: 13px 14px;
@@ -1604,7 +1604,19 @@ a {
 }
 
 .weekItem summary::before {
-  display: none !important;
+  content: "+";
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--green);
+  font-weight: 900;
+}
+
+.weekItem[open] summary::before {
+  content: "-";
 }
 
 .weekItem summary:hover,
@@ -1783,8 +1795,8 @@ a {
 .referralsAccordion summary {
   align-items: center;
   cursor: pointer;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
   gap: 14px;
   list-style: none;
   min-height: 58px;
@@ -1797,7 +1809,19 @@ a {
 }
 
 .referralsAccordion summary::before {
-  display: none !important;
+  content: "+";
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--green);
+  font-weight: 900;
+}
+
+.referralsAccordion[open] summary::before {
+  content: "-";
 }
 
 .referralsAccordion summary:hover,
@@ -2028,7 +2052,12 @@ a {
   }
 
   .weekItem summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .weekItem summary > div,
+  .weekItem summary > .statusPill {
+    grid-column: 2;
   }
 
   .reinvestmentActions {
