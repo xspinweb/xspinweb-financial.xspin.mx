@@ -522,10 +522,13 @@ function GrowthSparkline({ weeks }: { weeks: ProjectionWeek[] }) {
   const width = 560;
   const height = 260;
   const values = getHeroChartValues(weeks);
-  const points = getChartPoints(values, width, height, { bottom: 28, left: 18, right: 30, top: 26 });
+  const padding = { bottom: 28, left: 18, right: 78, top: 30 };
+  const points = getChartPoints(values, width, height, padding);
   const path = getSmoothPath(points);
   const last = points.at(-1);
-  const areaPath = path ? `${path} L ${width - 30} ${height - 28} L 18 ${height - 28} Z` : "";
+  const areaPath = path ? `${path} L ${width - padding.right} ${height - padding.bottom} L ${padding.left} ${height - padding.bottom} Z` : "";
+  const calloutLabel = formatChartCurrency(weeks.at(-1)?.totalGenerated ?? 0);
+  const growthCallout = last ? getChartCallout(last, calloutLabel, width, height, { right: 10, top: 8 }) : null;
 
   return (
     <svg className="growthSparkline" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
@@ -561,11 +564,11 @@ function GrowthSparkline({ weeks }: { weeks: ProjectionWeek[] }) {
               <circle cx={point.x} cy={point.y} fill="#f6fbff" r={index === points.length - 1 ? 5 : 3.3} />
             </g>
           ))}
-          {last ? (
+          {growthCallout ? (
             <g className="growthCallout">
-              <rect x={last.x - 42} y={Math.max(8, last.y - 42)} width="84" height="28" rx="8" />
-              <text x={last.x} y={Math.max(26, last.y - 23)} textAnchor="middle">
-                {formatCurrency(weeks.at(-1)?.totalGenerated ?? 0)}
+              <rect x={growthCallout.x - growthCallout.width / 2} y={growthCallout.y} width={growthCallout.width} height="28" rx="8" />
+              <text x={growthCallout.x} y={growthCallout.y + 19} textAnchor="middle">
+                {calloutLabel}
               </text>
             </g>
           ) : null}
@@ -589,12 +592,16 @@ function ProjectionChart({ weeks }: { weeks: ProjectionWeek[] }) {
   const width = 520;
   const height = 250;
   const values = getVisualChartValues(weeks);
-  const points = getChartPoints(values, width, height, { bottom: 42, left: 58, right: 20, top: 24 });
-  const path = getSmoothPath(points);
   const maxValue = Math.max(...values, 1);
-  const yTicks = Array.from({ length: 6 }).map((_, index) => Math.round((maxValue / 5) * index));
-  const areaPath = path ? `${path} L ${width - 20} ${height - 42} L 58 ${height - 42} Z` : "";
+  const axisMax = Math.max(500, Math.ceil(maxValue / 500) * 500);
+  const padding = { bottom: 42, left: 64, right: 62, top: 34 };
+  const points = getChartPoints(values, width, height, padding, axisMax);
+  const path = getSmoothPath(points);
+  const yTicks = Array.from({ length: 6 }).map((_, index) => Math.round((axisMax / 5) * index));
+  const areaPath = path ? `${path} L ${width - padding.right} ${height - padding.bottom} L ${padding.left} ${height - padding.bottom} Z` : "";
   const last = points.at(-1);
+  const calloutLabel = formatChartCurrency(weeks.at(-1)?.totalGenerated ?? 0);
+  const projectionCallout = last ? getChartCallout(last, calloutLabel, width, height, { right: 8, top: 8 }) : null;
 
   return (
     <svg className="projectionChart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Proyeccion de crecimiento semanal">
@@ -610,8 +617,8 @@ function ProjectionChart({ weeks }: { weeks: ProjectionWeek[] }) {
       <g className="projectionGrid">
         {yTicks.map((tick, index) => (
           <g key={`grid-h-${tick}`}>
-            <path d={`M 58 ${height - 42 - index * ((height - 66) / 5)} H ${width - 20}`} />
-            <text x="8" y={height - 38 - index * ((height - 66) / 5)}>
+            <path d={`M ${padding.left} ${height - padding.bottom - index * ((height - padding.bottom - padding.top) / 5)} H ${width - padding.right}`} />
+            <text x="10" y={height - padding.bottom + 4 - index * ((height - padding.bottom - padding.top) / 5)}>
               {formatCompactCurrency(tick)}
             </text>
           </g>
@@ -624,11 +631,11 @@ function ProjectionChart({ weeks }: { weeks: ProjectionWeek[] }) {
           {points.map((point, index) => (
             <circle cx={point.x} cy={point.y} fill="#f6fbff" key={`projection-point-${index}`} r="4" />
           ))}
-          {last ? (
+          {projectionCallout ? (
             <g className="projectionCallout">
-              <rect x={last.x - 36} y={Math.max(8, last.y - 40)} width="72" height="26" rx="8" />
-              <text x={last.x} y={Math.max(25, last.y - 22)} textAnchor="middle">
-                {formatCurrency(weeks.at(-1)?.totalGenerated ?? 0)}
+              <rect x={projectionCallout.x - projectionCallout.width / 2} y={projectionCallout.y} width={projectionCallout.width} height="26" rx="8" />
+              <text x={projectionCallout.x} y={projectionCallout.y + 18} textAnchor="middle">
+                {calloutLabel}
               </text>
             </g>
           ) : null}
@@ -676,14 +683,15 @@ function getChartPoints(
   values: number[],
   width: number,
   height: number,
-  padding: { bottom: number; left: number; right: number; top: number }
+  padding: { bottom: number; left: number; right: number; top: number },
+  maxOverride?: number
 ) {
   if (values.length === 0) {
     return [];
   }
 
   const min = Math.min(0, ...values);
-  const max = Math.max(...values, 1);
+  const max = maxOverride ?? Math.max(...values, 1);
   const usableWidth = width - padding.left - padding.right;
   const usableHeight = height - padding.top - padding.bottom;
 
@@ -691,6 +699,24 @@ function getChartPoints(
     x: padding.left + (values.length === 1 ? usableWidth : (index / (values.length - 1)) * usableWidth),
     y: padding.top + usableHeight - ((value - min) / (max - min || 1)) * usableHeight
   }));
+}
+
+function getChartCallout(
+  point: { x: number; y: number },
+  label: string,
+  width: number,
+  height: number,
+  padding: { right: number; top: number }
+) {
+  const labelWidth = Math.max(76, label.length * 7.4 + 20);
+  const x = clamp(point.x, labelWidth / 2 + 8, width - labelWidth / 2 - padding.right);
+  const y = clamp(point.y - 42, padding.top, height - 34);
+
+  return { width: labelWidth, x, y };
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
 }
 
 function getSmoothPath(points: Array<{ x: number; y: number }>) {
@@ -960,17 +986,29 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
+function formatChartCurrency(amount: number) {
+  return new Intl.NumberFormat("es-MX", {
+    currency: "MXN",
+    maximumFractionDigits: 0,
+    style: "currency"
+  }).format(amount);
+}
+
 function roundMoney(amount: number) {
   return Math.round((amount + Number.EPSILON) * 100) / 100;
 }
 
 function formatCompactCurrency(amount: number) {
-  return new Intl.NumberFormat("es-MX", {
-    currency: "MXN",
-    maximumFractionDigits: 0,
-    notation: "compact",
-    style: "currency"
-  }).format(amount);
+  if (amount >= 1000) {
+    const value = amount / 1000;
+    const formattedValue = new Intl.NumberFormat("es-MX", {
+      maximumFractionDigits: value >= 10 || Number.isInteger(value) ? 0 : 1
+    }).format(value);
+
+    return `$${formattedValue}k`;
+  }
+
+  return formatChartCurrency(amount);
 }
 
 function normalizeInvestmentWeek(week: InvestmentWeek, paidWeeks: number): InvestmentWeek {
