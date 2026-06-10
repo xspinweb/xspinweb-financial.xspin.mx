@@ -1060,13 +1060,13 @@ a {
     radial-gradient(circle at 70% 56%, rgba(53, 224, 161, 0.14), transparent 38%),
     rgba(8, 15, 24, 0.86);
   box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
-  min-height: 282px;
+  min-height: 292px;
   overflow: hidden;
 }
 
 .growthBalanceCard {
   display: grid;
-  grid-template-columns: minmax(250px, 0.45fr) minmax(280px, 1fr);
+  grid-template-columns: minmax(250px, 0.45fr) minmax(360px, 1fr);
   align-items: stretch;
   padding: 26px 24px;
   position: relative;
@@ -1110,14 +1110,27 @@ a {
 
 .growthSparkline {
   align-self: end;
-  height: 100%;
-  min-height: 190px;
+  height: 230px;
+  margin: 20px -6px -20px 0;
   width: 100%;
+}
+
+.growthSparkline rect,
+.growthSparkline text,
+.projectionCallout rect {
+  fill: rgba(53, 224, 161, 0.22);
+}
+
+.growthSparkline text,
+.projectionCallout text {
+  fill: #f6fbff;
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .projectionPanel {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   padding: 18px;
 }
 
@@ -1141,14 +1154,14 @@ a {
 
 .projectionContent {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(130px, 0.34fr);
-  gap: 16px;
-  min-height: 214px;
+  grid-template-columns: minmax(0, 1fr) minmax(168px, 0.34fr);
+  gap: 18px;
+  min-height: 230px;
 }
 
 .projectionChart {
   height: 100%;
-  min-height: 210px;
+  min-height: 236px;
   width: 100%;
 }
 
@@ -1157,17 +1170,30 @@ a {
   stroke-width: 1;
 }
 
+.projectionGrid text,
+.projectionAxis text {
+  fill: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.projectionAxis text:last-child {
+  font-size: 11px;
+}
+
 .projectionList {
   display: grid;
   align-content: start;
-  gap: 5px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  gap: 6px;
+  padding-left: 16px;
 }
 
 .projectionList div {
   align-items: center;
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  gap: 14px;
   font-size: 12px;
 }
 
@@ -1178,6 +1204,11 @@ a {
 
 .projectionList strong {
   font-size: 12px;
+}
+
+.projectionList div:last-child span,
+.projectionList div:last-child strong {
+  color: var(--green);
 }
 
 .dashboardMainGrid {

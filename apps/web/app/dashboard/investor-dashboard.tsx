@@ -432,23 +432,44 @@ function InviteReferralModal({ investmentId, investorCode }: { investmentId: str
 }
 
 function GrowthSparkline({ weeks }: { weeks: InvestmentWeek[] }) {
-  const points = getChartPoints(weeks, 420, 170);
+  const width = 460;
+  const height = 210;
+  const points = getChartPoints(weeks, width, height, { bottom: 18, left: 8, right: 18, top: 18 });
   const path = points.length > 0 ? `M ${points.map((point) => `${point.x} ${point.y}`).join(" L ")}` : "";
   const last = points.at(-1);
+  const areaPath = path ? `${path} L ${width - 18} ${height - 18} L 8 ${height - 18} Z` : "";
 
   return (
-    <svg className="growthSparkline" viewBox="0 0 420 170" aria-hidden="true">
+    <svg className="growthSparkline" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
       <defs>
         <linearGradient id="growthFill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="rgba(53, 224, 161, 0.48)" />
+          <stop offset="0%" stopColor="rgba(53, 224, 161, 0.5)" />
+          <stop offset="62%" stopColor="rgba(53, 224, 161, 0.16)" />
           <stop offset="100%" stopColor="rgba(53, 224, 161, 0)" />
         </linearGradient>
+        <filter id="growthGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="5" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
       </defs>
       {path ? (
         <>
-          <path d={`${path} L 420 170 L 0 170 Z`} fill="url(#growthFill)" />
-          <path d={path} fill="none" stroke="#35e0a1" strokeLinecap="round" strokeWidth="4" />
-          {last ? <circle cx={last.x} cy={last.y} fill="#f6fbff" r="5" /> : null}
+          <path d={areaPath} fill="url(#growthFill)" />
+          <path d={path} fill="none" filter="url(#growthGlow)" stroke="#35e0a1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
+          {points.map((point, index) => (
+            <circle cx={point.x} cy={point.y} fill="#f6fbff" key={`growth-point-${index}`} r={index === points.length - 1 ? 5 : 3.4} />
+          ))}
+          {last ? (
+            <g>
+              <rect x={last.x - 34} y={Math.max(6, last.y - 38)} width="68" height="26" rx="8" />
+              <text x={last.x} y={Math.max(23, last.y - 20)} textAnchor="middle">
+                {formatCurrency(weeks.at(-1)?.totalGenerated ?? 0)}
+              </text>
+            </g>
+          ) : null}
         </>
       ) : null}
     </svg>
@@ -456,33 +477,75 @@ function GrowthSparkline({ weeks }: { weeks: InvestmentWeek[] }) {
 }
 
 function ProjectionChart({ weeks }: { weeks: InvestmentWeek[] }) {
-  const points = getChartPoints(weeks, 420, 210);
+  const width = 520;
+  const height = 250;
+  const points = getChartPoints(weeks, width, height, { bottom: 42, left: 58, right: 20, top: 24 });
   const path = points.length > 0 ? `M ${points.map((point) => `${point.x} ${point.y}`).join(" L ")}` : "";
+  const values = weeks.map((week) => week.totalGenerated);
+  const maxValue = Math.max(...values, 1);
+  const yTicks = Array.from({ length: 6 }).map((_, index) => Math.round((maxValue / 5) * index));
+  const xTicks = weeks.map((week) => week.weekNumber);
+  const areaPath = path ? `${path} L ${width - 20} ${height - 42} L 58 ${height - 42} Z` : "";
+  const last = points.at(-1);
 
   return (
-    <svg className="projectionChart" viewBox="0 0 420 210" role="img" aria-label="Proyeccion de crecimiento semanal">
-      <g className="projectionGrid" aria-hidden="true">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <path d={`M 0 ${20 + index * 40} H 420`} key={`grid-h-${index}`} />
-        ))}
-        {Array.from({ length: 6 }).map((_, index) => (
-          <path d={`M ${40 + index * 70} 12 V 188`} key={`grid-v-${index}`} />
+    <svg className="projectionChart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Proyeccion de crecimiento semanal">
+      <defs>
+        <filter id="projectionGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <g className="projectionGrid">
+        {yTicks.map((tick, index) => (
+          <g key={`grid-h-${tick}`}>
+            <path d={`M 58 ${height - 42 - index * ((height - 66) / 5)} H ${width - 20}`} />
+            <text x="8" y={height - 38 - index * ((height - 66) / 5)}>
+              {formatCompactCurrency(tick)}
+            </text>
+          </g>
         ))}
       </g>
       {path ? (
         <>
-          <path d={`${path} L 420 188 L 0 188 Z`} fill="rgba(53, 224, 161, 0.18)" />
-          <path d={path} fill="none" stroke="#35e0a1" strokeLinecap="round" strokeWidth="4" />
-          {points.map((point) => (
-            <circle cx={point.x} cy={point.y} fill="#f6fbff" key={`${point.x}-${point.y}`} r="4" />
+          <path d={areaPath} fill="rgba(53, 224, 161, 0.2)" />
+          <path d={path} fill="none" filter="url(#projectionGlow)" stroke="#35e0a1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
+          {points.map((point, index) => (
+            <circle cx={point.x} cy={point.y} fill="#f6fbff" key={`projection-point-${index}`} r="4" />
           ))}
+          {last ? (
+            <g className="projectionCallout">
+              <rect x={last.x - 36} y={Math.max(8, last.y - 40)} width="72" height="26" rx="8" />
+              <text x={last.x} y={Math.max(25, last.y - 22)} textAnchor="middle">
+                {formatCurrency(weeks.at(-1)?.totalGenerated ?? 0)}
+              </text>
+            </g>
+          ) : null}
         </>
       ) : null}
+      <g className="projectionAxis">
+        {points.map((point, index) => (
+          <text x={point.x} y={height - 16} key={`axis-${xTicks[index]}`} textAnchor="middle">
+            {xTicks[index]}
+          </text>
+        ))}
+        <text x={width / 2} y={height - 1} textAnchor="middle">
+          Semanas
+        </text>
+      </g>
     </svg>
   );
 }
 
-function getChartPoints(weeks: InvestmentWeek[], width: number, height: number) {
+function getChartPoints(
+  weeks: InvestmentWeek[],
+  width: number,
+  height: number,
+  padding: { bottom: number; left: number; right: number; top: number }
+) {
   if (weeks.length === 0) {
     return [];
   }
@@ -490,12 +553,12 @@ function getChartPoints(weeks: InvestmentWeek[], width: number, height: number) 
   const values = weeks.map((week) => week.totalGenerated);
   const min = Math.min(0, ...values);
   const max = Math.max(...values, 1);
-  const usableWidth = width - 28;
-  const usableHeight = height - 34;
+  const usableWidth = width - padding.left - padding.right;
+  const usableHeight = height - padding.top - padding.bottom;
 
   return values.map((value, index) => ({
-    x: 14 + (weeks.length === 1 ? usableWidth : (index / (weeks.length - 1)) * usableWidth),
-    y: 12 + usableHeight - ((value - min) / (max - min || 1)) * usableHeight
+    x: padding.left + (weeks.length === 1 ? usableWidth : (index / (weeks.length - 1)) * usableWidth),
+    y: padding.top + usableHeight - ((value - min) / (max - min || 1)) * usableHeight
   }));
 }
 
@@ -742,6 +805,15 @@ function formatDate(date: Date) {
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("es-MX", {
     currency: "MXN",
+    style: "currency"
+  }).format(amount);
+}
+
+function formatCompactCurrency(amount: number) {
+  return new Intl.NumberFormat("es-MX", {
+    currency: "MXN",
+    maximumFractionDigits: 0,
+    notation: "compact",
     style: "currency"
   }).format(amount);
 }
