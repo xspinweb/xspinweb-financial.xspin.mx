@@ -59,7 +59,7 @@ type PortfolioResponse = {
   investments: Investment[];
 };
 
-const projectionWeeks = 12;
+const projectionWeeks = 8;
 const projectionReinvestRate = 0.82;
 const projectionReferralBonusRate = 0.05;
 const projectionReferralYieldRate = 0.27;
@@ -165,7 +165,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
         <article className="projectionPanel">
           <div className="panelTitle">
             <h2>Proyeccion de crecimiento</h2>
-            <span>12 semanas</span>
+            <span>8 semanas</span>
           </div>
           <div className="projectionContent">
             <ProjectionChart weeks={projectedWeeks} />
@@ -302,7 +302,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                   <summary>
                     <div>
                       <span>Semana</span>
-                      <strong>{week.weekNumber} de 12</strong>
+                      <strong>{week.weekNumber} de {projectionWeeks}</strong>
                     </div>
                     <div>
                       <span>Inicio</span>
@@ -980,7 +980,7 @@ function normalizeInvestmentWeek(week: InvestmentWeek, paidWeeks: number): Inves
   const isPaid = week.weekNumber <= paidWeeks;
   const isCurrent = today >= startDate && today < paymentDate;
   const isComplete = today >= paymentDate;
-  const canReinvest = week.weekNumber < 12 && week.canCollect && isComplete && !isPaid;
+  const canReinvest = week.weekNumber < projectionWeeks && week.canCollect && isComplete && !isPaid;
 
   return {
     ...week,

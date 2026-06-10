@@ -2,7 +2,7 @@ const growthStats = [
   { value: "27%", label: "rendimiento por inversion referida" },
   { value: "7 dias", label: "horizonte operativo base" },
   { value: "5%", label: "bono por referido directo" },
-  { value: "12", label: "semanas por ciclo completo" }
+  { value: "8", label: "semanas por ciclo completo" }
 ];
 
 const path = [
@@ -97,8 +97,8 @@ export default function HomePage() {
                   {Array.from({ length: 8 }).map((_, index) => (
                     <path key={`h-${index}`} d={`M24 ${36 + index * 36}H596`} />
                   ))}
-                  {Array.from({ length: 12 }).map((_, index) => (
-                    <path key={`v-${index}`} d={`M${48 + index * 48} 24V312`} />
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <path key={`v-${index}`} d={`M${48 + index * 72} 24V312`} />
                   ))}
                 </g>
                 <g className="volumeBars" aria-hidden="true">

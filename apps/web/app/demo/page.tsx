@@ -4,6 +4,7 @@ const reinvestPercent = 82;
 const cycleDays = 7;
 const referralBonusRate = 0.05;
 const referralYieldRate = 0.27;
+const totalCycleWeeks = 8;
 
 type DemoWeek = {
   baseAmount: number;
@@ -37,7 +38,7 @@ export default function DemoPage() {
             </p>
           </div>
           <div className="demoTotalCard">
-            <span>Total semana 12</span>
+            <span>Total semana {totalCycleWeeks}</span>
             <strong>{formatCurrency(lastWeek.totalGenerated)}</strong>
           </div>
         </header>
@@ -73,7 +74,7 @@ export default function DemoPage() {
                 <summary>
                   <div>
                     <span>Semana</span>
-                    <strong>{week.weekNumber} de 12</strong>
+                    <strong>{week.weekNumber} de {totalCycleWeeks}</strong>
                   </div>
                   <div>
                     <span>Inicio</span>
@@ -111,7 +112,7 @@ export default function DemoPage() {
                     <span>Total generado</span>
                     <strong>{formatCurrency(week.totalGenerated)}</strong>
                   </div>
-                  {week.weekNumber < 12 ? (
+                  {week.weekNumber < totalCycleWeeks ? (
                     <div>
                       <span>Reinversion {reinvestPercent}%</span>
                       <strong>{formatCurrency(week.reinvestedAmount)}</strong>
@@ -148,7 +149,7 @@ function buildDemoWeeks() {
   let baseAmount = initialAmount;
   let referralWeeklyAmount = initialAmount;
 
-  for (let index = 0; index < 12; index += 1) {
+  for (let index = 0; index < totalCycleWeeks; index += 1) {
     const weekNumber = index + 1;
     const weeklyReferralAmount = roundMoney(referralWeeklyAmount * referralCount);
     const bonusAmount = roundMoney(weeklyReferralAmount * referralBonusRate);
@@ -156,7 +157,7 @@ function buildDemoWeeks() {
     const yieldWasCapped = rawYield > baseAmount;
     const yieldAmount = yieldWasCapped ? roundMoney(baseAmount * 0.75) : rawYield;
     const totalGenerated = roundMoney(baseAmount + bonusAmount + yieldAmount);
-    const reinvestedAmount = weekNumber < 12 ? roundMoney(totalGenerated * (reinvestPercent / 100)) : 0;
+    const reinvestedAmount = weekNumber < totalCycleWeeks ? roundMoney(totalGenerated * (reinvestPercent / 100)) : 0;
     const withdrawalAmount = roundMoney(totalGenerated - reinvestedAmount);
     const weekStart = addDays(startDate, index * cycleDays);
     const paymentDate = addDays(startDate, weekNumber * cycleDays);
@@ -176,7 +177,7 @@ function buildDemoWeeks() {
       weekNumber
     });
 
-    if (weekNumber < 12) {
+    if (weekNumber < totalCycleWeeks) {
       baseAmount = reinvestedAmount;
       referralWeeklyAmount = reinvestedAmount;
     }

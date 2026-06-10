@@ -9,6 +9,7 @@ export const config = {
     referralYieldRate: 0.27,
     cycleDays: 7,
     groupSize: 16,
+    totalCycleWeeks: 8,
     yieldRate: 0.15
   }
 };

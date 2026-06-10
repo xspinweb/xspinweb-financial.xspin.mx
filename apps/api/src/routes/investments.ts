@@ -88,7 +88,7 @@ investmentsRouter.get("/portfolio", async (req, res, next) => {
         name: investor.fullName,
         amount: Number(investment.principalAmount),
         group: `Grupo ${investment.group.groupNumber}`,
-        cycle: `Semana ${investment.cycleNumber} de 12`,
+        cycle: `Semana ${investment.cycleNumber} de ${config.defaultBusinessRules.totalCycleWeeks}`,
         investedAt: investment.createdAt,
         nextPaymentAt: investment.paymentDueAt,
         referrals: investment.referralsSource.map((referral: PortfolioInvestment["referralsSource"][number]) => {

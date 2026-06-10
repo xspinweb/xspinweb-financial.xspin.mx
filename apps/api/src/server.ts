@@ -15,7 +15,7 @@ const createInvestmentSchema = z.object({
 
 const reinvestSchema = z.object({
   reinvestPercent: z.number().min(82).max(100),
-  weekNumber: z.number().int().min(1).max(12).optional()
+  weekNumber: z.number().int().min(1).max(config.defaultBusinessRules.totalCycleWeeks).optional()
 });
 
 type PortfolioInvestment = {
@@ -244,7 +244,7 @@ async function getPortfolio(email: string) {
       name: investor.fullName,
       amount: Number(investment.principalAmount),
       group: `Grupo ${investment.group.groupNumber}`,
-      cycle: `Semana ${investment.cycleNumber} de 12`,
+      cycle: `Semana ${investment.cycleNumber} de ${config.defaultBusinessRules.totalCycleWeeks}`,
       investedAt: investment.createdAt,
       nextPaymentAt: investment.paymentDueAt,
       paidWeeks: investment.payments.length,
@@ -370,12 +370,12 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
     const confirmedReferrals = referrals.filter((referral: ReinvestReferral) => Boolean(referral.referredInvestor.investments[0])).length;
     const paymentDate = addDays(investment.createdAt, weekNumber * config.defaultBusinessRules.cycleDays);
 
-    if (paidWeeks >= 12) {
-      throw new Error("Esta inversion ya concluyo sus 12 semanas.");
+    if (paidWeeks >= config.defaultBusinessRules.totalCycleWeeks) {
+      throw new Error(`Esta inversion ya concluyo sus ${config.defaultBusinessRules.totalCycleWeeks} semanas.`);
     }
 
-    if (weekNumber >= 12) {
-      throw new Error("La semana 12 es cierre final y no permite reinversion.");
+    if (weekNumber >= config.defaultBusinessRules.totalCycleWeeks) {
+      throw new Error(`La semana ${config.defaultBusinessRules.totalCycleWeeks} es cierre final y no permite reinversion.`);
     }
 
     if (confirmedReferrals < 2) {
@@ -431,7 +431,7 @@ function getTotalGenerated(input: { principalAmount: number; referrals: Array<{ 
 
 function buildInvestmentWeeks(investment: WeeklyInvestmentInput) {
   const paidWeeks = investment.payments.length;
-  const visibleWeeks = Math.min(12, Math.max(1, paidWeeks + 1));
+  const visibleWeeks = Math.min(config.defaultBusinessRules.totalCycleWeeks, Math.max(1, paidWeeks + 1));
 
   return Array.from({ length: visibleWeeks }, (_, index) => {
     const weekNumber = index + 1;
