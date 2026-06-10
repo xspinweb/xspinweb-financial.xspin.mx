@@ -1735,6 +1735,18 @@ a {
   background: rgba(255, 255, 255, 0.035);
 }
 
+.selectedInvestment > summary {
+  background:
+    linear-gradient(90deg, rgba(53, 224, 161, 0.12), rgba(53, 224, 161, 0.02)),
+    rgba(255, 255, 255, 0.035);
+  box-shadow: inset 3px 0 0 var(--green);
+}
+
+.selectedInvestment > summary::before {
+  background: rgba(53, 224, 161, 0.16);
+  box-shadow: 0 0 18px rgba(53, 224, 161, 0.18);
+}
+
 .investmentItem summary > div {
   min-width: 0;
 }

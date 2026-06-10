@@ -68,6 +68,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [investorCode, setInvestorCode] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedInvestmentId, setSelectedInvestmentId] = useState("");
 
   useEffect(() => {
     void loadPortfolio();
@@ -99,10 +100,13 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
 
     setInvestorCode(portfolio.investor?.code ?? "");
     setInvestments(sortedInvestments);
+    setSelectedInvestmentId((currentId) =>
+      sortedInvestments.some((investment) => investment.id === currentId) ? currentId : sortedInvestments[0]?.id ?? ""
+    );
     setIsLoading(false);
   }
 
-  const primaryInvestment = investments[0];
+  const primaryInvestment = investments.find((investment) => investment.id === selectedInvestmentId) ?? investments[0];
   const primaryWeeks = primaryInvestment?.weeks ?? [];
   const projectedWeeks = buildTwelveWeekProjection(primaryInvestment);
   const projectedBalance = projectedWeeks.at(-1)?.totalGenerated ?? primaryInvestment?.amount ?? 0;
@@ -112,12 +116,9 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
       : 0;
 
   const cards = useMemo(() => {
-    const confirmedReferrals = investments.reduce(
-      (total, investment) => total + investment.referrals.filter((referral) => referral.invested).length,
-      0
-    );
-    const nextPayment = investments[0]?.nextPaymentAt ?? "-";
-    const hasCollectable = investments.some((investment) => investment.referrals.filter((referral) => referral.invested).length >= 2);
+    const confirmedReferrals = primaryInvestment?.referrals.filter((referral) => referral.invested).length ?? 0;
+    const nextPayment = primaryInvestment?.nextPaymentAt ?? "-";
+    const hasCollectable = (primaryInvestment?.referrals.filter((referral) => referral.invested).length ?? 0) >= 2;
 
     return [
       { icon: "chart", label: "Inversiones activas", link: "Ver detalles", value: String(investments.length) },
@@ -125,7 +126,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
       { icon: "calendar", label: "Proximo pago", link: "Ver calendario", value: nextPayment },
       { icon: "wallet", label: "Estatus actual", link: "Ver historial", tone: "warning", value: hasCollectable ? "Por cobrar" : investments.length > 0 ? "Pendiente" : "-" }
     ];
-  }, [investments]);
+  }, [investments.length, primaryInvestment]);
 
   async function handleInvestmentCreated(amount: number) {
     if (!userEmail) {
@@ -234,8 +235,8 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                 const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
 
                 return (
-                  <details className="investmentItem" key={investment.id}>
-                    <summary>
+                  <details className={`investmentItem ${primaryInvestment?.id === investment.id ? "selectedInvestment" : ""}`} key={investment.id}>
+                    <summary onClick={() => setSelectedInvestmentId(investment.id)}>
                       <div className="investmentSummaryMain">
                         <span>{investment.name}</span>
                         <strong>{investment.group}</strong>
