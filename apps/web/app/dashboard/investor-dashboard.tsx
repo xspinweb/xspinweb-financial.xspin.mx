@@ -89,8 +89,16 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
     });
     const portfolio = (await response.json()) as PortfolioResponse;
 
+    const sortedInvestments = portfolio.investments
+      .map(normalizeInvestment)
+      .sort((current, next) => getTime(current.investedAtIso) - getTime(next.investedAtIso))
+      .map((investment, index) => ({
+        ...investment,
+        group: `Grupo ${index + 1}`
+      }));
+
     setInvestorCode(portfolio.investor?.code ?? "");
-    setInvestments(portfolio.investments.map(normalizeInvestment));
+    setInvestments(sortedInvestments);
     setIsLoading(false);
   }
 
@@ -226,7 +234,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                 const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
 
                 return (
-                  <details className="investmentItem" key={investment.id} open>
+                  <details className="investmentItem" key={investment.id}>
                     <summary>
                       <div className="investmentSummaryMain">
                         <span>{investment.name}</span>
@@ -252,7 +260,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                     </summary>
 
                     <div className="referralPanel">
-                      <details className="referralsAccordion" open>
+                      <details className="referralsAccordion">
                         <summary>
                           <strong>Referidos</strong>
                           <span>{investment.referrals.length}</span>
@@ -298,7 +306,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
               </div>
             ) : (
               primaryWeeks.map((week) => (
-                <details className="weekItem" key={`${primaryInvestment?.id}-week-${week.weekNumber}`} open={week.weekNumber === 1}>
+                <details className="weekItem" key={`${primaryInvestment?.id}-week-${week.weekNumber}`}>
                   <summary>
                     <div>
                       <span>Semana</span>
@@ -943,7 +951,9 @@ function normalizeInvestment(investment: Investment): Investment {
       ...referral,
       investedAt: formatDate(new Date(referral.investedAt))
     })),
-    weeks: investment.weeks?.map((week) => normalizeInvestmentWeek(week, investment.paidWeeks ?? 0))
+    weeks: investment.weeks
+      ?.map((week) => normalizeInvestmentWeek(week, investment.paidWeeks ?? 0))
+      .sort((current, next) => current.weekNumber - next.weekNumber)
   };
 }
 
@@ -996,6 +1006,10 @@ function formatChartCurrency(amount: number) {
 
 function roundMoney(amount: number) {
   return Math.round((amount + Number.EPSILON) * 100) / 100;
+}
+
+function getTime(value?: string) {
+  return value ? new Date(value).getTime() : 0;
 }
 
 function formatCompactCurrency(amount: number) {
