@@ -1056,7 +1056,7 @@ a {
 .dashboardGrowthGrid {
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(0, 0.95fr) minmax(420px, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .growthBalanceCard,
@@ -1261,7 +1261,7 @@ a {
 .dashboardMainGrid {
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(0, 0.95fr) minmax(420px, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .weeklyPanel {
@@ -1924,7 +1924,7 @@ a {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   padding: 14px;
 }
 
@@ -2277,6 +2277,10 @@ a {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .weekDetailGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .appWorkspace {
     width: 100%;
   }
@@ -2353,6 +2357,10 @@ a {
   .weekItem summary > div,
   .weekItem summary > .statusPill {
     grid-column: 2;
+  }
+
+  .weekDetailGrid {
+    grid-template-columns: 1fr;
   }
 
   .reinvestmentActions {
