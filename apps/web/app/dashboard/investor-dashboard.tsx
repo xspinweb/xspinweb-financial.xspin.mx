@@ -27,6 +27,11 @@ type InvestmentWeek = {
   weekNumber: number;
 };
 
+type ProjectionWeek = {
+  totalGenerated: number;
+  weekNumber: number;
+};
+
 type Investment = {
   id: string;
   name: string;
@@ -53,6 +58,11 @@ type PortfolioResponse = {
   } | null;
   investments: Investment[];
 };
+
+const projectionWeeks = 12;
+const projectionReinvestRate = 0.82;
+const projectionReferralBonusRate = 0.05;
+const projectionReferralYieldRate = 0.27;
 
 export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProps) {
   const [investments, setInvestments] = useState<Investment[]>([]);
@@ -86,7 +96,8 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
 
   const primaryInvestment = investments[0];
   const primaryWeeks = primaryInvestment?.weeks ?? [];
-  const projectedBalance = primaryWeeks.at(-1)?.totalGenerated ?? primaryInvestment?.amount ?? 0;
+  const projectedWeeks = buildTwelveWeekProjection(primaryInvestment);
+  const projectedBalance = projectedWeeks.at(-1)?.totalGenerated ?? primaryInvestment?.amount ?? 0;
   const projectedReturn =
     primaryInvestment?.amount && projectedBalance > primaryInvestment.amount
       ? Math.round(((projectedBalance - primaryInvestment.amount) / primaryInvestment.amount) * 100)
@@ -154,15 +165,15 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
         <article className="projectionPanel">
           <div className="panelTitle">
             <h2>Proyeccion de crecimiento</h2>
-            <span>{primaryWeeks.length || 0} semanas visibles</span>
+            <span>12 semanas</span>
           </div>
           <div className="projectionContent">
-            <ProjectionChart weeks={primaryWeeks} />
+            <ProjectionChart weeks={projectedWeeks} />
             <div className="projectionList">
-              {primaryWeeks.length === 0 ? (
+              {projectedWeeks.length === 0 ? (
                 <span className="emptyProjection">Sin semanas disponibles</span>
               ) : (
-                primaryWeeks.map((week) => (
+                projectedWeeks.map((week) => (
                   <div key={`projection-${week.weekNumber}`}>
                     <span>Semana {week.weekNumber}</span>
                     <strong>{formatCurrency(week.totalGenerated)}</strong>
@@ -346,6 +357,58 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   );
 }
 
+function buildTwelveWeekProjection(investment?: Investment): ProjectionWeek[] {
+  if (!investment) {
+    return [];
+  }
+
+  const visibleWeeks = investment.weeks ?? [];
+  const weeksByNumber = new Map(visibleWeeks.map((week) => [week.weekNumber, week]));
+  const initialBase = investment.amount || visibleWeeks[0]?.baseAmount || 0;
+  const firstVisibleWeek = visibleWeeks[0];
+  let baseAmount = initialBase;
+  let referralMovement =
+    firstVisibleWeek && firstVisibleWeek.weeklyBonus > 0
+      ? roundMoney(firstVisibleWeek.weeklyBonus / projectionReferralBonusRate)
+      : roundMoney(initialBase * 2);
+
+  return Array.from({ length: projectionWeeks }, (_, index) => {
+    const weekNumber = index + 1;
+    const actualWeek = weeksByNumber.get(weekNumber);
+
+    if (actualWeek) {
+      baseAmount = weekNumber < projectionWeeks ? roundMoney(actualWeek.totalGenerated * projectionReinvestRate) : 0;
+
+      if (actualWeek.weeklyBonus > 0) {
+        referralMovement = roundMoney(actualWeek.weeklyBonus / projectionReferralBonusRate);
+      }
+
+      if (weekNumber < projectionWeeks) {
+        referralMovement = roundMoney(referralMovement * projectionReinvestRate);
+      }
+
+      return {
+        totalGenerated: actualWeek.totalGenerated,
+        weekNumber
+      };
+    }
+
+    const weeklyBonus = roundMoney(referralMovement * projectionReferralBonusRate);
+    const weeklyYield = roundMoney(referralMovement * projectionReferralYieldRate);
+    const totalGenerated = roundMoney(baseAmount + weeklyBonus + weeklyYield);
+
+    if (weekNumber < projectionWeeks) {
+      baseAmount = roundMoney(totalGenerated * projectionReinvestRate);
+      referralMovement = roundMoney(referralMovement * projectionReinvestRate);
+    }
+
+    return {
+      totalGenerated,
+      weekNumber
+    };
+  });
+}
+
 function InviteReferralModal({ investmentId, investorCode }: { investmentId: string; investorCode: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [copiedValue, setCopiedValue] = useState<"link" | "code" | null>(null);
@@ -504,7 +567,7 @@ function getHeroChartValues(weeks: InvestmentWeek[]) {
   return shape.map((progress) => start + (end - start) * progress);
 }
 
-function ProjectionChart({ weeks }: { weeks: InvestmentWeek[] }) {
+function ProjectionChart({ weeks }: { weeks: ProjectionWeek[] }) {
   const width = 520;
   const height = 250;
   const values = getVisualChartValues(weeks);
@@ -567,7 +630,7 @@ function ProjectionChart({ weeks }: { weeks: InvestmentWeek[] }) {
   );
 }
 
-function getVisualChartValues(weeks: InvestmentWeek[]) {
+function getVisualChartValues(weeks: Array<{ totalGenerated: number }>) {
   const values = weeks.map((week) => week.totalGenerated);
 
   if (values.length >= 6) {
@@ -877,6 +940,10 @@ function formatCurrency(amount: number) {
     currency: "MXN",
     style: "currency"
   }).format(amount);
+}
+
+function roundMoney(amount: number) {
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
 }
 
 function formatCompactCurrency(amount: number) {
