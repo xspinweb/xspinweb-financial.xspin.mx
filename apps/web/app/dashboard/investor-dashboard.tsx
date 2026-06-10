@@ -143,7 +143,9 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
           <div>
             <h2>Tu inversion esta creciendo</h2>
             <span>Saldo proyectado</span>
-            <strong>{formatCurrency(projectedBalance)} <small>MXN</small></strong>
+            <strong className="projectedBalanceValue">
+              {formatCurrency(projectedBalance)} <small>MXN</small>
+            </strong>
             <em>+{projectedReturn}% de rendimiento esperado</em>
           </div>
           <GrowthSparkline weeks={primaryWeeks} />
@@ -434,8 +436,9 @@ function InviteReferralModal({ investmentId, investorCode }: { investmentId: str
 function GrowthSparkline({ weeks }: { weeks: InvestmentWeek[] }) {
   const width = 460;
   const height = 210;
-  const points = getChartPoints(weeks, width, height, { bottom: 18, left: 8, right: 18, top: 18 });
-  const path = points.length > 0 ? `M ${points.map((point) => `${point.x} ${point.y}`).join(" L ")}` : "";
+  const values = getVisualChartValues(weeks);
+  const points = getChartPoints(values, width, height, { bottom: 18, left: 8, right: 18, top: 18 });
+  const path = getSmoothPath(points);
   const last = points.at(-1);
   const areaPath = path ? `${path} L ${width - 18} ${height - 18} L 8 ${height - 18} Z` : "";
 
@@ -479,12 +482,11 @@ function GrowthSparkline({ weeks }: { weeks: InvestmentWeek[] }) {
 function ProjectionChart({ weeks }: { weeks: InvestmentWeek[] }) {
   const width = 520;
   const height = 250;
-  const points = getChartPoints(weeks, width, height, { bottom: 42, left: 58, right: 20, top: 24 });
-  const path = points.length > 0 ? `M ${points.map((point) => `${point.x} ${point.y}`).join(" L ")}` : "";
-  const values = weeks.map((week) => week.totalGenerated);
+  const values = getVisualChartValues(weeks);
+  const points = getChartPoints(values, width, height, { bottom: 42, left: 58, right: 20, top: 24 });
+  const path = getSmoothPath(points);
   const maxValue = Math.max(...values, 1);
   const yTicks = Array.from({ length: 6 }).map((_, index) => Math.round((maxValue / 5) * index));
-  const xTicks = weeks.map((week) => week.weekNumber);
   const areaPath = path ? `${path} L ${width - 20} ${height - 42} L 58 ${height - 42} Z` : "";
   const last = points.at(-1);
 
@@ -528,8 +530,8 @@ function ProjectionChart({ weeks }: { weeks: InvestmentWeek[] }) {
       ) : null}
       <g className="projectionAxis">
         {points.map((point, index) => (
-          <text x={point.x} y={height - 16} key={`axis-${xTicks[index]}`} textAnchor="middle">
-            {xTicks[index]}
+          <text x={point.x} y={height - 16} key={`axis-${index}`} textAnchor="middle">
+            {index + 1}
           </text>
         ))}
         <text x={width / 2} y={height - 1} textAnchor="middle">
@@ -540,26 +542,69 @@ function ProjectionChart({ weeks }: { weeks: InvestmentWeek[] }) {
   );
 }
 
+function getVisualChartValues(weeks: InvestmentWeek[]) {
+  const values = weeks.map((week) => week.totalGenerated);
+
+  if (values.length >= 6) {
+    return values;
+  }
+
+  const end = values.at(-1) ?? 0;
+  const start = values[0] ?? end;
+  const visualLength = 6;
+
+  if (end <= 0) {
+    return Array.from({ length: visualLength }, () => 0);
+  }
+
+  const visualStart = values.length <= 1 ? end * 0.42 : start;
+
+  return Array.from({ length: visualLength }, (_, index) => {
+    const progress = index / (visualLength - 1);
+    const eased = progress * progress * (3 - 2 * progress);
+    return visualStart + (end - visualStart) * eased;
+  });
+}
+
 function getChartPoints(
-  weeks: InvestmentWeek[],
+  values: number[],
   width: number,
   height: number,
   padding: { bottom: number; left: number; right: number; top: number }
 ) {
-  if (weeks.length === 0) {
+  if (values.length === 0) {
     return [];
   }
 
-  const values = weeks.map((week) => week.totalGenerated);
   const min = Math.min(0, ...values);
   const max = Math.max(...values, 1);
   const usableWidth = width - padding.left - padding.right;
   const usableHeight = height - padding.top - padding.bottom;
 
   return values.map((value, index) => ({
-    x: padding.left + (weeks.length === 1 ? usableWidth : (index / (weeks.length - 1)) * usableWidth),
+    x: padding.left + (values.length === 1 ? usableWidth : (index / (values.length - 1)) * usableWidth),
     y: padding.top + usableHeight - ((value - min) / (max - min || 1)) * usableHeight
   }));
+}
+
+function getSmoothPath(points: Array<{ x: number; y: number }>) {
+  if (points.length === 0) {
+    return "";
+  }
+
+  if (points.length === 1) {
+    return `M ${points[0].x} ${points[0].y}`;
+  }
+
+  return points.reduce((path, point, index) => {
+    if (index === 0) {
+      return `M ${point.x} ${point.y}`;
+    }
+
+    const previous = points[index - 1];
+    const controlX = (previous.x + point.x) / 2;
+    return `${path} C ${controlX} ${previous.y}, ${controlX} ${point.y}, ${point.x} ${point.y}`;
+  }, "");
 }
 
 function MetricIcon({ name }: { name: string }) {
