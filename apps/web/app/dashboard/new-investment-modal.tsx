@@ -1,9 +1,11 @@
 "use client";
 
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, type FormEvent, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 const minInvestment = 20;
 const maxInvestment = 2000;
+const investmentStep = 10;
 
 type NewInvestmentModalProps = {
   onInvestmentCreated: (amount: number) => Promise<void>;
@@ -11,16 +13,33 @@ type NewInvestmentModalProps = {
 
 export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(minInvestment);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
 
-  const numericAmount = useMemo(() => Number(amount), [amount]);
-  const hasAmount = amount.trim().length > 0;
-  const hasValidAmount = hasAmount && numericAmount >= minInvestment && numericAmount <= maxInvestment;
-  const showAmountError = hasAmount && !hasValidAmount;
+  const amountProgress = useMemo(() => ((amount - minInvestment) / (maxInvestment - minInvestment)) * 100, [amount]);
+  const hasValidAmount = amount >= minInvestment && amount <= maxInvestment;
+  const showAmountError = !hasValidAmount;
   const canSubmit = hasValidAmount && acceptedTerms && !isSubmitting;
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -43,7 +62,7 @@ export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalPr
 
   function closeModal() {
     setIsOpen(false);
-    setAmount("");
+    setAmount(minInvestment);
     setAcceptedTerms(false);
     setIsSubmitting(false);
     setSubmitError("");
@@ -59,7 +78,7 @@ export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalPr
     try {
       setIsSubmitting(true);
       setSubmitError("");
-      await onInvestmentCreated(numericAmount);
+      await onInvestmentCreated(amount);
       closeModal();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "No se pudo registrar la inversion. Intenta nuevamente.");
@@ -67,14 +86,7 @@ export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalPr
     }
   }
 
-  return (
-    <>
-      <button className="headerIconAction" type="button" aria-label="Nueva inversion" title="Nueva inversion" onClick={openModal}>
-        <InvestIcon />
-        <span>Nueva inversion</span>
-      </button>
-
-      {isOpen ? (
+  const modal = isOpen ? (
         <div className="modalOverlay" role="presentation">
           <section className="investmentModal" role="dialog" aria-modal="true" aria-labelledby="new-investment-title">
             <form onSubmit={handleSubmit}>
@@ -90,19 +102,25 @@ export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalPr
 
               <label className="amountField">
                 <span>Cantidad a invertir</span>
-                <div>
-                  <span>$</span>
-                  <input
-                    inputMode="decimal"
-                    min={minInvestment}
-                    max={maxInvestment}
-                    name="amount"
-                    onChange={(event) => setAmount(event.target.value)}
-                    placeholder="20 - 2000"
-                    type="number"
-                    value={amount}
-                  />
+                <div className="amountPreview">
+                  <strong>{formatMoney(amount)}</strong>
                   <span>MXN</span>
+                </div>
+                <input
+                  aria-label="Cantidad a invertir"
+                  className="amountSlider"
+                  max={maxInvestment}
+                  min={minInvestment}
+                  name="amount"
+                  onChange={(event) => setAmount(Number(event.target.value))}
+                  step={investmentStep}
+                  style={{ "--amount-progress": `${amountProgress}%` } as CSSProperties}
+                  type="range"
+                  value={amount}
+                />
+                <div className="amountRangeLabels">
+                  <span>{formatMoney(minInvestment)}</span>
+                  <span>{formatMoney(maxInvestment)}</span>
                 </div>
               </label>
 
@@ -125,9 +143,27 @@ export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalPr
             </form>
           </section>
         </div>
-      ) : null}
+  ) : null;
+
+  return (
+    <>
+      <button className="headerIconAction" type="button" aria-label="Nueva inversion" title="Nueva inversion" onClick={openModal}>
+        <InvestIcon />
+        <span>Nueva inversion</span>
+      </button>
+
+      {isMounted && modal ? createPortal(modal, document.body) : null}
     </>
   );
+}
+
+function formatMoney(value: number) {
+  return new Intl.NumberFormat("es-MX", {
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+    style: "currency",
+    currency: "MXN"
+  }).format(value);
 }
 
 function InvestIcon() {
