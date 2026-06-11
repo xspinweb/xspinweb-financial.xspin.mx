@@ -2662,18 +2662,21 @@ a {
   }
 
   .appHeader img:first-child {
-    width: 92px;
+    width: 78px;
   }
 
   .userAvatar,
   .userFallback {
-    height: 32px;
-    width: 32px;
+    flex: 0 0 28px;
+    height: 28px !important;
+    max-height: 28px;
+    max-width: 28px;
+    width: 28px !important;
   }
 
   .menuChevron {
-    height: 22px;
-    width: 22px;
+    height: 20px;
+    width: 20px;
   }
 
   .dashboardGrowthGrid {
@@ -2705,11 +2708,11 @@ a {
   }
 
   .growthSparkline {
-    bottom: -12px;
-    height: 190px;
-    opacity: 0.68;
-    right: -96px;
-    width: 118%;
+    bottom: 10px;
+    height: 150px;
+    opacity: 0.72;
+    right: 8px;
+    width: min(72%, 320px);
   }
 
   .projectionPanel {
