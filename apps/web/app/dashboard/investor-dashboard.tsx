@@ -121,10 +121,10 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
     const hasCollectable = (primaryInvestment?.referrals.filter((referral) => referral.invested).length ?? 0) >= 2;
 
     return [
-      { icon: "chart", label: "Inversiones activas", link: "Ver detalles", value: String(investments.length) },
-      { icon: "users", label: "Referidos confirmados", link: "Ver referidos", value: String(confirmedReferrals) },
-      { icon: "calendar", label: "Proximo pago", link: "Ver calendario", value: nextPayment },
-      { icon: "wallet", label: "Estatus actual", link: "Ver historial", tone: "warning", value: hasCollectable ? "Por cobrar" : investments.length > 0 ? "Pendiente" : "-" }
+      { icon: "chart", label: "Inversiones activas", value: String(investments.length) },
+      { icon: "users", label: "Referidos confirmados", value: String(confirmedReferrals) },
+      { icon: "calendar", label: "Proximo pago", value: nextPayment },
+      { icon: "wallet", label: "Estatus actual", tone: "warning", value: hasCollectable ? "Por cobrar" : investments.length > 0 ? "Pendiente" : "-" }
     ];
   }, [investments.length, primaryInvestment]);
 
@@ -204,7 +204,6 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
             <div>
               <span>{card.label}</span>
               <strong>{card.value}</strong>
-              <small>{card.link} &rarr;</small>
             </div>
           </article>
         ))}
