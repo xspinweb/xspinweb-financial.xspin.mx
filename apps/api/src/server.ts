@@ -295,14 +295,16 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
       }
     });
 
-    if (input.referredByCode && input.sourceInvestmentId) {
+    const referralTarget = parseReferralTarget(input.referredByCode, input.sourceInvestmentId);
+
+    if (referralTarget.referredByCode && referralTarget.sourceInvestmentId) {
       const referrer = await tx.investor.findUnique({
-        where: { investorCode: input.referredByCode }
+        where: { investorCode: referralTarget.referredByCode }
       });
       const sourceInvestment = referrer
         ? await tx.investment.findFirst({
             where: {
-              id: input.sourceInvestmentId,
+              id: referralTarget.sourceInvestmentId,
               investorId: referrer.id
             }
           })
@@ -538,6 +540,19 @@ async function createUniqueInvestorCode(tx: Prisma.TransactionClient) {
   }
 
   throw new Error("No se pudo generar un codigo unico de inversionista");
+}
+
+function parseReferralTarget(referredByCode?: string, sourceInvestmentId?: string) {
+  if (!referredByCode) {
+    return { referredByCode, sourceInvestmentId };
+  }
+
+  const [investorCode, embeddedInvestmentId] = referredByCode.split(/-(.+)/);
+
+  return {
+    referredByCode: investorCode,
+    sourceInvestmentId: sourceInvestmentId ?? embeddedInvestmentId
+  };
 }
 
 async function readJson(req: IncomingMessage) {

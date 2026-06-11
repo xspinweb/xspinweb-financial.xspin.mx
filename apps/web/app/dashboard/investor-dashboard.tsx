@@ -134,13 +134,14 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
     }
 
     const params = new URLSearchParams(window.location.search);
+    const referralTarget = parseReferralTarget(params);
     const response = await fetch("/api/investments", {
       body: JSON.stringify({
         amount,
         email: userEmail,
         fullName: userName,
-        referredByCode: params.get("ref") ?? undefined,
-        sourceInvestmentId: params.get("inv") ?? undefined
+        referredByCode: referralTarget.referredByCode,
+        sourceInvestmentId: referralTarget.sourceInvestmentId
       }),
       headers: {
         "Content-Type": "application/json"
@@ -444,8 +445,8 @@ function InviteReferralModal({ investmentId, investorCode }: { investmentId: str
   const [isOpen, setIsOpen] = useState(false);
   const [copiedValue, setCopiedValue] = useState<"link" | "code" | null>(null);
   const [origin, setOrigin] = useState("");
-  const referralCode = investorCode || "PENDIENTE";
-  const referralLink = `${origin || "https://pay.xspin.mx"}/dashboard?ref=${referralCode}&inv=${investmentId}`;
+  const referralCode = investorCode ? `${investorCode}-${investmentId}` : "PENDIENTE";
+  const referralLink = `${origin || "https://pay.xspin.mx"}/dashboard?ref=${encodeURIComponent(referralCode)}&inv=${investmentId}`;
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -525,6 +526,22 @@ function InviteReferralModal({ investmentId, investorCode }: { investmentId: str
       ) : null}
     </>
   );
+}
+
+function parseReferralTarget(params: URLSearchParams) {
+  const rawCode = params.get("ref") ?? undefined;
+  const explicitInvestmentId = params.get("inv") ?? undefined;
+
+  if (!rawCode) {
+    return { referredByCode: undefined, sourceInvestmentId: explicitInvestmentId };
+  }
+
+  const [referredByCode, embeddedInvestmentId] = rawCode.split(/-(.+)/);
+
+  return {
+    referredByCode,
+    sourceInvestmentId: explicitInvestmentId ?? embeddedInvestmentId
+  };
 }
 
 function GrowthSparkline({ weeks }: { weeks: ProjectionWeek[] }) {
