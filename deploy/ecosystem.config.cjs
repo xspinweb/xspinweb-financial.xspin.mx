@@ -23,7 +23,8 @@ module.exports = {
         NODE_ENV: "production",
         API_PORT: process.env.API_PORT || "5101",
         DATABASE_URL: process.env.DATABASE_URL,
-        JWT_SECRET: process.env.JWT_SECRET
+        JWT_SECRET: process.env.JWT_SECRET,
+        STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY
       }
     },
     {

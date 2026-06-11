@@ -13,6 +13,10 @@ const createInvestmentSchema = z.object({
   sourceInvestmentId: z.string().optional()
 });
 
+const checkoutConfirmSchema = z.object({
+  sessionId: z.string().min(1)
+});
+
 const reinvestSchema = z.object({
   reinvestPercent: z.number().min(82).max(100),
   weekNumber: z.number().int().min(1).max(config.defaultBusinessRules.totalCycleWeeks).optional()
@@ -81,6 +85,14 @@ type ReinvestReferral = {
   };
 };
 
+type StripeCheckoutSession = {
+  id: string;
+  metadata?: Record<string, string | undefined>;
+  payment_status?: string;
+  status?: string;
+  url?: string;
+};
+
 const server = createServer(async (req, res) => {
   try {
     await handleRequest(req, res);
@@ -143,6 +155,20 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   if (req.method === "POST" && url.pathname === "/investments") {
     const input = createInvestmentSchema.parse(await readJson(req));
     const result = await createInvestment(input);
+    sendJson(res, 201, result);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/checkout/investment") {
+    const input = createInvestmentSchema.parse(await readJson(req));
+    const result = await createStripeInvestmentCheckout(input);
+    sendJson(res, 201, result);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/checkout/confirm") {
+    const input = checkoutConfirmSchema.parse(await readJson(req));
+    const result = await confirmStripeInvestmentCheckout(input.sessionId);
     sendJson(res, 201, result);
     return;
   }
@@ -324,6 +350,96 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
 
     return { investor, investment };
   });
+}
+
+async function createStripeInvestmentCheckout(input: z.infer<typeof createInvestmentSchema>) {
+  if (!config.stripeSecretKey) {
+    throw new Error("Stripe no esta configurado en el servidor.");
+  }
+
+  const session = await stripeRequest<StripeCheckoutSession>("checkout/sessions", {
+    "mode": "payment",
+    "payment_method_types[0]": "card",
+    "customer_email": input.email,
+    "success_url": `${config.appUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+    "cancel_url": `${config.appUrl}/dashboard?checkout=cancelled`,
+    "line_items[0][quantity]": "1",
+    "line_items[0][price_data][currency]": "mxn",
+    "line_items[0][price_data][unit_amount]": String(Math.round(input.amount * 100)),
+    "line_items[0][price_data][product_data][name]": "Inversion Pay Financial",
+    "line_items[0][price_data][product_data][description]": "Registro de inversion en modo pruebas",
+    "metadata[amount]": String(input.amount),
+    "metadata[email]": input.email,
+    "metadata[fullName]": input.fullName ?? "",
+    "metadata[referredByCode]": input.referredByCode ?? "",
+    "metadata[sourceInvestmentId]": input.sourceInvestmentId ?? ""
+  });
+
+  if (!session.url) {
+    throw new Error("Stripe no regreso una URL de pago.");
+  }
+
+  return {
+    sessionId: session.id,
+    url: session.url
+  };
+}
+
+async function confirmStripeInvestmentCheckout(sessionId: string) {
+  if (!config.stripeSecretKey) {
+    throw new Error("Stripe no esta configurado en el servidor.");
+  }
+
+  const existingPayment = await prisma.payment.findFirst({
+    where: {
+      notes: {
+        contains: getStripePaymentNote(sessionId)
+      }
+    },
+    select: {
+      investmentId: true
+    }
+  });
+
+  if (existingPayment) {
+    return {
+      alreadyProcessed: true,
+      investmentId: existingPayment.investmentId
+    };
+  }
+
+  const session = await stripeRequest<StripeCheckoutSession>(`checkout/sessions/${encodeURIComponent(sessionId)}`, undefined, "GET");
+
+  if (session.payment_status !== "paid" && session.status !== "complete") {
+    throw new Error("El pago aun no esta confirmado por Stripe.");
+  }
+
+  const metadata = session.metadata ?? {};
+  const amount = Number(metadata.amount);
+
+  const input = createInvestmentSchema.parse({
+    amount,
+    email: metadata.email,
+    fullName: metadata.fullName || undefined,
+    referredByCode: metadata.referredByCode || undefined,
+    sourceInvestmentId: metadata.sourceInvestmentId || undefined
+  });
+  const result = await createInvestment(input);
+
+  await prisma.payment.create({
+    data: {
+      investorId: result.investor.id,
+      groupId: result.investment.groupId,
+      amount: input.amount,
+      paymentType: "ADJUSTMENT",
+      notes: `${getStripePaymentNote(sessionId)} inversion confirmada`
+    }
+  });
+
+  return {
+    alreadyProcessed: false,
+    investmentId: result.investment.id
+  };
 }
 
 async function reinvestInvestment(investmentId: string, input: z.infer<typeof reinvestSchema>) {
@@ -553,6 +669,33 @@ function parseReferralTarget(referredByCode?: string, sourceInvestmentId?: strin
     referredByCode: investorCode,
     sourceInvestmentId: sourceInvestmentId ?? embeddedInvestmentId
   };
+}
+
+function getStripePaymentNote(sessionId: string) {
+  return `stripe_checkout_session:${sessionId}`;
+}
+
+async function stripeRequest<T>(path: string, payload?: Record<string, string>, method: "GET" | "POST" = "POST") {
+  const response = await fetch(`https://api.stripe.com/v1/${path}`, {
+    body: method === "POST" ? new URLSearchParams(payload) : undefined,
+    headers: {
+      Authorization: `Bearer ${config.stripeSecretKey}`,
+      ...(method === "POST" ? { "Content-Type": "application/x-www-form-urlencoded" } : {})
+    },
+    method
+  });
+
+  const data = (await response.json().catch(() => null)) as (T & { error?: { message?: string } }) | null;
+
+  if (!response.ok) {
+    throw new Error(data?.error?.message ?? "Stripe no pudo procesar la solicitud.");
+  }
+
+  if (!data) {
+    throw new Error("Stripe regreso una respuesta vacia.");
+  }
+
+  return data;
 }
 
 async function readJson(req: IncomingMessage) {

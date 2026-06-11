@@ -79,6 +79,10 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
     return () => window.clearInterval(interval);
   }, [userEmail]);
 
+  useEffect(() => {
+    void confirmCheckoutFromUrl();
+  }, [userEmail]);
+
   async function loadPortfolio() {
     if (!userEmail) {
       setIsLoading(false);
@@ -135,7 +139,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
 
     const params = new URLSearchParams(window.location.search);
     const referralTarget = parseReferralTarget(params);
-    const response = await fetch("/api/investments", {
+    const response = await fetch("/api/checkout/investment", {
       body: JSON.stringify({
         amount,
         email: userEmail,
@@ -154,7 +158,40 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
       throw new Error(message);
     }
 
-    await loadPortfolio();
+    const checkout = (await response.json()) as { url?: string };
+
+    if (!checkout.url) {
+      throw new Error("No se pudo generar la liga de pago.");
+    }
+
+    window.location.assign(checkout.url);
+  }
+
+  async function confirmCheckoutFromUrl() {
+    if (!userEmail) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+
+    if (params.get("checkout") !== "success" || !sessionId) {
+      return;
+    }
+
+    const response = await fetch("/api/checkout/confirm", {
+      body: JSON.stringify({ sessionId }),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "POST"
+    });
+
+    if (response.ok) {
+      await loadPortfolio();
+    }
+
+    window.history.replaceState({}, "", window.location.pathname);
   }
 
   return (
