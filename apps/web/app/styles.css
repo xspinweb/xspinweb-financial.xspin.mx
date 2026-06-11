@@ -1920,6 +1920,12 @@ a {
   color: var(--green);
 }
 
+.investmentOptions,
+.mobileCycleProgress,
+.mobileInvestmentStats {
+  display: none;
+}
+
 .statusPill {
   justify-self: end;
   border-radius: 999px;
@@ -2832,6 +2838,214 @@ a {
   .investmentItem summary > .inviteReferralAction {
     justify-self: start;
     margin-top: 8px;
+  }
+
+  .investmentList {
+    gap: 14px;
+    padding: 0 16px 16px;
+  }
+
+  .investmentItem {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at 14% 12%, rgba(53, 224, 161, 0.1), transparent 26%),
+      linear-gradient(145deg, rgba(18, 31, 44, 0.88), rgba(7, 15, 24, 0.92));
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+  }
+
+  .investmentItem summary {
+    grid-template-columns: 72px minmax(0, 1fr) 24px;
+    padding: 22px 20px;
+  }
+
+  .investmentItem summary::before {
+    align-self: start;
+    content: "$";
+    font-size: 34px;
+    grid-column: 1;
+    grid-row: 1;
+    height: 64px;
+    width: 64px;
+    background: rgba(53, 224, 161, 0.13);
+    border: 1px solid rgba(53, 224, 161, 0.18);
+    box-shadow: 0 0 26px rgba(53, 224, 161, 0.16);
+  }
+
+  .investmentItem[open] summary::before {
+    content: "$";
+  }
+
+  .investmentItem summary:hover,
+  .investmentItem[open] > summary,
+  .selectedInvestment > summary {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .selectedInvestment {
+    border-color: rgba(53, 224, 161, 0.26);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28), 0 0 28px rgba(53, 224, 161, 0.08);
+  }
+
+  .investmentSummaryMain {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .investmentSummaryMain span {
+    color: var(--muted);
+    font-size: 16px;
+    margin-top: 4px;
+    order: 2;
+  }
+
+  .investmentSummaryMain strong {
+    color: var(--ink);
+    font-size: 22px !important;
+    line-height: 1.1;
+    order: 1;
+  }
+
+  .investmentOptions {
+    align-self: center;
+    color: var(--muted);
+    display: block;
+    font-size: 24px;
+    font-weight: 900;
+    grid-column: 3;
+    grid-row: 1;
+    letter-spacing: 2px;
+    line-height: 1;
+    transform: rotate(90deg);
+  }
+
+  .investmentCycleCell,
+  .investmentDateCell,
+  .investmentReferralCell,
+  .investmentPaymentCell {
+    display: none !important;
+  }
+
+  .mobileCycleProgress {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: grid !important;
+    grid-column: 1 / -1 !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    margin-top: 18px;
+    padding-top: 18px;
+  }
+
+  .mobileCycleProgress > span {
+    color: var(--muted);
+    font-size: 15px;
+    grid-column: 1 / -1;
+  }
+
+  .mobileCycleProgress strong {
+    color: var(--ink);
+    font-size: 20px !important;
+    grid-column: 1 / -1;
+  }
+
+  .mobileCycleProgress em {
+    color: var(--green);
+    font-style: normal;
+  }
+
+  .cycleSegments {
+    align-items: center;
+    display: grid;
+    gap: 3px;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+
+  .cycleSegments span {
+    height: 11px;
+    border-radius: 999px;
+    background: rgba(159, 178, 196, 0.13);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.32);
+  }
+
+  .cycleSegments span.active {
+    background: linear-gradient(90deg, var(--green), var(--cyan));
+    box-shadow: 0 0 18px rgba(53, 224, 161, 0.24);
+  }
+
+  .mobileCycleProgress b {
+    align-self: center;
+    color: var(--green);
+    font-size: 18px;
+  }
+
+  .mobileInvestmentStats {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: grid !important;
+    grid-column: 1 / -1 !important;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 14px;
+    padding-top: 14px;
+  }
+
+  .mobileInvestmentStats > div {
+    align-items: center;
+    display: grid;
+    gap: 4px 12px;
+    grid-template-columns: 46px minmax(0, 1fr);
+    padding: 0 8px;
+  }
+
+  .mobileInvestmentStats > div + div {
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    padding-left: 18px;
+  }
+
+  .mobileInvestmentStats svg {
+    grid-row: span 2;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(53, 224, 161, 0.12);
+    fill: var(--green);
+    padding: 10px;
+  }
+
+  .mobileInvestmentStats span {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .mobileInvestmentStats strong {
+    color: var(--ink);
+    font-size: 16px !important;
+  }
+
+  .investmentItem summary > .inviteReferralAction {
+    align-items: center;
+    border: 1px solid rgba(53, 224, 161, 0.45);
+    border-radius: 14px;
+    display: flex;
+    grid-column: 1 / -1;
+    justify-content: center;
+    margin-top: 18px;
+    min-height: 58px;
+    width: 100%;
+  }
+
+  .investmentItem summary > .inviteReferralAction svg {
+    height: 27px;
+    width: 27px;
+  }
+
+  .investmentItem summary > .inviteReferralAction span {
+    font-size: 0;
+  }
+
+  .investmentItem summary > .inviteReferralAction span::after {
+    content: "Invitar amigos";
+    font-size: 17px;
   }
 
   .weekList {

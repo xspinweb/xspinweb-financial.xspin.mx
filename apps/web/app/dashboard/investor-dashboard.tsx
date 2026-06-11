@@ -274,6 +274,8 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                 const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
                 const currentWeek = getCurrentInvestmentWeek(investment);
                 const nextPaymentLabel = currentWeek?.paymentLabel ?? investment.nextPaymentAt;
+                const currentWeekNumber = currentWeek?.weekNumber ?? 1;
+                const cycleProgress = Math.round((currentWeekNumber / projectionWeeks) * 100);
 
                 return (
                   <details className={`investmentItem ${primaryInvestment?.id === investment.id ? "selectedInvestment" : ""}`} key={investment.id}>
@@ -282,21 +284,44 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                         <span>{investment.name}</span>
                         <strong>{investment.group}</strong>
                       </div>
-                      <div>
+                      <span className="investmentOptions" aria-hidden="true">...</span>
+                      <div className="investmentCycleCell">
                         <span>Ciclo</span>
                         <strong>{investment.cycle}</strong>
                       </div>
-                      <div>
+                      <div className="investmentDateCell">
                         <span>Fecha</span>
                         <strong>{investment.investedAt}</strong>
                       </div>
-                      <div>
+                      <div className="investmentReferralCell">
                         <span>Referidos</span>
                         <strong>{confirmedReferrals}</strong>
                       </div>
-                      <div>
+                      <div className="investmentPaymentCell">
                         <span>Proximo pago</span>
                         <strong>{nextPaymentLabel}</strong>
+                      </div>
+                      <div className="mobileCycleProgress">
+                        <span>Progreso del ciclo</span>
+                        <strong>Semana <em>{currentWeekNumber}</em> de {projectionWeeks}</strong>
+                        <div className="cycleSegments" aria-hidden="true">
+                          {Array.from({ length: projectionWeeks }, (_, index) => (
+                            <span className={index < currentWeekNumber ? "active" : ""} key={`${investment.id}-segment-${index}`} />
+                          ))}
+                        </div>
+                        <b>{cycleProgress}%</b>
+                      </div>
+                      <div className="mobileInvestmentStats">
+                        <div>
+                          <CalendarIcon />
+                          <span>Proximo pago</span>
+                          <strong>{nextPaymentLabel}</strong>
+                        </div>
+                        <div>
+                          <InviteIcon />
+                          <span>Referidos</span>
+                          <strong>{confirmedReferrals} confirmados</strong>
+                        </div>
                       </div>
                       <InviteReferralModal investmentId={investment.id} investorCode={investorCode} />
                     </summary>
