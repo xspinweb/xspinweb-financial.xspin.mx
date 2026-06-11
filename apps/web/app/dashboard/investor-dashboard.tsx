@@ -122,7 +122,8 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   const cards = useMemo(() => {
     const confirmedReferrals = primaryInvestment?.referrals.filter((referral) => referral.invested).length ?? 0;
     const nextPayment = primaryInvestment?.nextPaymentAt ?? "-";
-    const hasCollectable = (primaryInvestment?.referrals.filter((referral) => referral.invested).length ?? 0) >= 2;
+    const nextPaymentDate = primaryInvestment?.nextPaymentAtIso ? new Date(primaryInvestment.nextPaymentAtIso) : null;
+    const hasCollectable = confirmedReferrals >= 2 && Boolean(nextPaymentDate && new Date() >= nextPaymentDate);
 
     return [
       { icon: "chart", label: "Inversiones activas", value: String(investments.length) },
@@ -1086,7 +1087,6 @@ function normalizeInvestmentWeek(week: InvestmentWeek, paidWeeks: number): Inves
   const paymentDate = new Date(week.paymentAt);
   const today = new Date();
   const isPaid = week.weekNumber <= paidWeeks;
-  const isCurrent = today >= startDate && today < paymentDate;
   const isComplete = today >= paymentDate;
   const canReinvest = week.weekNumber < projectionWeeks && week.canCollect && isComplete && !isPaid;
 
@@ -1095,8 +1095,8 @@ function normalizeInvestmentWeek(week: InvestmentWeek, paidWeeks: number): Inves
     canReinvest,
     paymentLabel: formatDate(paymentDate),
     startLabel: formatDate(startDate),
-    statusClass: isPaid ? "statusGreen" : canReinvest ? "statusGreen" : isCurrent ? "statusYellow" : isComplete ? "statusRed" : "statusMuted",
-    statusLabel: isPaid ? "Cobrada" : canReinvest ? "Por cobrar" : isCurrent ? "En curso" : isComplete ? "Pendiente" : "Programada"
+    statusClass: isPaid ? "statusGreen" : canReinvest ? "statusYellow" : "statusRed",
+    statusLabel: isPaid ? "Cobrada" : canReinvest ? "Por cobrar" : "Pendiente"
   };
 }
 
