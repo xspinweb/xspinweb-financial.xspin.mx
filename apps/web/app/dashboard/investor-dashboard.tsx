@@ -553,7 +553,7 @@ function GrowthSparkline({ weeks }: { weeks: ProjectionWeek[] }) {
   const last = points.at(-1);
   const areaPath = path ? `${path} L ${width - padding.right} ${height - padding.bottom} L ${padding.left} ${height - padding.bottom} Z` : "";
   const calloutLabel = formatChartCurrency(weeks.at(-1)?.totalGenerated ?? 0);
-  const growthCallout = last ? getChartCallout(last, calloutLabel, width, height, { right: 10, top: 8 }, 54) : null;
+  const growthCallout = last ? getChartCallout(last, calloutLabel, width, height, { right: 10, top: 8 }, 74, -34) : null;
 
   return (
     <svg className="growthSparkline" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
@@ -732,10 +732,11 @@ function getChartCallout(
   width: number,
   height: number,
   padding: { right: number; top: number },
-  verticalOffset = 42
+  verticalOffset = 42,
+  horizontalOffset = 0
 ) {
   const labelWidth = Math.max(76, label.length * 7.4 + 20);
-  const x = clamp(point.x, labelWidth / 2 + 8, width - labelWidth / 2 - padding.right);
+  const x = clamp(point.x + horizontalOffset, labelWidth / 2 + 8, width - labelWidth / 2 - padding.right);
   const y = clamp(point.y - verticalOffset, padding.top, height - 34);
 
   return { width: labelWidth, x, y };
