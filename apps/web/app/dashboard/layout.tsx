@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { getAppRole, getNavItems } from "../../lib/access";
 import { authOptions } from "../../lib/auth";
+import { UserMenu } from "./user-menu";
 
 function NavIcon({ name }: { name: string }) {
   if (name === "home") {
@@ -86,23 +87,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <section className="appWorkspace">
         <header className="appHeader">
           <Image src="/logos/xspin-logo.svg" alt="Xspin" width={116} height={32} priority />
-          <div className="userBox">
-            {avatar ? (
-              <img
-                src={avatar}
-                alt=""
-                width={38}
-                height={38}
-                className="userAvatar"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <span className="userFallback">{userName.charAt(0)}</span>
-            )}
-            <div>
-              <strong>{userName}</strong>
-            </div>
-          </div>
+          <UserMenu avatar={avatar} userName={userName} />
         </header>
         {children}
       </section>

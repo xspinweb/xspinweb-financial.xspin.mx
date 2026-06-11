@@ -872,12 +872,6 @@ a {
   display: block;
 }
 
-.userBox {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .userAvatar,
 .userFallback {
   border-radius: 50%;
@@ -896,6 +890,90 @@ a {
   background: rgba(53, 224, 161, 0.13);
   color: var(--green);
   font-weight: 900;
+}
+
+.userMenu {
+  position: relative;
+}
+
+.userMenuTrigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.userMenuTrigger strong {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.menuChevron {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  fill: var(--muted);
+  padding: 4px;
+  transition: background 180ms ease, fill 180ms ease, transform 180ms ease;
+}
+
+.userMenuTrigger:hover .menuChevron,
+.menuChevron.open {
+  background: rgba(53, 224, 161, 0.14);
+  fill: var(--green);
+}
+
+.menuChevron.open {
+  transform: rotate(180deg);
+}
+
+.userDropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 40;
+  min-width: 190px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(8, 17, 28, 0.94);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.45);
+  padding: 8px;
+}
+
+.userDropdown a,
+.userDropdown button {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+  padding: 0 12px;
+  text-align: left;
+  text-decoration: none;
+}
+
+.userDropdown a:hover,
+.userDropdown button:hover {
+  background: rgba(53, 224, 161, 0.12);
+  color: var(--green);
 }
 
 .roleBadge {
@@ -2461,11 +2539,6 @@ a {
     justify-content: flex-start;
   }
 
-  .userBox {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-
   .dashboardContent {
     padding: 84px 16px 16px;
   }
@@ -2489,13 +2562,12 @@ a {
     height: auto;
   }
 
-  .userBox {
+  .userMenu {
     gap: 8px;
     justify-content: flex-start;
-    width: 100%;
   }
 
-  .userBox div {
+  .userMenuTrigger strong {
     display: none;
   }
 
