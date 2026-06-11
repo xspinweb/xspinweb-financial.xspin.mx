@@ -2662,21 +2662,21 @@ a {
   }
 
   .appHeader img:first-child {
-    width: 78px;
+    width: 92px;
   }
 
   .userAvatar,
   .userFallback {
-    flex: 0 0 28px;
-    height: 28px !important;
-    max-height: 28px;
-    max-width: 28px;
-    width: 28px !important;
+    flex: 0 0 34px;
+    height: 34px !important;
+    max-height: 34px;
+    max-width: 34px;
+    width: 34px !important;
   }
 
   .menuChevron {
-    height: 20px;
-    width: 20px;
+    height: 24px;
+    width: 24px;
   }
 
   .dashboardGrowthGrid {
