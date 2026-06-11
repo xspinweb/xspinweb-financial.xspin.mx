@@ -121,9 +121,9 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
 
   const cards = useMemo(() => {
     const confirmedReferrals = primaryInvestment?.referrals.filter((referral) => referral.invested).length ?? 0;
-    const nextOpenWeek = primaryWeeks.find((week) => week.statusLabel !== "Cobrada");
-    const nextPayment = nextOpenWeek?.paymentLabel ?? primaryInvestment?.nextPaymentAt ?? "-";
-    const currentStatus = nextOpenWeek?.statusLabel ?? (primaryInvestment ? "Cobrada" : "-");
+    const currentWeek = getCurrentInvestmentWeek(primaryInvestment);
+    const nextPayment = currentWeek?.paymentLabel ?? primaryInvestment?.nextPaymentAt ?? "-";
+    const currentStatus = currentWeek?.statusLabel ?? (primaryInvestment ? "Cobrada" : "-");
     const currentTone = currentStatus === "Cobrada" ? "success" : currentStatus === "Por cobrar" ? "warning" : currentStatus === "Pendiente" ? "danger" : undefined;
 
     return [
@@ -272,6 +272,8 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
             <div className="investmentList">
               {investments.map((investment) => {
                 const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
+                const currentWeek = getCurrentInvestmentWeek(investment);
+                const nextPaymentLabel = currentWeek?.paymentLabel ?? investment.nextPaymentAt;
 
                 return (
                   <details className={`investmentItem ${primaryInvestment?.id === investment.id ? "selectedInvestment" : ""}`} key={investment.id}>
@@ -294,7 +296,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                       </div>
                       <div>
                         <span>Proximo pago</span>
-                        <strong>{investment.nextPaymentAt}</strong>
+                        <strong>{nextPaymentLabel}</strong>
                       </div>
                       <InviteReferralModal investmentId={investment.id} investorCode={investorCode} />
                     </summary>
@@ -741,6 +743,10 @@ function getVisualChartValues(weeks: Array<{ totalGenerated: number }>) {
     const eased = progress * progress * (3 - 2 * progress);
     return visualStart + (end - visualStart) * eased;
   });
+}
+
+function getCurrentInvestmentWeek(investment?: Investment) {
+  return investment?.weeks?.find((week) => week.statusLabel !== "Cobrada") ?? investment?.weeks?.at(-1);
 }
 
 function getChartPoints(
