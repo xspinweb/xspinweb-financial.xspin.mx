@@ -1418,6 +1418,24 @@ a {
   color: #ffcc4d;
 }
 
+.metricDanger .metricIcon {
+  background: rgba(255, 66, 92, 0.12);
+  color: #ff6b7f;
+}
+
+.metricDanger strong {
+  color: #ff6b7f;
+}
+
+.metricSuccess .metricIcon {
+  background: rgba(53, 224, 161, 0.12);
+  color: var(--green);
+}
+
+.metricSuccess strong {
+  color: var(--green);
+}
+
 .dashboardCard:hover {
   border-color: rgba(53, 224, 161, 0.26);
   background: rgba(12, 24, 35, 0.88);

@@ -121,17 +121,18 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
 
   const cards = useMemo(() => {
     const confirmedReferrals = primaryInvestment?.referrals.filter((referral) => referral.invested).length ?? 0;
-    const nextPayment = primaryInvestment?.nextPaymentAt ?? "-";
-    const nextPaymentDate = primaryInvestment?.nextPaymentAtIso ? new Date(primaryInvestment.nextPaymentAtIso) : null;
-    const hasCollectable = confirmedReferrals >= 2 && Boolean(nextPaymentDate && new Date() >= nextPaymentDate);
+    const nextOpenWeek = primaryWeeks.find((week) => week.statusLabel !== "Cobrada");
+    const nextPayment = nextOpenWeek?.paymentLabel ?? primaryInvestment?.nextPaymentAt ?? "-";
+    const currentStatus = nextOpenWeek?.statusLabel ?? (primaryInvestment ? "Cobrada" : "-");
+    const currentTone = currentStatus === "Cobrada" ? "success" : currentStatus === "Por cobrar" ? "warning" : currentStatus === "Pendiente" ? "danger" : undefined;
 
     return [
       { icon: "chart", label: "Inversiones activas", value: String(investments.length) },
       { icon: "users", label: "Referidos confirmados", value: String(confirmedReferrals) },
       { icon: "calendar", label: "Proximo pago", value: nextPayment },
-      { icon: "wallet", label: "Estatus actual", tone: "warning", value: hasCollectable ? "Por cobrar" : investments.length > 0 ? "Pendiente" : "-" }
+      { icon: "wallet", label: "Estatus actual", tone: currentTone, value: currentStatus }
     ];
-  }, [investments.length, primaryInvestment]);
+  }, [investments.length, primaryInvestment, primaryWeeks]);
 
   async function handleInvestmentCreated(amount: number) {
     if (!userEmail) {
@@ -235,7 +236,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
 
       <section className="dashboardCards metricCards">
         {cards.map((card) => (
-          <article className={`dashboardCard metricCard ${card.tone === "warning" ? "metricWarning" : ""}`} key={card.label}>
+          <article className={`dashboardCard metricCard ${card.tone ? `metric${capitalize(card.tone)}` : ""}`} key={card.label}>
             <div className="metricIcon">
               <MetricIcon name={card.icon} />
             </div>
@@ -1080,6 +1081,10 @@ function formatCompactCurrency(amount: number) {
   }
 
   return formatChartCurrency(amount);
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function normalizeInvestmentWeek(week: InvestmentWeek, paidWeeks: number): InvestmentWeek {
