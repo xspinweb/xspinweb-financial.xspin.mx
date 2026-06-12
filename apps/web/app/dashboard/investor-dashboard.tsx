@@ -253,7 +253,10 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
           <div className="tableHeader">
             <div className="panelTitle">
               <ChartIcon />
-              <h2>Mis inversiones</h2>
+              <h2>
+                <span className="desktopSectionTitle">Mis inversiones</span>
+                <span className="mobileSectionTitle">Mis grupos</span>
+              </h2>
             </div>
             <NewInvestmentModal onInvestmentCreated={handleInvestmentCreated} />
           </div>
@@ -276,6 +279,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                 const nextPaymentLabel = currentWeek?.paymentLabel ?? investment.nextPaymentAt;
                 const currentWeekNumber = currentWeek?.weekNumber ?? 1;
                 const cycleProgress = Math.round((currentWeekNumber / projectionWeeks) * 100);
+                const currentTotalGenerated = currentWeek?.totalGenerated ?? investment.amount;
 
                 return (
                   <details className={`investmentItem ${primaryInvestment?.id === investment.id ? "selectedInvestment" : ""}`} key={investment.id}>
@@ -322,6 +326,10 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                           <span>Referidos</span>
                           <strong>{confirmedReferrals} confirmados</strong>
                         </div>
+                      </div>
+                      <div className="mobileInvestmentTotal">
+                        <span>Total generado</span>
+                        <strong>{formatCurrency(currentTotalGenerated)}</strong>
                       </div>
                       <InviteReferralModal investmentId={investment.id} investorCode={investorCode} />
                     </summary>

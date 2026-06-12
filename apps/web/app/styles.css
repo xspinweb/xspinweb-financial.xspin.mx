@@ -1922,7 +1922,9 @@ a {
 
 .investmentOptions,
 .mobileCycleProgress,
-.mobileInvestmentStats {
+.mobileInvestmentStats,
+.mobileInvestmentTotal,
+.mobileSectionTitle {
   display: none;
 }
 
@@ -3046,6 +3048,200 @@ a {
   .investmentItem summary > .inviteReferralAction span::after {
     content: "Invitar amigos";
     font-size: 17px;
+  }
+
+  .desktopSectionTitle {
+    display: none;
+  }
+
+  .mobileSectionTitle {
+    display: inline;
+  }
+
+  .investmentPanel .tableHeader {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 16px 16px 10px;
+  }
+
+  .investmentPanel .tableHeader h2 {
+    font-size: 15px;
+  }
+
+  .investmentPanel .headerIconAction {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    min-height: 30px;
+    padding: 0;
+    width: auto;
+  }
+
+  .investmentPanel .headerIconAction svg {
+    display: none;
+  }
+
+  .investmentPanel .headerIconAction span {
+    color: var(--green);
+    font-size: 12px;
+  }
+
+  .investmentList {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 0 16px 18px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .investmentList::-webkit-scrollbar {
+    display: none;
+  }
+
+  .investmentItem {
+    flex: 0 0 164px;
+    scroll-snap-align: start;
+  }
+
+  .investmentItem summary {
+    gap: 0;
+    grid-template-columns: 38px minmax(0, 1fr) 20px;
+    min-height: 244px;
+    padding: 14px 12px;
+  }
+
+  .investmentItem summary::before {
+    font-size: 22px;
+    height: 34px;
+    width: 34px;
+  }
+
+  .investmentSummaryMain {
+    padding-left: 4px;
+  }
+
+  .investmentSummaryMain strong {
+    font-size: 12px !important;
+  }
+
+  .investmentSummaryMain span {
+    font-size: 9px;
+    line-height: 1.25;
+    margin-top: 3px;
+  }
+
+  .investmentOptions {
+    display: none;
+  }
+
+  .mobileCycleProgress {
+    border-top: 0;
+    gap: 8px;
+    margin-top: 18px;
+    padding-top: 0;
+  }
+
+  .mobileCycleProgress > span {
+    display: none;
+  }
+
+  .mobileCycleProgress strong {
+    font-size: 10px !important;
+    line-height: 1.2;
+  }
+
+  .cycleSegments {
+    grid-column: 1;
+  }
+
+  .cycleSegments span {
+    height: 6px;
+  }
+
+  .mobileCycleProgress b {
+    font-size: 10px;
+  }
+
+  .mobileInvestmentStats {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 10px;
+    grid-template-columns: 1fr;
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+
+  .mobileInvestmentStats > div {
+    gap: 2px 8px;
+    grid-template-columns: 22px minmax(0, 1fr);
+    padding: 0;
+  }
+
+  .mobileInvestmentStats > div + div {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .mobileInvestmentStats svg {
+    height: 22px;
+    padding: 5px;
+    width: 22px;
+  }
+
+  .mobileInvestmentStats span,
+  .mobileInvestmentTotal span {
+    font-size: 9px;
+  }
+
+  .mobileInvestmentStats strong,
+  .mobileInvestmentTotal strong {
+    font-size: 11px !important;
+    line-height: 1.2;
+  }
+
+  .mobileInvestmentTotal {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: grid !important;
+    gap: 4px;
+    grid-column: 1 / -1 !important;
+    margin-top: 12px;
+    padding-top: 10px;
+  }
+
+  .mobileInvestmentTotal strong {
+    color: var(--green);
+  }
+
+  .investmentItem summary > .inviteReferralAction {
+    align-self: start;
+    border: 0;
+    border-radius: 50%;
+    grid-column: 3;
+    grid-row: 1;
+    height: 24px;
+    justify-self: end;
+    margin: 0;
+    min-height: 24px;
+    padding: 0;
+    width: 24px;
+  }
+
+  .investmentItem summary > .inviteReferralAction svg,
+  .investmentItem summary > .inviteReferralAction span {
+    display: none;
+  }
+
+  .investmentItem summary > .inviteReferralAction::before {
+    content: "...";
+    color: var(--muted);
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    line-height: 1;
+    transform: rotate(90deg);
+  }
+
+  .referralPanel {
+    display: none;
   }
 
   .weekList {
