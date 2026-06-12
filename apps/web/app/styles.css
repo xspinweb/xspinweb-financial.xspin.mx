@@ -3520,6 +3520,43 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .paymentTypeGrid {
+    display: flex;
+    gap: 12px;
+    margin: 0 -16px;
+    overflow-x: auto;
+    padding: 0 16px 6px;
+    scroll-padding: 16px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .paymentTypeGrid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .paymentTypeCard {
+    flex: 0 0 78%;
+    min-height: 118px;
+    scroll-snap-align: start;
+  }
+
+  .paymentTypeCard.active {
+    flex-basis: 82%;
+  }
+
+  .paymentFormGrid {
+    display: block;
+  }
+
+  .paymentFormCard {
+    display: none;
+  }
+
+  .paymentFormCard.active {
+    display: flex;
+  }
+
   .walletPanel,
   .walletSecurityPanel {
     padding: 16px;
@@ -3532,10 +3569,6 @@ a {
 
   .secondaryWalletAction {
     width: 100%;
-  }
-
-  .paymentTypeCard {
-    min-height: 108px;
   }
 
   .paymentFormCard {
