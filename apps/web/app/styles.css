@@ -2142,6 +2142,204 @@ a {
   justify-content: space-between;
 }
 
+.weeklyTimeline {
+  gap: 16px;
+  padding: 18px;
+}
+
+.weeklyTimeline > p {
+  color: var(--muted);
+  font-size: 12px;
+  margin: -8px 0 4px 42px;
+}
+
+.weekSelector {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 2px 2px 8px;
+  scrollbar-width: none;
+}
+
+.weekSelector::-webkit-scrollbar {
+  display: none;
+}
+
+.weekSelector button {
+  flex: 0 0 54px;
+  min-height: 64px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  padding: 8px;
+  position: relative;
+}
+
+.weekSelector button strong,
+.weekSelector button span {
+  display: block;
+  line-height: 1.1;
+}
+
+.weekSelector button strong {
+  color: inherit;
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.weekSelector button span {
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.weekSelector button.active {
+  border-color: rgba(53, 224, 161, 0.5);
+  background: rgba(53, 224, 161, 0.12);
+  color: var(--ink);
+  box-shadow: 0 0 20px rgba(53, 224, 161, 0.12);
+}
+
+.weekSelector button.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--green);
+  transform: translateX(-50%);
+}
+
+.weekSelectorNext {
+  font-size: 28px !important;
+}
+
+.selectedWeekCard {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 78% 8%, rgba(53, 224, 161, 0.08), transparent 28%),
+    rgba(5, 11, 18, 0.5);
+  overflow: hidden;
+}
+
+.selectedWeekCard header {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 16px;
+}
+
+.selectedWeekCard h3 {
+  font-size: 17px;
+  margin: 0;
+}
+
+.weekDateGrid,
+.weekMetricGrid {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.weekDateGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.weekDateGrid > div,
+.weekMetricGrid > div {
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 3px 10px;
+  grid-template-columns: 36px minmax(0, 1fr);
+  min-height: 72px;
+  padding: 12px;
+}
+
+.weekDateGrid > div {
+  border-color: transparent;
+  background: transparent;
+  min-height: 48px;
+}
+
+.weekMetricGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-top: 0;
+}
+
+.weekMetricGrid > div:nth-child(5),
+.weekMetricGrid > .weekActionCard {
+  grid-column: 1 / -1;
+}
+
+.weekDateGrid svg,
+.weekMetricGrid svg {
+  grid-row: span 2;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(53, 224, 161, 0.1);
+  fill: var(--green);
+  padding: 8px;
+}
+
+.weekDateGrid span,
+.weekMetricGrid span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.weekDateGrid strong,
+.weekMetricGrid strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.weekMetricGrid strong {
+  color: var(--green);
+}
+
+.weekInfoNote {
+  border: 1px solid rgba(53, 224, 161, 0.22);
+  border-radius: 12px;
+  color: #c8d7e6;
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0 14px 14px;
+  padding: 12px 12px 12px 38px;
+  position: relative;
+}
+
+.weekInfoNote::before {
+  content: "i";
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--green);
+  border-radius: 50%;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 900;
+}
+
 .reinvestmentModal {
   width: min(560px, 100%);
 }

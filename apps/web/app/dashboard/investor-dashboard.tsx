@@ -70,6 +70,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   const [investorCode, setInvestorCode] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedInvestmentId, setSelectedInvestmentId] = useState("");
+  const [selectedWeekNumber, setSelectedWeekNumber] = useState(1);
 
   useEffect(() => {
     void loadPortfolio();
@@ -113,6 +114,8 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
 
   const primaryInvestment = investments.find((investment) => investment.id === selectedInvestmentId) ?? investments[0];
   const primaryWeeks = primaryInvestment?.weeks ?? [];
+  const currentPrimaryWeek = getCurrentInvestmentWeek(primaryInvestment);
+  const selectedWeek = primaryWeeks.find((week) => week.weekNumber === selectedWeekNumber) ?? currentPrimaryWeek ?? primaryWeeks[0];
   const projectedWeeks = buildTwelveWeekProjection(primaryInvestment);
   const projectedBalance = projectedWeeks.at(-1)?.totalGenerated ?? primaryInvestment?.amount ?? 0;
   const projectedReturn =
@@ -122,7 +125,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
 
   const cards = useMemo(() => {
     const confirmedReferrals = primaryInvestment?.referrals.filter((referral) => referral.invested).length ?? 0;
-    const currentWeek = getCurrentInvestmentWeek(primaryInvestment);
+    const currentWeek = currentPrimaryWeek;
     const nextPayment = currentWeek?.paymentLabel ?? primaryInvestment?.nextPaymentAt ?? "-";
     const currentStatus = currentWeek?.statusLabel ?? (primaryInvestment ? "Cobrada" : "-");
     const currentTone = currentStatus === "Cobrada" ? "success" : currentStatus === "Por cobrar" ? "warning" : currentStatus === "Pendiente" ? "danger" : undefined;
@@ -133,7 +136,11 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
       { icon: "calendar", label: "Proximo pago", value: nextPayment },
       { icon: "wallet", label: "Estatus actual", tone: currentTone, value: currentStatus }
     ];
-  }, [investments.length, primaryInvestment, primaryWeeks]);
+  }, [investments.length, primaryInvestment, currentPrimaryWeek]);
+
+  useEffect(() => {
+    setSelectedWeekNumber(currentPrimaryWeek?.weekNumber ?? primaryWeeks[0]?.weekNumber ?? 1);
+  }, [primaryInvestment?.id, currentPrimaryWeek?.weekNumber, primaryWeeks]);
 
   async function handleInvestmentCreated(amount: number) {
     if (!userEmail) {
@@ -386,65 +393,99 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
               <h2>Historial semanal</h2>
             </div>
           </div>
-          <div className="weekList">
+          <div className="weekList weeklyTimeline">
             {primaryWeeks.length === 0 ? (
               <div className="emptyInvestments">
                 <strong>Sin historial semanal</strong>
                 <span>Las semanas apareceran cuando exista una inversion activa.</span>
               </div>
             ) : (
-              primaryWeeks.map((week) => (
-                <details className="weekItem" key={`${primaryInvestment?.id}-week-${week.weekNumber}`}>
-                  <summary>
-                    <div>
-                      <span>Semana</span>
-                      <strong>{week.weekNumber} de {projectionWeeks}</strong>
-                    </div>
-                    <div>
-                      <span>Inicio</span>
-                      <strong>{week.startLabel}</strong>
-                    </div>
-                    <div>
-                      <span>Pago</span>
-                      <strong>{week.paymentLabel}</strong>
-                    </div>
-                    <span className={`statusPill ${week.statusClass}`}>{week.statusLabel}</span>
-                  </summary>
-                  <div className="weekDetailGrid">
-                    <div>
-                      <span>Monto base</span>
-                      <strong>{formatCurrency(week.baseAmount)}</strong>
-                    </div>
-                    <div>
-                      <span>Referidos confirmados</span>
-                      <strong>{primaryInvestment?.referrals.filter((referral) => referral.invested).length ?? 0}</strong>
-                    </div>
-                    <div>
-                      <span>Bono semanal</span>
-                      <strong>{formatCurrency(week.weeklyBonus)}</strong>
-                    </div>
-                    <div>
-                      <span>Rendimiento calculado</span>
-                      <strong>{formatCurrency(week.weeklyYield)}</strong>
-                    </div>
-                    <div>
-                      <span>Total generado</span>
-                      <strong>{formatCurrency(week.totalGenerated)}</strong>
-                    </div>
-                    {week.canReinvest && primaryInvestment ? (
-                      <div className="weekActionCard">
-                        <span>Reinversion</span>
-                        <ReinvestmentModal
-                          investmentId={primaryInvestment.id}
-                          totalGenerated={week.totalGenerated}
-                          weekNumber={week.weekNumber}
-                          onCompleted={loadPortfolio}
-                        />
+              <>
+                <p>Consulta el detalle de tus semanas de inversion</p>
+                <div className="weekSelector" aria-label="Seleccionar semana">
+                  {primaryWeeks.map((week) => (
+                    <button
+                      className={week.weekNumber === selectedWeek?.weekNumber ? "active" : ""}
+                      key={`${primaryInvestment?.id}-selector-${week.weekNumber}`}
+                      type="button"
+                      onClick={() => setSelectedWeekNumber(week.weekNumber)}
+                    >
+                      <strong>{week.weekNumber}</strong>
+                      <span>de {projectionWeeks}</span>
+                    </button>
+                  ))}
+                  {primaryWeeks.length < projectionWeeks ? (
+                    <button className="weekSelectorNext" type="button" aria-label="Semanas futuras" disabled>
+                      ›
+                    </button>
+                  ) : null}
+                </div>
+
+                {selectedWeek ? (
+                  <article className="selectedWeekCard">
+                    <header>
+                      <h3>Semana {selectedWeek.weekNumber} de {projectionWeeks}</h3>
+                      <span className={`statusPill ${selectedWeek.statusClass}`}>{selectedWeek.statusLabel}</span>
+                    </header>
+
+                    <div className="weekDateGrid">
+                      <div>
+                        <CalendarIcon />
+                        <span>Inicio</span>
+                        <strong>{selectedWeek.startLabel}</strong>
                       </div>
-                    ) : null}
-                  </div>
-                </details>
-              ))
+                      <div>
+                        <CalendarIcon />
+                        <span>Pago</span>
+                        <strong>{selectedWeek.paymentLabel}</strong>
+                      </div>
+                    </div>
+
+                    <div className="weekMetricGrid">
+                      <div>
+                        <MetricIcon name="wallet" />
+                        <span>Monto base</span>
+                        <strong>{formatCurrency(selectedWeek.baseAmount)}</strong>
+                      </div>
+                      <div>
+                        <MetricIcon name="users" />
+                        <span>Referidos confirmados</span>
+                        <strong>{primaryInvestment?.referrals.filter((referral) => referral.invested).length ?? 0}</strong>
+                      </div>
+                      <div>
+                        <BonusIcon />
+                        <span>Bono semanal</span>
+                        <strong>{formatCurrency(selectedWeek.weeklyBonus)}</strong>
+                      </div>
+                      <div>
+                        <MetricIcon name="chart" />
+                        <span>Rendimiento calculado</span>
+                        <strong>{formatCurrency(selectedWeek.weeklyYield)}</strong>
+                      </div>
+                      <div>
+                        <MetricIcon name="wallet" />
+                        <span>Total generado</span>
+                        <strong>{formatCurrency(selectedWeek.totalGenerated)}</strong>
+                      </div>
+                      {selectedWeek.canReinvest && primaryInvestment ? (
+                        <div className="weekActionCard">
+                          <span>Reinversion</span>
+                          <ReinvestmentModal
+                            investmentId={primaryInvestment.id}
+                            totalGenerated={selectedWeek.totalGenerated}
+                            weekNumber={selectedWeek.weekNumber}
+                            onCompleted={loadPortfolio}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <p className="weekInfoNote">
+                      El pago se realizara el {selectedWeek.paymentLabel}. Los montos pueden variar segun el rendimiento del ciclo.
+                    </p>
+                  </article>
+                ) : null}
+              </>
             )}
           </div>
         </section>
@@ -893,6 +934,14 @@ function CalendarIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M7 2h2v3h6V2h2v3h3a1 1 0 0 1 1 1v15H3V6a1 1 0 0 1 1-1h3Zm12 8H5v9h14ZM5 8h14V7H5Zm2 4h3v3H7Zm5 0h3v3h-3Z" />
+    </svg>
+  );
+}
+
+function BonusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 7h-2.2A3.2 3.2 0 0 0 12 5.1 3.2 3.2 0 0 0 6.2 7H4a1 1 0 0 0-1 1v4h2v8h14v-8h2V8a1 1 0 0 0-1-1Zm-5.1-2c.7 0 1.2.5 1.2 1.1 0 .6-.5.9-1.7.9h-1.1c.4-1.3.9-2 1.6-2ZM9.1 5c.7 0 1.2.7 1.6 2H9.6C8.4 7 7.9 6.7 7.9 6.1 7.9 5.5 8.4 5 9.1 5ZM5 9h6v1H5Zm6 9H7v-6h4Zm6 0h-4v-6h4Zm2-8h-6V9h6Z" />
     </svg>
   );
 }
