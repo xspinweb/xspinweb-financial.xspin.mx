@@ -79,6 +79,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
   const [error, setError] = useState("");
   const [isLoadingMethods, setIsLoadingMethods] = useState(true);
   const [isSavingMethod, setIsSavingMethod] = useState(false);
+  const [paymentCarouselIndex, setPaymentCarouselIndex] = useState(0);
   const [savedCarouselIndex, setSavedCarouselIndex] = useState(0);
 
   useEffect(() => {
@@ -125,6 +126,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
 
   function selectType(type: PaymentType) {
     setSelectedType(type);
+    setPaymentCarouselIndex(methodOptions.findIndex((option) => option.type === type));
     setDraft(initialDraft);
     setError("");
   }
@@ -217,9 +219,20 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
   }
 
   function updateSavedCarouselIndex(event: UIEvent<HTMLDivElement>) {
-    const element = event.currentTarget;
-    const nextIndex = Math.round(element.scrollLeft / Math.max(1, element.clientWidth));
-    setSavedCarouselIndex(nextIndex);
+    setSavedCarouselIndex(getCarouselIndex(event.currentTarget, ".savedMethodRow"));
+  }
+
+  function updatePaymentCarouselIndex(event: UIEvent<HTMLDivElement>) {
+    const nextIndex = getCarouselIndex(event.currentTarget, ".paymentTypeCard");
+    const nextType = methodOptions[nextIndex]?.type;
+
+    setPaymentCarouselIndex(nextIndex);
+
+    if (nextType && nextType !== selectedType) {
+      setSelectedType(nextType);
+      setDraft(initialDraft);
+      setError("");
+    }
   }
 
   return (
@@ -249,7 +262,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
           </div>
         </div>
 
-        <div className="paymentTypeGrid">
+        <div className="paymentTypeGrid" onScroll={updatePaymentCarouselIndex}>
           {methodOptions.map((option) => (
             <button
               className={selectedType === option.type ? "paymentTypeCard active" : "paymentTypeCard"}
@@ -268,7 +281,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
           ))}
         </div>
         <CarouselDots
-          activeIndex={methodOptions.findIndex((option) => option.type === selectedType)}
+          activeIndex={paymentCarouselIndex}
           count={methodOptions.length}
         />
 
@@ -367,6 +380,22 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
       </section>
     </>
   );
+}
+
+function getCarouselIndex(element: HTMLElement, itemSelector: string) {
+  const items = Array.from(element.querySelectorAll<HTMLElement>(itemSelector));
+
+  if (!items.length) {
+    return 0;
+  }
+
+  return items.reduce(
+    (closest, item, index) => {
+      const distance = Math.abs(item.offsetLeft - element.scrollLeft);
+      return distance < closest.distance ? { distance, index } : closest;
+    },
+    { distance: Number.POSITIVE_INFINITY, index: 0 }
+  ).index;
 }
 
 function CarouselDots({ activeIndex, count }: { activeIndex: number; count: number }) {
