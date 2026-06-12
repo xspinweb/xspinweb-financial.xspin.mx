@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode, UIEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type PaymentType = "bank" | "paypal" | "paxum" | "crypto";
 
@@ -73,6 +73,7 @@ const bankOptions = ["BBVA Mexico", "Santander", "Banorte", "HSBC", "Citibanamex
 const coinOptions = ["Bitcoin (BTC)", "Ethereum (ETH)", "Tether (USDT)", "Solana (SOL)"];
 
 export function WalletDashboard({ userEmail }: { userEmail: string }) {
+  const savedMethodsCarouselRef = useRef<HTMLDivElement>(null);
   const [selectedType, setSelectedType] = useState<PaymentType>("bank");
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [draft, setDraft] = useState<MethodDraft>(initialDraft);
@@ -182,7 +183,11 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
         throw new Error(await getResponseErrorMessage(response));
       }
 
-      setMethods((current) => current.map((method) => ({ ...method, isPrimary: method.id === id })));
+      setMethods((current) => movePrimaryMethodToFront(current, id));
+      setSavedCarouselIndex(0);
+      requestAnimationFrame(() => {
+        savedMethodsCarouselRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+      });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "No se pudo cambiar el metodo principal.");
     }
@@ -336,7 +341,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
           </div>
         ) : (
           <>
-          <div className="savedMethodsTable" onScroll={updateSavedCarouselIndex}>
+          <div className="savedMethodsTable" onScroll={updateSavedCarouselIndex} ref={savedMethodsCarouselRef}>
             <div className="savedMethodsHead">
               <span>Metodo</span>
               <span>Informacion</span>
@@ -387,6 +392,17 @@ function getCarouselIndex(element: HTMLElement, itemSelector: string) {
     },
     { distance: Number.POSITIVE_INFINITY, index: 0 }
   ).index;
+}
+
+function movePrimaryMethodToFront(methods: PaymentMethod[], primaryId: string) {
+  const updated = methods.map((method) => ({ ...method, isPrimary: method.id === primaryId }));
+  const primary = updated.find((method) => method.id === primaryId);
+
+  if (!primary) {
+    return updated;
+  }
+
+  return [primary, ...updated.filter((method) => method.id !== primaryId)];
 }
 
 function CarouselDots({ activeIndex, count }: { activeIndex: number; count: number }) {
