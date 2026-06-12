@@ -2854,6 +2854,7 @@ a {
 }
 
 .walletPanel {
+  overflow: hidden;
   padding: 20px;
 }
 
@@ -3371,10 +3372,10 @@ a {
   .savedMethodsTable {
     display: flex;
     gap: 12px;
-    margin: 0 -16px;
+    margin: 0;
     overflow-x: auto;
-    padding: 0 16px 4px;
-    scroll-padding: 16px;
+    padding: 0 0 4px;
+    scroll-padding: 0;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
   }
@@ -3384,7 +3385,7 @@ a {
   }
 
   .savedMethodRow {
-    flex: 0 0 82%;
+    flex: 0 0 min(84%, 420px);
     grid-template-columns: minmax(0, 1fr) auto;
     min-height: 174px;
     scroll-snap-align: start;
@@ -3543,10 +3544,10 @@ a {
   .paymentTypeGrid {
     display: flex;
     gap: 12px;
-    margin: 0 -16px;
+    margin: 0;
     overflow-x: auto;
-    padding: 0 16px 6px;
-    scroll-padding: 16px;
+    padding: 0 0 6px;
+    scroll-padding: 0;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
   }
@@ -3556,13 +3557,13 @@ a {
   }
 
   .paymentTypeCard {
-    flex: 0 0 78%;
+    flex: 0 0 min(84%, 420px);
     min-height: 118px;
     scroll-snap-align: start;
   }
 
   .paymentTypeCard.active {
-    flex-basis: 82%;
+    flex-basis: min(88%, 440px);
   }
 
   .paymentFormGrid {
