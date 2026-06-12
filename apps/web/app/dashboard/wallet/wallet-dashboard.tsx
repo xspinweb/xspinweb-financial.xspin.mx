@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type PaymentType = "bank" | "paypal" | "paxum" | "crypto";
 
@@ -76,27 +76,46 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
   const [selectedType, setSelectedType] = useState<PaymentType>("bank");
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [draft, setDraft] = useState<MethodDraft>(initialDraft);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const storageKey = useMemo(() => `pay-financial-wallet-${userEmail.toLowerCase()}`, [userEmail]);
+  const [isLoadingMethods, setIsLoadingMethods] = useState(true);
+  const [isSavingMethod, setIsSavingMethod] = useState(false);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(storageKey);
+    let isCurrent = true;
 
-    if (!saved) {
-      return;
+    async function loadMethods() {
+      setIsLoadingMethods(true);
+      setError("");
+
+      try {
+        const response = await fetch(`/api/payout-methods?email=${encodeURIComponent(userEmail)}`);
+
+        if (!response.ok) {
+          throw new Error(await getResponseErrorMessage(response));
+        }
+
+        const data = (await response.json()) as PaymentMethod[];
+
+        if (isCurrent) {
+          setMethods(data);
+        }
+      } catch (requestError) {
+        if (isCurrent) {
+          setError(requestError instanceof Error ? requestError.message : "No se pudieron cargar tus metodos de pago.");
+        }
+      } finally {
+        if (isCurrent) {
+          setIsLoadingMethods(false);
+        }
+      }
     }
 
-    try {
-      setMethods(JSON.parse(saved) as PaymentMethod[]);
-    } catch {
-      setMethods([]);
-    }
-  }, [storageKey]);
+    loadMethods();
 
-  useEffect(() => {
-    window.localStorage.setItem(storageKey, JSON.stringify(methods));
-  }, [methods, storageKey]);
+    return () => {
+      isCurrent = false;
+    };
+  }, [userEmail]);
 
   function updateDraft(field: keyof MethodDraft, value: string) {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -105,12 +124,11 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
 
   function selectType(type: PaymentType) {
     setSelectedType(type);
-    setEditingId(null);
     setDraft(initialDraft);
     setError("");
   }
 
-  function saveMethod() {
+  async function saveMethod() {
     const validationError = validateDraft(selectedType, draft);
 
     if (validationError) {
@@ -119,38 +137,52 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
     }
 
     const payload = buildMethod(selectedType, draft);
-
-    if (editingId) {
-      setMethods((current) =>
-        current.map((method) =>
-          method.id === editingId
-            ? {
-                ...method,
-                ...payload,
-                isPrimary: method.isPrimary
-              }
-            : method
-        )
-      );
-    } else {
-      setMethods((current) => [
-        ...current.map((method) => ({ ...method, isPrimary: current.length === 0 ? false : method.isPrimary })),
-        {
-          ...payload,
-          createdAt: new Date().toISOString(),
-          id: crypto.randomUUID(),
-          isPrimary: current.length === 0
-        }
-      ]);
-    }
-
-    setDraft(initialDraft);
-    setEditingId(null);
+    setIsSavingMethod(true);
     setError("");
+
+    try {
+      const response = await fetch("/api/payout-methods", {
+        body: JSON.stringify(toApiPayoutMethod(userEmail, payload)),
+        headers: { "Content-Type": "application/json" },
+        method: "POST"
+      });
+
+      if (!response.ok) {
+        throw new Error(await getResponseErrorMessage(response));
+      }
+
+      const method = (await response.json()) as PaymentMethod;
+
+      setMethods((current) => [
+        ...(method.isPrimary ? current.map((currentMethod) => ({ ...currentMethod, isPrimary: false })) : current),
+        method
+      ]);
+      setDraft(initialDraft);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "No se pudo guardar el metodo de pago.");
+    } finally {
+      setIsSavingMethod(false);
+    }
   }
 
-  function setPrimary(id: string) {
-    setMethods((current) => current.map((method) => ({ ...method, isPrimary: method.id === id })));
+  async function setPrimary(id: string) {
+    setError("");
+
+    try {
+      const response = await fetch(`/api/payout-methods/${encodeURIComponent(id)}/primary`, {
+        body: JSON.stringify({ email: userEmail }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST"
+      });
+
+      if (!response.ok) {
+        throw new Error(await getResponseErrorMessage(response));
+      }
+
+      setMethods((current) => current.map((method) => ({ ...method, isPrimary: method.id === id })));
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "No se pudo cambiar el metodo principal.");
+    }
   }
 
   return (
@@ -210,28 +242,28 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
             draft={draft}
             onChange={updateDraft}
             onSave={saveMethod}
-            isEditing={Boolean(editingId && selectedType === "bank")}
+            isSaving={isSavingMethod}
           />
           <PayPalForm
             active={selectedType === "paypal"}
             draft={draft}
             onChange={updateDraft}
             onSave={saveMethod}
-            isEditing={Boolean(editingId && selectedType === "paypal")}
+            isSaving={isSavingMethod}
           />
           <PaxumForm
             active={selectedType === "paxum"}
             draft={draft}
             onChange={updateDraft}
             onSave={saveMethod}
-            isEditing={Boolean(editingId && selectedType === "paxum")}
+            isSaving={isSavingMethod}
           />
           <CryptoForm
             active={selectedType === "crypto"}
             draft={draft}
             onChange={updateDraft}
             onSave={saveMethod}
-            isEditing={Boolean(editingId && selectedType === "crypto")}
+            isSaving={isSavingMethod}
           />
         </div>
         {error ? <p className="walletError">{error}</p> : null}
@@ -248,7 +280,13 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
           </button>
         </div>
 
-        {methods.length === 0 ? (
+        {isLoadingMethods ? (
+          <div className="emptyWalletState">
+            <PaymentBrandIcon type="bank" />
+            <strong>Cargando tus metodos</strong>
+            <span>Estamos consultando la informacion guardada.</span>
+          </div>
+        ) : methods.length === 0 ? (
           <div className="emptyWalletState">
             <PaymentBrandIcon type="bank" />
             <strong>Aun no tienes metodos guardados</strong>
@@ -286,7 +324,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
 
 function BankForm(props: FormProps) {
   return (
-    <PaymentFormCard active={props.active} accent="green" onSave={props.onSave} title="Transferencia Bancaria (CLABE)" type="bank" isEditing={props.isEditing}>
+    <PaymentFormCard active={props.active} accent="green" onSave={props.onSave} title="Transferencia Bancaria (CLABE)" type="bank" isSaving={props.isSaving}>
       <WalletField label="Nombre del titular" value={props.draft.accountHolder} placeholder="Ej. Juan Perez Garcia" onChange={(value) => props.onChange("accountHolder", value)} />
       <label className="walletField">
         <span>Nombre del banco</span>
@@ -311,7 +349,7 @@ function BankForm(props: FormProps) {
 
 function PayPalForm(props: FormProps) {
   return (
-    <PaymentFormCard active={props.active} accent="blue" onSave={props.onSave} title="PayPal" type="paypal" isEditing={props.isEditing}>
+    <PaymentFormCard active={props.active} accent="blue" onSave={props.onSave} title="PayPal" type="paypal" isSaving={props.isSaving}>
       <WalletField label="Correo de PayPal" value={props.draft.email} placeholder="Ej. juanperez@correo.com" onChange={(value) => props.onChange("email", value)} />
       <div className="walletAdvice blue">
         <ShieldIcon />
@@ -326,7 +364,7 @@ function PayPalForm(props: FormProps) {
 
 function PaxumForm(props: FormProps) {
   return (
-    <PaymentFormCard active={props.active} accent="red" onSave={props.onSave} title="Paxum" type="paxum" isEditing={props.isEditing}>
+    <PaymentFormCard active={props.active} accent="red" onSave={props.onSave} title="Paxum" type="paxum" isSaving={props.isSaving}>
       <WalletField label="Nombre del titular" value={props.draft.accountHolder} placeholder="Ej. Juan Perez Garcia" onChange={(value) => props.onChange("accountHolder", value)} />
       <WalletField label="Correo de Paxum" value={props.draft.email} placeholder="Ej. juanperez@paxum.com" onChange={(value) => props.onChange("email", value)} />
       <WalletField label="Numero de cuenta Paxum" value={props.draft.paxumAccount} placeholder="Ej. 1234567" onChange={(value) => props.onChange("paxumAccount", value)} />
@@ -340,7 +378,7 @@ function PaxumForm(props: FormProps) {
 
 function CryptoForm(props: FormProps) {
   return (
-    <PaymentFormCard active={props.active} accent="purple" onSave={props.onSave} title="Criptomonedas" type="crypto" isEditing={props.isEditing}>
+    <PaymentFormCard active={props.active} accent="purple" onSave={props.onSave} title="Criptomonedas" type="crypto" isSaving={props.isSaving}>
       <label className="walletField">
         <span>Selecciona la criptomoneda</span>
         <select value={props.draft.coin} onChange={(event) => props.onChange("coin", event.target.value)}>
@@ -363,16 +401,16 @@ function CryptoForm(props: FormProps) {
 type FormProps = {
   active: boolean;
   draft: MethodDraft;
-  isEditing: boolean;
+  isSaving: boolean;
   onChange: (field: keyof MethodDraft, value: string) => void;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
 };
 
 function PaymentFormCard({
   accent,
   active,
   children,
-  isEditing,
+  isSaving,
   onSave,
   title,
   type
@@ -380,8 +418,8 @@ function PaymentFormCard({
   accent: "green" | "blue" | "red" | "purple";
   active: boolean;
   children: ReactNode;
-  isEditing: boolean;
-  onSave: () => void;
+  isSaving: boolean;
+  onSave: () => void | Promise<void>;
   title: string;
   type: PaymentType;
 }) {
@@ -392,8 +430,8 @@ function PaymentFormCard({
         <h3>{title}</h3>
       </div>
       {children}
-      <button type="button" onClick={onSave}>
-        {isEditing ? "Actualizar metodo" : "Guardar metodo"}
+      <button type="button" onClick={onSave} disabled={isSaving}>
+        {isSaving ? "Guardando..." : "Guardar metodo"}
       </button>
     </article>
   );
@@ -448,6 +486,20 @@ function buildMethod(type: PaymentType, draft: MethodDraft): Omit<PaymentMethod,
     coin: draft.coin,
     type,
     walletAddress: draft.walletAddress.trim()
+  };
+}
+
+function toApiPayoutMethod(email: string, method: Omit<PaymentMethod, "createdAt" | "id" | "isPrimary">) {
+  return {
+    accountHolder: method.accountHolder,
+    bankName: method.bankName,
+    clabe: method.clabe,
+    coin: method.coin,
+    email,
+    paxumAccount: method.paxumAccount,
+    payoutEmail: method.email,
+    type: method.type.toUpperCase(),
+    walletAddress: method.walletAddress
   };
 }
 
@@ -512,6 +564,11 @@ function onlyDigits(value: string) {
 
 function isEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+async function getResponseErrorMessage(response: Response) {
+  const data = (await response.json().catch(() => null)) as { error?: string } | null;
+  return data?.error ?? "No se pudo procesar la solicitud.";
 }
 
 function PaymentBrandIcon({ type }: { type: PaymentType }) {

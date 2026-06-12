@@ -44,6 +44,13 @@ enum PaymentType {
   ADJUSTMENT
 }
 
+enum PayoutMethodType {
+  BANK
+  PAYPAL
+  PAXUM
+  CRYPTO
+}
+
 model User {
   id                  String    @id @default(cuid())
   name                String
@@ -72,6 +79,7 @@ model Investor {
   referralsGiven        Referral[]       @relation("Referrer")
   referralsReceived     Referral[]       @relation("Referred")
   payments              Payment[]
+  payoutMethods         PayoutMethod[]
   reinvestments         Reinvestment[]
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
@@ -135,6 +143,25 @@ model Payment {
   paymentType  PaymentType
   paidAt       DateTime     @default(now())
   notes        String?
+}
+
+model PayoutMethod {
+  id            String           @id @default(cuid())
+  investorId    String
+  investor      Investor         @relation(fields: [investorId], references: [id])
+  type          PayoutMethodType
+  accountHolder String?
+  bankName      String?
+  clabe         String?
+  email         String?
+  paxumAccount  String?
+  coin          String?
+  walletAddress String?
+  isPrimary     Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([investorId])
 }
 
 model Reinvestment {

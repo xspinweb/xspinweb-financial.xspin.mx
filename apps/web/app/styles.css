@@ -3552,13 +3552,38 @@ a {
   }
 
   .paymentTypeCard {
-    flex: 0 0 min(84%, 420px);
-    min-height: 118px;
+    box-sizing: border-box;
+    flex: 0 0 100%;
+    grid-template-columns: 72px minmax(0, 1fr) 28px;
+    min-height: 170px;
+    padding: 18px;
     scroll-snap-align: start;
   }
 
   .paymentTypeCard.active {
-    flex-basis: min(88%, 440px);
+    flex-basis: 100%;
+  }
+
+  .paymentTypeCard .paymentBrandIcon,
+  .paymentTypeCard .cryptoIconStack {
+    height: 68px;
+    width: 68px;
+  }
+
+  .paymentTypeCard .paymentBrandIcon svg {
+    height: 38px;
+    width: 38px;
+  }
+
+  .paymentTypeCard strong {
+    font-size: 18px;
+    line-height: 1.15;
+  }
+
+  .paymentTypeCard p {
+    font-size: 15px;
+    line-height: 1.45;
+    max-width: 95%;
   }
 
   .paymentFormGrid {

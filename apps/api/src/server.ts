@@ -22,6 +22,23 @@ const reinvestSchema = z.object({
   weekNumber: z.number().int().min(1).max(config.defaultBusinessRules.totalCycleWeeks).optional()
 });
 
+const payoutMethodSchema = z.object({
+  accountHolder: z.string().optional(),
+  bankName: z.string().optional(),
+  clabe: z.string().optional(),
+  coin: z.string().optional(),
+  email: z.string().email(),
+  isPrimary: z.boolean().optional(),
+  paxumAccount: z.string().optional(),
+  payoutEmail: z.string().email().optional(),
+  type: z.enum(["BANK", "PAYPAL", "PAXUM", "CRYPTO"]),
+  walletAddress: z.string().optional()
+});
+
+const primaryPayoutMethodSchema = z.object({
+  email: z.string().email()
+});
+
 type PortfolioInvestment = {
   id: string;
   principalAmount: unknown;
@@ -152,6 +169,20 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/payout-methods") {
+    const email = z.string().email().parse(url.searchParams.get("email"));
+    const methods = await getPayoutMethods(email);
+    sendJson(res, 200, methods);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/payout-methods") {
+    const input = payoutMethodSchema.parse(await readJson(req));
+    const method = await createPayoutMethod(input);
+    sendJson(res, 201, method);
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/investments") {
     const input = createInvestmentSchema.parse(await readJson(req));
     await assertReferralTargetOpen(input.referredByCode, input.sourceInvestmentId);
@@ -176,6 +207,14 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   }
 
   const reinvestMatch = url.pathname.match(/^\/investments\/([^/]+)\/reinvest$/);
+  const primaryPayoutMethodMatch = url.pathname.match(/^\/payout-methods\/([^/]+)\/primary$/);
+
+  if (req.method === "POST" && primaryPayoutMethodMatch) {
+    const input = primaryPayoutMethodSchema.parse(await readJson(req));
+    const method = await setPrimaryPayoutMethod(primaryPayoutMethodMatch[1], input.email);
+    sendJson(res, 200, method);
+    return;
+  }
 
   if (req.method === "POST" && reinvestMatch) {
     const input = reinvestSchema.parse(await readJson(req));
@@ -290,6 +329,95 @@ async function getPortfolio(email: string) {
       })
     }))
   };
+}
+
+async function getPayoutMethods(email: string) {
+  const investor = await prisma.investor.findFirst({
+    include: {
+      payoutMethods: {
+        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }]
+      }
+    },
+    where: { email }
+  });
+
+  if (!investor) {
+    return [];
+  }
+
+  return investor.payoutMethods.map(formatPayoutMethod);
+}
+
+async function createPayoutMethod(input: z.infer<typeof payoutMethodSchema>) {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const investor = await getOrCreateInvestor(tx, {
+      email: input.email
+    });
+    const existingMethods = await tx.payoutMethod.count({
+      where: { investorId: investor.id }
+    });
+    const isPrimary = input.isPrimary || existingMethods === 0;
+
+    if (isPrimary) {
+      await tx.payoutMethod.updateMany({
+        data: { isPrimary: false },
+        where: { investorId: investor.id }
+      });
+    }
+
+    const method = await tx.payoutMethod.create({
+      data: {
+        accountHolder: cleanOptional(input.accountHolder),
+        bankName: cleanOptional(input.bankName),
+        clabe: cleanOptional(input.clabe),
+        coin: cleanOptional(input.coin),
+        email: cleanOptional(input.payoutEmail),
+        investorId: investor.id,
+        isPrimary,
+        paxumAccount: cleanOptional(input.paxumAccount),
+        type: input.type,
+        walletAddress: cleanOptional(input.walletAddress)
+      }
+    });
+
+    return formatPayoutMethod(method);
+  });
+}
+
+async function setPrimaryPayoutMethod(methodId: string, email: string) {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const investor = await tx.investor.findFirst({
+      select: { id: true },
+      where: { email }
+    });
+
+    if (!investor) {
+      throw new Error("No se encontro el inversionista.");
+    }
+
+    const method = await tx.payoutMethod.findFirst({
+      where: {
+        id: methodId,
+        investorId: investor.id
+      }
+    });
+
+    if (!method) {
+      throw new Error("No se encontro el metodo de pago.");
+    }
+
+    await tx.payoutMethod.updateMany({
+      data: { isPrimary: false },
+      where: { investorId: investor.id }
+    });
+
+    const updated = await tx.payoutMethod.update({
+      data: { isPrimary: true },
+      where: { id: method.id }
+    });
+
+    return formatPayoutMethod(updated);
+  });
 }
 
 async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
@@ -716,6 +844,39 @@ function parseReferralTarget(referredByCode?: string, sourceInvestmentId?: strin
 
 function getStripePaymentNote(sessionId: string) {
   return `stripe_checkout_session:${sessionId}`;
+}
+
+function formatPayoutMethod(method: {
+  accountHolder: string | null;
+  bankName: string | null;
+  clabe: string | null;
+  coin: string | null;
+  createdAt: Date;
+  email: string | null;
+  id: string;
+  isPrimary: boolean;
+  paxumAccount: string | null;
+  type: "BANK" | "PAYPAL" | "PAXUM" | "CRYPTO";
+  walletAddress: string | null;
+}) {
+  return {
+    accountHolder: method.accountHolder ?? undefined,
+    bankName: method.bankName ?? undefined,
+    clabe: method.clabe ?? undefined,
+    coin: method.coin ?? undefined,
+    createdAt: method.createdAt,
+    email: method.email ?? undefined,
+    id: method.id,
+    isPrimary: method.isPrimary,
+    paxumAccount: method.paxumAccount ?? undefined,
+    type: method.type.toLowerCase(),
+    walletAddress: method.walletAddress ?? undefined
+  };
+}
+
+function cleanOptional(value?: string) {
+  const clean = value?.trim();
+  return clean ? clean : undefined;
 }
 
 async function stripeRequest<T>(path: string, payload?: Record<string, string>, method: "GET" | "POST" = "POST") {
