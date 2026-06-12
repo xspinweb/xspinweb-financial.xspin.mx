@@ -1277,6 +1277,19 @@ a {
   margin-left: auto;
 }
 
+.detailPill {
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  color: var(--ink);
+  display: none;
+  font-size: 13px;
+  font-weight: 850;
+  min-height: 38px;
+  padding: 0 14px;
+  text-decoration: none;
+}
+
 .projectionContent {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(168px, 0.34fr);
@@ -2864,25 +2877,51 @@ a {
 
   .dashboardContent {
     gap: 12px;
-    padding: 84px 16px calc(110px + env(safe-area-inset-bottom));
+    padding: 126px 18px calc(110px + env(safe-area-inset-bottom));
+  }
+
+  .appHeader {
+    left: 18px;
+    right: 18px;
+    top: 34px;
   }
 
   .appHeader img:first-child {
-    width: 92px;
+    width: 132px;
   }
 
   .userAvatar,
   .userFallback {
-    flex: 0 0 34px;
-    height: 34px !important;
-    max-height: 34px;
-    max-width: 34px;
-    width: 34px !important;
+    flex: 0 0 54px;
+    height: 54px !important;
+    max-height: 54px;
+    max-width: 54px;
+    width: 54px !important;
   }
 
   .menuChevron {
-    height: 24px;
-    width: 24px;
+    height: 44px;
+    padding: 10px;
+    width: 44px;
+  }
+
+  .dashboardHero {
+    min-height: 210px;
+  }
+
+  .dashboardHero .loginEyebrow {
+    font-size: 14px;
+  }
+
+  .dashboardHero h1 {
+    font-size: 42px;
+    margin-top: 14px;
+  }
+
+  .dashboardHero p {
+    font-size: 20px;
+    line-height: 1.55;
+    max-width: 390px;
   }
 
   .dashboardGrowthGrid {
@@ -2890,8 +2929,8 @@ a {
   }
 
   .growthBalanceCard {
-    min-height: 260px;
-    padding: 20px 18px 18px;
+    min-height: 250px;
+    padding: 24px 20px 18px;
   }
 
   .growthBalanceCard h2,
@@ -2900,11 +2939,12 @@ a {
   }
 
   .growthBalanceCard span {
-    margin-top: 22px;
+    font-size: 18px;
+    margin-top: 0;
   }
 
   .growthBalanceCard .projectedBalanceValue {
-    font-size: 34px;
+    font-size: 44px;
     max-width: 100%;
   }
 
@@ -2926,14 +2966,24 @@ a {
     padding: 18px 16px;
   }
 
+  .metricCards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .projectionPanel .panelTitle {
-    align-items: flex-start;
+    align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
   }
 
   .projectionPanel .panelTitle span {
     margin-left: 0;
     white-space: nowrap;
+  }
+
+  .projectionPanel .detailPill {
+    display: inline-flex;
+    margin-left: auto;
   }
 
   .projectionContent {
@@ -2953,6 +3003,7 @@ a {
   .projectionList {
     border-left: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.12);
+    display: none;
     gap: 8px;
     padding-left: 0;
     padding-top: 12px;

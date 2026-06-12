@@ -116,27 +116,27 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   const primaryWeeks = primaryInvestment?.weeks ?? [];
   const currentPrimaryWeek = getCurrentInvestmentWeek(primaryInvestment);
   const selectedWeek = primaryWeeks.find((week) => week.weekNumber === selectedWeekNumber) ?? currentPrimaryWeek ?? primaryWeeks[0];
-  const projectedWeeks = buildTwelveWeekProjection(primaryInvestment);
-  const projectedBalance = projectedWeeks.at(-1)?.totalGenerated ?? primaryInvestment?.amount ?? 0;
+  const projectedWeeks = buildPortfolioProjection(investments);
+  const totalInvested = roundMoney(investments.reduce((total, investment) => total + investment.amount, 0));
+  const projectedBalance = projectedWeeks.at(-1)?.totalGenerated ?? totalInvested;
+  const totalGains = roundMoney(Math.max(projectedBalance - totalInvested, 0));
   const projectedReturn =
-    primaryInvestment?.amount && projectedBalance > primaryInvestment.amount
-      ? Math.round(((projectedBalance - primaryInvestment.amount) / primaryInvestment.amount) * 100)
+    totalInvested > 0 && projectedBalance > totalInvested
+      ? Math.round((totalGains / totalInvested) * 100)
       : 0;
+  const totalReferrals = investments.reduce(
+    (total, investment) => total + investment.referrals.filter((referral) => referral.invested).length,
+    0
+  );
 
   const cards = useMemo(() => {
-    const confirmedReferrals = primaryInvestment?.referrals.filter((referral) => referral.invested).length ?? 0;
-    const currentWeek = currentPrimaryWeek;
-    const nextPayment = currentWeek?.paymentLabel ?? primaryInvestment?.nextPaymentAt ?? "-";
-    const currentStatus = currentWeek?.statusLabel ?? (primaryInvestment ? "Cobrada" : "-");
-    const currentTone = currentStatus === "Cobrada" ? "success" : currentStatus === "Por cobrar" ? "warning" : currentStatus === "Pendiente" ? "danger" : undefined;
-
     return [
-      { icon: "chart", label: "Inversiones activas", value: String(investments.length) },
-      { icon: "users", label: "Referidos confirmados", value: String(confirmedReferrals) },
-      { icon: "calendar", label: "Proximo pago", value: nextPayment },
-      { icon: "wallet", label: "Estatus actual", tone: currentTone, value: currentStatus }
+      { icon: "wallet", label: "Inversion total", value: formatCurrency(totalInvested) },
+      { icon: "chart", label: "Ganancias totales", value: formatCurrency(totalGains) },
+      { icon: "percent", label: "Rendimiento", value: `${projectedReturn}%` },
+      { icon: "users", label: "Referidos totales", value: String(totalReferrals) }
     ];
-  }, [investments.length, primaryInvestment, currentPrimaryWeek]);
+  }, [projectedReturn, totalGains, totalInvested, totalReferrals]);
 
   useEffect(() => {
     setSelectedWeekNumber(currentPrimaryWeek?.weekNumber ?? primaryWeeks[0]?.weekNumber ?? 1);
@@ -223,6 +223,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
           <div className="panelTitle">
             <h2>Proyeccion de crecimiento</h2>
             <span>8 semanas</span>
+            <a className="detailPill" href="#weekly-history">Ver detalle</a>
           </div>
           <div className="projectionContent">
             <ProjectionChart weeks={projectedWeeks} />
@@ -244,7 +245,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
 
       <section className="dashboardCards metricCards">
         {cards.map((card) => (
-          <article className={`dashboardCard metricCard ${card.tone ? `metric${capitalize(card.tone)}` : ""}`} key={card.label}>
+          <article className="dashboardCard metricCard" key={card.label}>
             <div className="metricIcon">
               <MetricIcon name={card.icon} />
             </div>
@@ -386,7 +387,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
           )}
         </section>
 
-        <section className="investmentPanel weeklyPanel">
+        <section className="investmentPanel weeklyPanel" id="weekly-history">
           <div className="tableHeader">
             <div className="panelTitle">
               <CalendarIcon />
@@ -537,6 +538,21 @@ function buildTwelveWeekProjection(investment?: Investment): ProjectionWeek[] {
       weekNumber
     };
   });
+}
+
+function buildPortfolioProjection(investments: Investment[]): ProjectionWeek[] {
+  if (investments.length === 0) {
+    return [];
+  }
+
+  const projections = investments.map(buildTwelveWeekProjection);
+
+  return Array.from({ length: projectionWeeks }, (_, index) => ({
+    totalGenerated: roundMoney(
+      projections.reduce((total, projection) => total + (projection[index]?.totalGenerated ?? 0), 0)
+    ),
+    weekNumber: index + 1
+  }));
 }
 
 function getInitialReferralMovement(investment: Investment, visibleWeeks: InvestmentWeek[], initialBase: number) {
@@ -915,6 +931,14 @@ function MetricIcon({ name }: { name: string }) {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H20v3H6c-.6 0-1 .4-1 1s.4 1 1 1h14a2 2 0 0 1 2 2v5a2.5 2.5 0 0 1-2.5 2.5h-14A2.5 2.5 0 0 1 3 17Zm14.7 6.2a1.6 1.6 0 1 0 0 3.2H20v-3.2Z" />
+      </svg>
+    );
+  }
+
+  if (name === "percent") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7.2 9.2a3.2 3.2 0 1 1 0-6.4 3.2 3.2 0 0 1 0 6.4Zm0-2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm9.6 14a3.2 3.2 0 1 1 0-6.4 3.2 3.2 0 0 1 0 6.4Zm0-2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4ZM18.9 3.7 5.3 20.1l-1.6-1.3L17.3 2.4Z" />
       </svg>
     );
   }
