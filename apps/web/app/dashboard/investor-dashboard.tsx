@@ -273,22 +273,34 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
             </div>
           ) : (
             <div className="investmentList">
-              {investments.map((investment) => {
+              {investments.map((investment, index) => {
                 const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
                 const currentWeek = getCurrentInvestmentWeek(investment);
                 const nextPaymentLabel = currentWeek?.paymentLabel ?? investment.nextPaymentAt;
                 const currentWeekNumber = currentWeek?.weekNumber ?? 1;
                 const cycleProgress = Math.round((currentWeekNumber / projectionWeeks) * 100);
                 const currentTotalGenerated = currentWeek?.totalGenerated ?? investment.amount;
+                const toneClass = ["groupToneGreen", "groupToneBlue", "groupTonePurple", "groupToneOrange"][index % 4];
 
                 return (
-                  <details className={`investmentItem ${primaryInvestment?.id === investment.id ? "selectedInvestment" : ""}`} key={investment.id}>
-                    <summary onClick={() => setSelectedInvestmentId(investment.id)}>
+                  <details className={`investmentItem ${toneClass} ${primaryInvestment?.id === investment.id ? "selectedInvestment" : ""}`} key={investment.id}>
+                    <summary
+                      onClick={(event) => {
+                        if ((event.target as HTMLElement).closest("button,a")) {
+                          return;
+                        }
+
+                        setSelectedInvestmentId(investment.id);
+
+                        if (window.innerWidth <= 620) {
+                          event.preventDefault();
+                        }
+                      }}
+                    >
                       <div className="investmentSummaryMain">
                         <span>{investment.name}</span>
                         <strong>{investment.group}</strong>
                       </div>
-                      <span className="investmentOptions" aria-hidden="true">...</span>
                       <div className="investmentCycleCell">
                         <span>Ciclo</span>
                         <strong>{investment.cycle}</strong>
