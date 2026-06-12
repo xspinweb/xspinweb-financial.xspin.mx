@@ -1290,10 +1290,10 @@ a {
   cursor: pointer;
   display: grid;
   font: inherit;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: 34px minmax(0, 1fr) auto auto auto;
-  min-height: 48px;
-  padding: 8px 10px;
+  min-height: 42px;
+  padding: 6px 10px;
   text-align: left;
 }
 
@@ -1309,9 +1309,10 @@ a {
   color: var(--muted);
   display: inline-flex;
   font-weight: 900;
-  height: 28px;
+  font-size: 12px;
+  height: 24px;
   justify-content: center;
-  width: 28px;
+  width: 24px;
 }
 
 .portfolioWeekRows button.active > span {
@@ -1322,27 +1323,27 @@ a {
 
 .portfolioWeekRows strong {
   color: inherit;
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .portfolioWeekRows em {
   border-radius: 999px;
   background: rgba(53, 224, 161, 0.12);
   color: var(--green);
-  font-size: 11px;
+  font-size: 9px;
   font-style: normal;
   font-weight: 900;
-  padding: 5px 9px;
+  padding: 4px 7px;
 }
 
 .portfolioWeekRows b {
   color: var(--ink);
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .portfolioWeekRows i {
   color: var(--green);
-  font-size: 22px;
+  font-size: 18px;
   font-style: normal;
   line-height: 1;
 }
@@ -1359,7 +1360,8 @@ a {
   font-weight: 900;
   gap: 10px;
   justify-content: center;
-  min-height: 56px;
+  font-size: 13px;
+  min-height: 46px;
   width: 100%;
 }
 
