@@ -39,6 +39,10 @@ const primaryPayoutMethodSchema = z.object({
   email: z.string().email()
 });
 
+const deletePayoutMethodSchema = z.object({
+  email: z.string().email()
+});
+
 type PortfolioInvestment = {
   id: string;
   principalAmount: unknown;
@@ -208,11 +212,19 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
 
   const reinvestMatch = url.pathname.match(/^\/investments\/([^/]+)\/reinvest$/);
   const primaryPayoutMethodMatch = url.pathname.match(/^\/payout-methods\/([^/]+)\/primary$/);
+  const payoutMethodMatch = url.pathname.match(/^\/payout-methods\/([^/]+)$/);
 
   if (req.method === "POST" && primaryPayoutMethodMatch) {
     const input = primaryPayoutMethodSchema.parse(await readJson(req));
     const method = await setPrimaryPayoutMethod(primaryPayoutMethodMatch[1], input.email);
     sendJson(res, 200, method);
+    return;
+  }
+
+  if (req.method === "DELETE" && payoutMethodMatch) {
+    const input = deletePayoutMethodSchema.parse(await readJson(req));
+    const result = await deletePayoutMethod(payoutMethodMatch[1], input.email);
+    sendJson(res, 200, result);
     return;
   }
 
@@ -417,6 +429,50 @@ async function setPrimaryPayoutMethod(methodId: string, email: string) {
     });
 
     return formatPayoutMethod(updated);
+  });
+}
+
+async function deletePayoutMethod(methodId: string, email: string) {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const investor = await tx.investor.findFirst({
+      select: { id: true },
+      where: { email }
+    });
+
+    if (!investor) {
+      throw new Error("No se encontro el inversionista.");
+    }
+
+    const method = await tx.payoutMethod.findFirst({
+      where: {
+        id: methodId,
+        investorId: investor.id
+      }
+    });
+
+    if (!method) {
+      throw new Error("No se encontro el metodo de pago.");
+    }
+
+    await tx.payoutMethod.delete({
+      where: { id: method.id }
+    });
+
+    if (method.isPrimary) {
+      const nextMethod = await tx.payoutMethod.findFirst({
+        orderBy: { createdAt: "asc" },
+        where: { investorId: investor.id }
+      });
+
+      if (nextMethod) {
+        await tx.payoutMethod.update({
+          data: { isPrimary: true },
+          where: { id: nextMethod.id }
+        });
+      }
+    }
+
+    return { ok: true };
   });
 }
 
@@ -923,5 +979,5 @@ function sendJson(res: ServerResponse, statusCode: number, payload: unknown) {
 function setCorsHeaders(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
 }

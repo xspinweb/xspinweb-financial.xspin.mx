@@ -3161,7 +3161,8 @@ a {
 
 .paymentFormCard button,
 .secondaryWalletAction,
-.setPrimaryAction {
+.setPrimaryAction,
+.deleteWalletAction {
   min-height: 44px;
   border: 1px solid rgba(53, 224, 161, 0.26);
   border-radius: 9px;
@@ -3215,7 +3216,7 @@ a {
 .savedMethodsHead,
 .savedMethodRow {
   display: grid;
-  grid-template-columns: 1.25fr 2fr 0.85fr;
+  grid-template-columns: 1.15fr 1.8fr 1fr auto;
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
@@ -3259,6 +3260,13 @@ a {
   line-height: 1.45;
 }
 
+.savedMethodActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
 .walletStatus {
   display: inline-flex;
   justify-self: start;
@@ -3278,6 +3286,25 @@ a {
   background: rgba(159, 178, 196, 0.08);
   color: var(--muted);
   padding: 0 10px;
+}
+
+.deleteWalletAction {
+  width: 34px;
+  min-height: 34px;
+  border-color: rgba(255, 84, 118, 0.36);
+  background: rgba(255, 84, 118, 0.08);
+  color: #ff5476;
+  padding: 0;
+}
+
+.deleteWalletAction svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.walletCarouselDots {
+  display: none;
 }
 
 .emptyWalletState {
@@ -3364,11 +3391,7 @@ a {
   }
 
   .savedMethodRow > span,
-  .savedMethodRow > .setPrimaryAction {
-    grid-column: 1;
-  }
-
-  .savedMethodRow > .walletStatus.primary {
+  .savedMethodActions {
     grid-column: 1;
   }
 
@@ -3393,11 +3416,21 @@ a {
     max-width: 94%;
   }
 
+  .savedMethodActions {
+    gap: 10px;
+  }
+
   .savedMethodRow .walletStatus.primary,
   .savedMethodRow .setPrimaryAction {
     justify-self: start;
     min-height: 38px;
     padding: 9px 16px;
+  }
+
+  .deleteWalletAction {
+    height: 38px;
+    min-height: 38px;
+    width: 42px;
   }
 
   .walletSecurityPanel {
@@ -3586,6 +3619,27 @@ a {
     max-width: 95%;
   }
 
+  .walletCarouselDots {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin: 10px 0 2px;
+  }
+
+  .walletCarouselDots span {
+    width: 16px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(159, 178, 196, 0.22);
+    transition: width 160ms ease, background-color 160ms ease;
+  }
+
+  .walletCarouselDots span.active {
+    width: 26px;
+    background: linear-gradient(90deg, var(--green), var(--cyan));
+    box-shadow: 0 0 14px rgba(53, 224, 161, 0.34);
+  }
+
   .paymentFormGrid {
     display: block;
   }
@@ -3619,6 +3673,41 @@ a {
   .savedMethodRow {
     border: 1px solid rgba(159, 178, 196, 0.12);
     border-radius: 12px;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    min-height: 230px;
+    padding: 20px;
+  }
+
+  .savedMethodRow > div:first-child {
+    display: grid;
+    grid-column: 1 / 4;
+    grid-template-columns: 64px minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .savedMethodRow > div:first-child strong {
+    align-self: center;
+  }
+
+  .savedMethodRow > span {
+    grid-column: 1 / 4;
+    font-size: 16px;
+  }
+
+  .savedMethodActions {
+    grid-column: 1 / 4;
+  }
+
+  .savedMethodRow .walletStatus.primary,
+  .savedMethodRow .setPrimaryAction {
+    min-height: 44px;
+  }
+
+  .deleteWalletAction {
+    border-radius: 12px;
+    height: 44px;
+    min-height: 44px;
+    width: 48px;
   }
 
   .terminalValue strong {

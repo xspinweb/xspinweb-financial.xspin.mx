@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactNode, UIEvent } from "react";
 import { useEffect, useState } from "react";
 
 type PaymentType = "bank" | "paypal" | "paxum" | "crypto";
@@ -79,6 +79,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
   const [error, setError] = useState("");
   const [isLoadingMethods, setIsLoadingMethods] = useState(true);
   const [isSavingMethod, setIsSavingMethod] = useState(false);
+  const [savedCarouselIndex, setSavedCarouselIndex] = useState(0);
 
   useEffect(() => {
     let isCurrent = true;
@@ -185,6 +186,42 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
     }
   }
 
+  async function deleteMethod(id: string) {
+    setError("");
+
+    try {
+      const response = await fetch(`/api/payout-methods/${encodeURIComponent(id)}`, {
+        body: JSON.stringify({ email: userEmail }),
+        headers: { "Content-Type": "application/json" },
+        method: "DELETE"
+      });
+
+      if (!response.ok) {
+        throw new Error(await getResponseErrorMessage(response));
+      }
+
+      setMethods((current) => {
+        const deletedMethod = current.find((method) => method.id === id);
+        const remaining = current.filter((method) => method.id !== id);
+
+        if (!deletedMethod?.isPrimary || remaining.some((method) => method.isPrimary)) {
+          return remaining;
+        }
+
+        return remaining.map((method, index) => ({ ...method, isPrimary: index === 0 }));
+      });
+      setSavedCarouselIndex((current) => Math.max(0, Math.min(current, methods.length - 2)));
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "No se pudo eliminar el metodo de pago.");
+    }
+  }
+
+  function updateSavedCarouselIndex(event: UIEvent<HTMLDivElement>) {
+    const element = event.currentTarget;
+    const nextIndex = Math.round(element.scrollLeft / Math.max(1, element.clientWidth));
+    setSavedCarouselIndex(nextIndex);
+  }
+
   return (
     <>
       <section className="walletSecurityPanel">
@@ -230,6 +267,10 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
             </button>
           ))}
         </div>
+        <CarouselDots
+          activeIndex={methodOptions.findIndex((option) => option.type === selectedType)}
+          count={methodOptions.length}
+        />
 
         <p className="walletInfoNote">
           <InfoIcon />
@@ -275,9 +316,6 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
             <h2>Mis metodos guardados</h2>
             <p>Estos son los metodos donde puedes recibir tus pagos.</p>
           </div>
-          <button className="secondaryWalletAction" type="button" onClick={() => selectType("bank")}>
-            + Agregar metodo
-          </button>
         </div>
 
         {isLoadingMethods ? (
@@ -293,11 +331,13 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
             <span>Agrega al menos un metodo para preparar tus retiros.</span>
           </div>
         ) : (
-          <div className="savedMethodsTable">
+          <>
+          <div className="savedMethodsTable" onScroll={updateSavedCarouselIndex}>
             <div className="savedMethodsHead">
               <span>Metodo</span>
               <span>Informacion</span>
               <span>Principal</span>
+              <span>Acciones</span>
             </div>
             {methods.map((method) => (
               <div className="savedMethodRow" key={method.id}>
@@ -306,19 +346,40 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
                   <strong>{getMethodTitle(method)}</strong>
                 </div>
                 <span>{getMethodInfo(method)}</span>
-                <button
-                  className={method.isPrimary ? "walletStatus primary" : "setPrimaryAction"}
-                  type="button"
-                  onClick={() => setPrimary(method.id)}
-                >
-                  {method.isPrimary ? "Principal" : "Marcar principal"}
-                </button>
+                <div className="savedMethodActions">
+                  <button
+                    className={method.isPrimary ? "walletStatus primary" : "setPrimaryAction"}
+                    type="button"
+                    onClick={() => setPrimary(method.id)}
+                  >
+                    {method.isPrimary ? "Principal" : "Marcar principal"}
+                  </button>
+                  <button className="deleteWalletAction" type="button" onClick={() => deleteMethod(method.id)} aria-label="Eliminar metodo">
+                    <TrashIcon />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
+          <CarouselDots activeIndex={savedCarouselIndex} count={methods.length} />
+          </>
         )}
       </section>
     </>
+  );
+}
+
+function CarouselDots({ activeIndex, count }: { activeIndex: number; count: number }) {
+  if (count < 2) {
+    return null;
+  }
+
+  return (
+    <div className="walletCarouselDots" aria-hidden="true">
+      {Array.from({ length: count }, (_, index) => (
+        <span className={index === activeIndex ? "active" : ""} key={index} />
+      ))}
+    </div>
   );
 }
 
@@ -627,6 +688,14 @@ function InfoIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M11 10h2v7h-2Zm0-3h2v2h-2Zm1-5a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8 3h8l1 2h4v2H3V5h4Zm1 6h2v9H9Zm4 0h2v9h-2Zm4 0h2v9h-2ZM6 9h2l1 11h10l1-11h2l-1.2 12.2c-.1.6-.6 1-1.2 1H8.4c-.6 0-1.1-.4-1.2-1Z" />
     </svg>
   );
 }
