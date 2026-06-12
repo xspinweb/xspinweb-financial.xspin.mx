@@ -1512,7 +1512,7 @@ a {
 .modalOverlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 1000;
   display: grid;
   place-items: center;
   background: rgba(3, 8, 14, 0.72);
@@ -3236,19 +3236,19 @@ a {
     color: var(--green);
     grid-column: 3;
     grid-row: 1;
-    height: 30px;
+    height: 24px;
     justify-self: end;
     margin: 0;
-    min-height: 30px;
+    min-height: 24px;
     padding: 0;
-    width: 30px;
+    width: 24px;
   }
 
   .investmentItem summary > .inviteReferralAction svg {
     display: block;
     fill: currentColor;
-    height: 18px;
-    width: 18px;
+    height: 14px;
+    width: 14px;
   }
 
   .investmentItem summary > .inviteReferralAction span {

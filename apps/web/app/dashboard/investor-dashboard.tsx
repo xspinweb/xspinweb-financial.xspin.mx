@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { NewInvestmentModal } from "./new-investment-modal";
 
 type Referral = {
@@ -562,24 +563,8 @@ function InviteReferralModal({ investmentId, investorCode }: { investmentId: str
     setCopiedValue(type);
   }
 
-  return (
-    <>
-      <button
-        className="inviteReferralAction"
-        type="button"
-        aria-label="Invitar referido"
-        title="Invitar referido"
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          setIsOpen(true);
-        }}
-      >
-        <InviteIcon />
-        <span>Invitar</span>
-      </button>
-
-      {isOpen ? (
+  const modal = isOpen
+    ? createPortal(
         <div className="modalOverlay" role="presentation">
           <section className="investmentModal" role="dialog" aria-modal="true" aria-labelledby={`invite-${investmentId}`}>
             <div className="inviteModalContent">
@@ -607,8 +592,28 @@ function InviteReferralModal({ investmentId, investorCode }: { investmentId: str
               />
             </div>
           </section>
-        </div>
-      ) : null}
+        </div>,
+        document.body
+      )
+    : null;
+
+  return (
+    <>
+      <button
+        className="inviteReferralAction"
+        type="button"
+        aria-label="Invitar referido"
+        title="Invitar referido"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsOpen(true);
+        }}
+      >
+        <InviteIcon />
+        <span>Invitar</span>
+      </button>
+      {modal}
     </>
   );
 }
