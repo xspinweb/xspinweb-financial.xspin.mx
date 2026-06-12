@@ -149,19 +149,6 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
     setError("");
   }
 
-  function deleteMethod(id: string) {
-    setMethods((current) => {
-      const methodWasPrimary = current.find((method) => method.id === id)?.isPrimary;
-      const filtered = current.filter((method) => method.id !== id);
-
-      if (!methodWasPrimary || filtered.length === 0) {
-        return filtered;
-      }
-
-      return filtered.map((method, index) => ({ ...method, isPrimary: index === 0 }));
-    });
-  }
-
   function setPrimary(id: string) {
     setMethods((current) => current.map((method) => ({ ...method, isPrimary: method.id === id })));
   }
@@ -273,7 +260,6 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
               <span>Metodo</span>
               <span>Informacion</span>
               <span>Principal</span>
-              <span>Acciones</span>
             </div>
             {methods.map((method) => (
               <div className="savedMethodRow" key={method.id}>
@@ -289,11 +275,6 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
                 >
                   {method.isPrimary ? "Principal" : "Marcar principal"}
                 </button>
-                <div className="walletRowActions">
-                  <button className="danger" type="button" aria-label="Eliminar metodo" onClick={() => deleteMethod(method.id)}>
-                    <TrashIcon />
-                  </button>
-                </div>
               </div>
             ))}
           </div>
@@ -589,14 +570,6 @@ function InfoIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M11 10h2v7h-2Zm0-3h2v2h-2Zm1-5a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" />
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M8 4h8l1 2h4v2H3V6h4Zm-2 6h12l-.8 11H6.8Z" />
     </svg>
   );
 }

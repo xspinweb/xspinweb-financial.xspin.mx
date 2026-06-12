@@ -3215,7 +3215,7 @@ a {
 .savedMethodsHead,
 .savedMethodRow {
   display: grid;
-  grid-template-columns: 1.25fr 2fr 0.85fr 0.55fr;
+  grid-template-columns: 1.25fr 2fr 0.85fr;
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
@@ -3278,36 +3278,6 @@ a {
   background: rgba(159, 178, 196, 0.08);
   color: var(--muted);
   padding: 0 10px;
-}
-
-.walletRowActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.walletRowActions button {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid rgba(59, 130, 246, 0.35);
-  border-radius: 8px;
-  background: rgba(59, 130, 246, 0.08);
-  color: #4aa3ff;
-  cursor: pointer;
-}
-
-.walletRowActions button.danger {
-  border-color: rgba(255, 57, 82, 0.32);
-  background: rgba(255, 57, 82, 0.08);
-  color: #ff405a;
-}
-
-.walletRowActions svg {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
 }
 
 .emptyWalletState {
@@ -3385,24 +3355,49 @@ a {
   }
 
   .savedMethodRow {
-    flex: 0 0 min(84%, 420px);
-    grid-template-columns: minmax(0, 1fr) auto;
-    min-height: 174px;
+    box-sizing: border-box;
+    flex: 0 0 100%;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 190px;
+    padding: 18px;
     scroll-snap-align: start;
   }
 
   .savedMethodRow > span,
   .savedMethodRow > .setPrimaryAction {
-    grid-column: 1 / -1;
+    grid-column: 1;
   }
 
   .savedMethodRow > .walletStatus.primary {
     grid-column: 1;
   }
 
-  .walletRowActions {
-    grid-column: 2;
-    grid-row: 1;
+  .savedMethodRow > div:first-child {
+    gap: 14px;
+  }
+
+  .savedMethodRow > div:first-child strong {
+    font-size: 18px;
+    line-height: 1.18;
+  }
+
+  .savedMethodRow .paymentBrandIcon,
+  .savedMethodRow .cryptoIconStack {
+    height: 52px;
+    width: 52px;
+  }
+
+  .savedMethodRow > span {
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 94%;
+  }
+
+  .savedMethodRow .walletStatus.primary,
+  .savedMethodRow .setPrimaryAction {
+    justify-self: start;
+    min-height: 38px;
+    padding: 9px 16px;
   }
 
   .walletSecurityPanel {
