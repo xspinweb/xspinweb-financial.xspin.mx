@@ -71,6 +71,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   const [isLoading, setIsLoading] = useState(true);
   const [selectedInvestmentId, setSelectedInvestmentId] = useState("");
   const [selectedWeekNumber, setSelectedWeekNumber] = useState(1);
+  const [showAllPortfolioWeeks, setShowAllPortfolioWeeks] = useState(false);
 
   useEffect(() => {
     void loadPortfolio();
@@ -117,6 +118,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   const currentPrimaryWeek = getCurrentInvestmentWeek(primaryInvestment);
   const selectedWeek = primaryWeeks.find((week) => week.weekNumber === selectedWeekNumber) ?? currentPrimaryWeek ?? primaryWeeks[0];
   const projectedWeeks = buildPortfolioProjection(investments);
+  const visiblePortfolioWeeks = showAllPortfolioWeeks ? projectedWeeks : projectedWeeks.slice(0, 3);
   const totalInvested = roundMoney(investments.reduce((total, investment) => total + investment.amount, 0));
   const projectedBalance = projectedWeeks.at(-1)?.totalGenerated ?? totalInvested;
   const totalGains = roundMoney(Math.max(projectedBalance - totalInvested, 0));
@@ -264,7 +266,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
           <h2>Desglose por semana</h2>
         </div>
         <div className="portfolioWeekRows">
-          {projectedWeeks.slice(0, 5).map((week, index) => (
+          {visiblePortfolioWeeks.map((week, index) => (
             <button className={index === 0 ? "active" : ""} key={`portfolio-week-${week.weekNumber}`} type="button">
               <span>{week.weekNumber}</span>
               <strong>Semana {week.weekNumber}</strong>
@@ -274,9 +276,9 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
             </button>
           ))}
         </div>
-        {projectedWeeks.length > 5 ? (
-          <button className="showAllWeeks" type="button">
-            Ver todas las semanas
+        {projectedWeeks.length > 3 ? (
+          <button className={showAllPortfolioWeeks ? "showAllWeeks open" : "showAllWeeks"} type="button" onClick={() => setShowAllPortfolioWeeks((current) => !current)}>
+            {showAllPortfolioWeeks ? "Ver menos semanas" : "Ver todas las semanas"}
             <span aria-hidden="true">⌄</span>
           </button>
         ) : null}
@@ -720,13 +722,13 @@ function GrowthSparkline({ weeks }: { weeks: ProjectionWeek[] }) {
   const width = 560;
   const height = 260;
   const values = getHeroChartValues(weeks);
-  const padding = { bottom: 28, left: 18, right: 78, top: 30 };
+  const padding = { bottom: 28, left: 18, right: 104, top: 34 };
   const points = getChartPoints(values, width, height, padding);
   const path = getSmoothPath(points);
   const last = points.at(-1);
   const areaPath = path ? `${path} L ${width - padding.right} ${height - padding.bottom} L ${padding.left} ${height - padding.bottom} Z` : "";
   const calloutLabel = formatChartCurrency(weeks.at(-1)?.totalGenerated ?? 0);
-  const growthCallout = last ? getChartCallout(last, calloutLabel, width, height, { right: 10, top: 8 }, 74, -34) : null;
+  const growthCallout = last ? getChartCallout(last, calloutLabel, width, height, { right: 24, top: 12 }, 58, -12) : null;
 
   return (
     <svg className="growthSparkline" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">

@@ -1365,6 +1365,15 @@ a {
   width: 100%;
 }
 
+.showAllWeeks span {
+  display: inline-block;
+  transition: transform 180ms ease;
+}
+
+.showAllWeeks.open span {
+  transform: rotate(180deg);
+}
+
 .panelTitle {
   align-items: center;
   display: flex;
