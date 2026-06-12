@@ -2766,6 +2766,558 @@ a {
   padding: 0 12px 12px;
 }
 
+.walletPage {
+  gap: 16px;
+}
+
+.walletHero {
+  min-height: 0;
+}
+
+.walletHero h1 {
+  font-size: clamp(28px, 3.2vw, 40px);
+  line-height: 1;
+  margin: 5px 0 8px;
+}
+
+.walletHero p {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+}
+
+.walletSecurityPanel,
+.walletPanel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(53, 224, 161, 0.09), transparent 32%),
+    linear-gradient(145deg, rgba(12, 23, 35, 0.86), rgba(5, 12, 20, 0.92));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+}
+
+.walletSecurityPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 20px 24px;
+}
+
+.walletSecurityItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.walletSecurityItem > svg {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  fill: var(--green);
+  filter: drop-shadow(0 0 14px rgba(53, 224, 161, 0.28));
+}
+
+.walletSecurityItem strong,
+.paymentTypeCard strong,
+.paymentFormTitle h3,
+.savedMethodRow strong {
+  color: var(--ink);
+  display: block;
+  font-weight: 900;
+}
+
+.walletSecurityItem span,
+.walletSectionHeader p,
+.paymentTypeCard p,
+.walletField span,
+.walletHelper,
+.walletAdvice span,
+.emptyWalletState span {
+  color: var(--muted);
+}
+
+.walletSecurityItem span {
+  display: block;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.walletSecurityItem.compact strong {
+  color: var(--green);
+  font-size: 12px;
+}
+
+.walletSecurityItem.compact svg {
+  width: 28px;
+  height: 28px;
+}
+
+.walletPanel {
+  padding: 20px;
+}
+
+.walletSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.walletSectionHeader h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.walletSectionHeader p {
+  font-size: 13px;
+  margin: 5px 0 0;
+}
+
+.paymentTypeGrid,
+.paymentFormGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.paymentTypeCard,
+.paymentFormCard,
+.savedMethodRow,
+.emptyWalletState {
+  border: 1px solid rgba(159, 178, 196, 0.14);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(53, 224, 161, 0.06), transparent 28%),
+    rgba(8, 17, 28, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.paymentTypeCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  min-height: 126px;
+  padding: 18px;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.paymentTypeCard:hover,
+.paymentTypeCard.active {
+  border-color: rgba(53, 224, 161, 0.6);
+  box-shadow: 0 0 32px rgba(53, 224, 161, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+
+.paymentTypeCard span:not(.paymentBrandIcon):not(.cryptoIconStack) {
+  display: inline-flex;
+  border-radius: 999px;
+  background: rgba(53, 224, 161, 0.13);
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 950;
+  margin-top: 6px;
+  padding: 3px 7px;
+}
+
+.paymentTypeCard p {
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 10px 0 0;
+}
+
+.checkBadgeIcon {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 20px;
+  height: 20px;
+  fill: var(--green);
+}
+
+.paymentBrandIcon,
+.cryptoIconStack {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  color: var(--green);
+  background: rgba(53, 224, 161, 0.12);
+  box-shadow: 0 0 28px rgba(53, 224, 161, 0.13);
+}
+
+.paymentBrandIcon svg {
+  width: 34px;
+  height: 34px;
+  fill: currentColor;
+}
+
+.paymentBrandIcon.paypal {
+  color: #56a8ff;
+  background: rgba(42, 123, 224, 0.18);
+  font-size: 32px;
+  font-weight: 950;
+  font-style: italic;
+}
+
+.paymentBrandIcon.paxum {
+  color: #f3f7ff;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.cryptoIconStack {
+  position: relative;
+  color: #fff;
+  background: rgba(130, 82, 255, 0.16);
+}
+
+.cryptoIconStack i {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.cryptoIconStack i:nth-child(1) {
+  left: 3px;
+  background: #f59e0b;
+}
+
+.cryptoIconStack i:nth-child(2) {
+  background: #6574ff;
+}
+
+.cryptoIconStack i:nth-child(3) {
+  right: 3px;
+  background: #ff2f93;
+}
+
+.walletInfoNote {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.06);
+  color: #b9d6ff;
+  font-size: 12px;
+  margin: 18px 0;
+  padding: 12px 14px;
+}
+
+.walletInfoNote svg {
+  width: 18px;
+  height: 18px;
+  fill: #4aa3ff;
+}
+
+.paymentFormCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 390px;
+  opacity: 0.54;
+  padding: 16px;
+  transition: opacity 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.paymentFormCard.active {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.paymentFormCard.green.active {
+  border-color: rgba(53, 224, 161, 0.45);
+}
+
+.paymentFormCard.blue.active {
+  border-color: rgba(60, 167, 255, 0.45);
+}
+
+.paymentFormCard.red.active {
+  border-color: rgba(255, 57, 82, 0.48);
+}
+
+.paymentFormCard.purple.active {
+  border-color: rgba(166, 107, 255, 0.5);
+}
+
+.paymentFormTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.paymentFormTitle .paymentBrandIcon,
+.paymentFormTitle .cryptoIconStack {
+  width: 48px;
+  height: 48px;
+}
+
+.paymentFormTitle h3 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.walletField {
+  display: grid;
+  gap: 7px;
+}
+
+.walletField span {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.walletField input,
+.walletField select {
+  min-height: 42px;
+  border: 1px solid rgba(159, 178, 196, 0.16);
+  border-radius: 8px;
+  background: rgba(4, 12, 21, 0.72);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  padding: 0 12px;
+}
+
+.walletField input:focus,
+.walletField select:focus {
+  border-color: rgba(53, 224, 161, 0.55);
+  box-shadow: 0 0 0 3px rgba(53, 224, 161, 0.09);
+}
+
+.walletHelper {
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.walletHelper.success {
+  color: var(--green);
+}
+
+.walletAdvice {
+  display: flex;
+  gap: 10px;
+  border: 1px solid rgba(53, 224, 161, 0.22);
+  border-radius: 10px;
+  background: rgba(53, 224, 161, 0.06);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: auto;
+  padding: 12px;
+}
+
+.walletAdvice svg {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.walletAdvice.green {
+  color: var(--green);
+}
+
+.walletAdvice.blue {
+  border-color: rgba(60, 167, 255, 0.4);
+  background: rgba(60, 167, 255, 0.08);
+  color: #58b2ff;
+}
+
+.walletAdvice.red {
+  border-color: rgba(255, 57, 82, 0.45);
+  background: rgba(255, 57, 82, 0.08);
+  color: #ff5f78;
+}
+
+.walletAdvice.purple {
+  border-color: rgba(166, 107, 255, 0.5);
+  background: rgba(166, 107, 255, 0.08);
+  color: #b891ff;
+}
+
+.walletAdvice strong {
+  color: inherit;
+  display: block;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.paymentFormCard button,
+.secondaryWalletAction,
+.setPrimaryAction {
+  min-height: 44px;
+  border: 1px solid rgba(53, 224, 161, 0.26);
+  border-radius: 9px;
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+  color: #031016;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.paymentFormCard.blue button {
+  background: linear-gradient(90deg, #2877d9, #3ca7ff);
+  color: #f6fbff;
+}
+
+.paymentFormCard.red button {
+  background: linear-gradient(90deg, #ef233c, #ff405a);
+  color: #fff;
+}
+
+.paymentFormCard.purple button {
+  background: linear-gradient(90deg, #7c3aed, #a855f7);
+  color: #fff;
+}
+
+.walletError {
+  border: 1px solid rgba(255, 91, 117, 0.28);
+  border-radius: 10px;
+  background: rgba(255, 91, 117, 0.08);
+  color: #ff6b85;
+  font-size: 13px;
+  font-weight: 900;
+  margin: 14px 0 0;
+  padding: 12px;
+}
+
+.secondaryWalletAction {
+  background: rgba(53, 224, 161, 0.08);
+  color: var(--green);
+  padding: 0 16px;
+}
+
+.savedMethodsTable {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid rgba(159, 178, 196, 0.12);
+  border-radius: 12px;
+}
+
+.savedMethodsHead,
+.savedMethodRow {
+  display: grid;
+  grid-template-columns: 1.2fr 1.9fr 0.8fr 0.8fr 0.7fr;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+.savedMethodsHead {
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.savedMethodRow {
+  border: 0;
+  border-top: 1px solid rgba(159, 178, 196, 0.1);
+  border-radius: 0;
+  background: rgba(7, 15, 24, 0.58);
+  box-shadow: none;
+}
+
+.savedMethodRow > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.savedMethodRow .paymentBrandIcon,
+.savedMethodRow .cryptoIconStack {
+  width: 38px;
+  height: 38px;
+}
+
+.savedMethodRow .paymentBrandIcon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.savedMethodRow > span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.walletStatus {
+  display: inline-flex;
+  justify-self: start;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 950;
+  padding: 6px 9px;
+}
+
+.walletStatus.verified,
+.walletStatus.primary {
+  background: rgba(53, 224, 161, 0.12);
+  color: var(--green);
+}
+
+.setPrimaryAction {
+  min-height: 30px;
+  background: rgba(159, 178, 196, 0.08);
+  color: var(--muted);
+  padding: 0 10px;
+}
+
+.walletRowActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.walletRowActions button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.08);
+  color: #4aa3ff;
+  cursor: pointer;
+}
+
+.walletRowActions button.danger {
+  border-color: rgba(255, 57, 82, 0.32);
+  background: rgba(255, 57, 82, 0.08);
+  color: #ff405a;
+}
+
+.walletRowActions svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.emptyWalletState {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 34px 18px;
+  text-align: center;
+}
+
 @media (max-width: 980px) {
   .heroGrid,
   .split,
@@ -2806,6 +3358,34 @@ a {
 
   .dashboardHero {
     padding-right: 0;
+  }
+
+  .paymentTypeGrid,
+  .paymentFormGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .savedMethodsHead {
+    display: none;
+  }
+
+  .savedMethodRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .savedMethodRow > span,
+  .savedMethodRow > .walletStatus,
+  .savedMethodRow > .setPrimaryAction {
+    grid-column: 1 / -1;
+  }
+
+  .walletRowActions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .walletSecurityPanel {
+    grid-template-columns: 1fr;
   }
 
   .metricCards {
@@ -2933,6 +3513,43 @@ a {
 
   .dashboardContent {
     padding: 84px 16px 16px;
+  }
+
+  .paymentTypeGrid,
+  .paymentFormGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .walletPanel,
+  .walletSecurityPanel {
+    padding: 16px;
+  }
+
+  .walletSectionHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .secondaryWalletAction {
+    width: 100%;
+  }
+
+  .paymentTypeCard {
+    min-height: 108px;
+  }
+
+  .paymentFormCard {
+    min-height: auto;
+  }
+
+  .savedMethodsTable {
+    border: 0;
+    gap: 10px;
+  }
+
+  .savedMethodRow {
+    border: 1px solid rgba(159, 178, 196, 0.12);
+    border-radius: 12px;
   }
 
   .terminalValue strong {

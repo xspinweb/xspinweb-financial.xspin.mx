@@ -33,8 +33,8 @@ export function getNavItems(role: AppRole): NavItem[] {
 
   return [
     { label: "Inicio", href: "/dashboard", icon: "home" },
-    { label: "Historial", href: "#", icon: "history" },
-    { label: "Cartera", href: "#", icon: "wallet" },
+    { label: "Historial", href: "/dashboard#weekly-history", icon: "history" },
+    { label: "Cartera", href: "/dashboard/wallet", icon: "wallet" },
     { label: "Perfil", href: "#", icon: "profile" }
   ];
 }
