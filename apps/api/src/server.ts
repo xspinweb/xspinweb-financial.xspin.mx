@@ -154,6 +154,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
 
   if (req.method === "POST" && url.pathname === "/investments") {
     const input = createInvestmentSchema.parse(await readJson(req));
+    await assertReferralTargetOpen(input.referredByCode, input.sourceInvestmentId);
     const result = await createInvestment(input);
     sendJson(res, 201, result);
     return;
@@ -161,6 +162,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
 
   if (req.method === "POST" && url.pathname === "/checkout/investment") {
     const input = createInvestmentSchema.parse(await readJson(req));
+    await assertReferralTargetOpen(input.referredByCode, input.sourceInvestmentId);
     const result = await createStripeInvestmentCheckout(input);
     sendJson(res, 201, result);
     return;
@@ -332,11 +334,18 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
             where: {
               id: referralTarget.sourceInvestmentId,
               investorId: referrer.id
+            },
+            include: {
+              payments: {
+                select: { id: true },
+                take: 1
+              }
             }
           })
         : null;
+      const sourceAcceptsReferrals = sourceInvestment ? sourceInvestment.payments.length === 0 : false;
 
-      if (referrer && sourceInvestment && referrer.id !== investor.id) {
+      if (referrer && sourceInvestment && sourceAcceptsReferrals && referrer.id !== investor.id) {
         await tx.referral.create({
           data: {
             referrerInvestorId: referrer.id,
@@ -350,6 +359,40 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
 
     return { investor, investment };
   });
+}
+
+async function assertReferralTargetOpen(referredByCode?: string, sourceInvestmentId?: string) {
+  const referralTarget = parseReferralTarget(referredByCode, sourceInvestmentId);
+
+  if (!referralTarget.referredByCode || !referralTarget.sourceInvestmentId) {
+    return;
+  }
+
+  const referrer = await prisma.investor.findUnique({
+    select: { id: true },
+    where: { investorCode: referralTarget.referredByCode }
+  });
+
+  if (!referrer) {
+    return;
+  }
+
+  const sourceInvestment = await prisma.investment.findFirst({
+    include: {
+      payments: {
+        select: { id: true },
+        take: 1
+      }
+    },
+    where: {
+      id: referralTarget.sourceInvestmentId,
+      investorId: referrer.id
+    }
+  });
+
+  if (sourceInvestment?.payments.length) {
+    throw new Error("Este grupo ya no acepta referidos porque la primera semana ya fue cobrada.");
+  }
 }
 
 async function createStripeInvestmentCheckout(input: z.infer<typeof createInvestmentSchema>) {

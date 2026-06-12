@@ -2110,6 +2110,22 @@ a {
   transform: translateY(-1px);
 }
 
+.inviteReferralAction:disabled,
+.inviteReferralActionDisabled {
+  background: rgba(159, 178, 196, 0.08);
+  border-color: rgba(159, 178, 196, 0.12);
+  color: rgba(159, 178, 196, 0.58);
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.inviteReferralAction:disabled:hover,
+.inviteReferralActionDisabled:hover {
+  background: rgba(159, 178, 196, 0.08);
+  transform: none;
+}
+
 .inviteReferralAction svg {
   width: 23px;
   height: 23px;
@@ -3631,6 +3647,15 @@ a {
     width: 24px;
   }
 
+  .investmentItem summary > .inviteReferralAction:disabled,
+  .investmentItem summary > .inviteReferralActionDisabled {
+    background: rgba(159, 178, 196, 0.08);
+    border-color: rgba(159, 178, 196, 0.14);
+    color: rgba(159, 178, 196, 0.58);
+    fill: rgba(159, 178, 196, 0.58);
+    opacity: 0.58;
+  }
+
   .investmentItem summary > .inviteReferralAction svg {
     display: block;
     fill: currentColor;
@@ -3661,6 +3686,14 @@ a {
     border-color: rgba(var(--group-accent-rgb), 0.25);
     color: var(--group-accent);
     fill: var(--group-accent);
+  }
+
+  .investmentItem summary > .inviteReferralAction:disabled,
+  .investmentItem summary > .inviteReferralActionDisabled {
+    background: rgba(159, 178, 196, 0.08);
+    border-color: rgba(159, 178, 196, 0.14);
+    color: rgba(159, 178, 196, 0.58);
+    fill: rgba(159, 178, 196, 0.58);
   }
 
   .cycleSegments span.active {

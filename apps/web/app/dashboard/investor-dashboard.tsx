@@ -316,6 +316,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                 const currentWeekNumber = currentWeek?.weekNumber ?? 1;
                 const cycleProgress = Math.round((currentWeekNumber / projectionWeeks) * 100);
                 const currentTotalGenerated = currentWeek?.totalGenerated ?? investment.amount;
+                const referralsClosed = (investment.paidWeeks ?? 0) >= 1;
                 const toneClass = ["groupToneGreen", "groupToneBlue", "groupTonePurple", "groupToneOrange"][index % 4];
 
                 return (
@@ -379,7 +380,11 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                         <span>Total generado</span>
                         <strong>{formatCurrency(currentTotalGenerated)}</strong>
                       </div>
-                      <InviteReferralModal investmentId={investment.id} investorCode={investorCode} />
+                      <InviteReferralModal
+                        disabled={referralsClosed}
+                        investmentId={investment.id}
+                        investorCode={investorCode}
+                      />
                     </summary>
 
                     <div className="referralPanel">
@@ -611,7 +616,15 @@ function projectNextReferralMovement(referralMovement: number) {
   return roundMoney(referredInvestorTotal * projectionReinvestRate * 2);
 }
 
-function InviteReferralModal({ investmentId, investorCode }: { investmentId: string; investorCode: string }) {
+function InviteReferralModal({
+  disabled = false,
+  investmentId,
+  investorCode
+}: {
+  disabled?: boolean;
+  investmentId: string;
+  investorCode: string;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [copiedValue, setCopiedValue] = useState<"link" | "code" | null>(null);
   const [origin, setOrigin] = useState("");
@@ -684,13 +697,17 @@ function InviteReferralModal({ investmentId, investorCode }: { investmentId: str
   return (
     <>
       <button
-        className="inviteReferralAction"
+        className={disabled ? "inviteReferralAction inviteReferralActionDisabled" : "inviteReferralAction"}
         type="button"
-        aria-label="Invitar referido"
-        title="Invitar referido"
+        aria-label={disabled ? "Referidos cerrados" : "Invitar referido"}
+        disabled={disabled}
+        title={disabled ? "Este grupo ya cerro referidos" : "Invitar referido"}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
+          if (disabled) {
+            return;
+          }
           setIsOpen(true);
         }}
       >
