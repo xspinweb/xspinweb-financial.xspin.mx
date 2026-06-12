@@ -1134,7 +1134,13 @@ a {
 .dashboardGrowthGrid {
   display: grid;
   gap: 14px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
+}
+
+.dashboardProjectionGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
 }
 
 .growthBalanceCard,
@@ -1257,6 +1263,104 @@ a {
     radial-gradient(circle at 50% 82%, rgba(53, 224, 161, 0.18), transparent 44%),
     linear-gradient(180deg, rgba(14, 27, 40, 0.72), rgba(5, 13, 22, 0.86));
   padding: 18px;
+}
+
+.portfolioBreakdown {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(53, 224, 161, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(14, 27, 40, 0.74), rgba(5, 13, 22, 0.84));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.portfolioWeekRows {
+  display: grid;
+  gap: 2px;
+  padding: 0 16px 12px;
+}
+
+.portfolioWeekRows button {
+  align-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 12px;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto auto;
+  min-height: 48px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.portfolioWeekRows button.active {
+  background: rgba(53, 224, 161, 0.1);
+  color: var(--green);
+}
+
+.portfolioWeekRows button > span {
+  align-items: center;
+  border: 1px solid rgba(159, 178, 196, 0.22);
+  border-radius: 50%;
+  color: var(--muted);
+  display: inline-flex;
+  font-weight: 900;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.portfolioWeekRows button.active > span {
+  background: rgba(53, 224, 161, 0.14);
+  border-color: rgba(53, 224, 161, 0.22);
+  color: var(--green);
+}
+
+.portfolioWeekRows strong {
+  color: inherit;
+  font-size: 15px;
+}
+
+.portfolioWeekRows em {
+  border-radius: 999px;
+  background: rgba(53, 224, 161, 0.12);
+  color: var(--green);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  padding: 5px 9px;
+}
+
+.portfolioWeekRows b {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.portfolioWeekRows i {
+  color: var(--green);
+  font-size: 22px;
+  font-style: normal;
+  line-height: 1;
+}
+
+.showAllWeeks {
+  align-items: center;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: var(--green);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-weight: 900;
+  gap: 10px;
+  justify-content: center;
+  min-height: 56px;
+  width: 100%;
 }
 
 .panelTitle {

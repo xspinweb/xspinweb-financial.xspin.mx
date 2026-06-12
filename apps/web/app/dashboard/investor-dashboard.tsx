@@ -218,7 +218,23 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
           </div>
           <GrowthSparkline weeks={projectedWeeks} />
         </article>
+      </section>
 
+      <section className="dashboardCards metricCards">
+        {cards.map((card) => (
+          <article className="dashboardCard metricCard" key={card.label}>
+            <div className="metricIcon">
+              <MetricIcon name={card.icon} />
+            </div>
+            <div>
+              <span>{card.label}</span>
+              <strong>{card.value}</strong>
+            </div>
+          </article>
+        ))}
+      </section>
+
+      <section className="dashboardProjectionGrid">
         <article className="projectionPanel">
           <div className="panelTitle">
             <h2>Proyeccion de crecimiento</h2>
@@ -243,18 +259,27 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
         </article>
       </section>
 
-      <section className="dashboardCards metricCards">
-        {cards.map((card) => (
-          <article className="dashboardCard metricCard" key={card.label}>
-            <div className="metricIcon">
-              <MetricIcon name={card.icon} />
-            </div>
-            <div>
-              <span>{card.label}</span>
-              <strong>{card.value}</strong>
-            </div>
-          </article>
-        ))}
+      <section className="portfolioBreakdown">
+        <div className="tableHeader">
+          <h2>Desglose por semana</h2>
+        </div>
+        <div className="portfolioWeekRows">
+          {projectedWeeks.slice(0, 5).map((week, index) => (
+            <button className={index === 0 ? "active" : ""} key={`portfolio-week-${week.weekNumber}`} type="button">
+              <span>{week.weekNumber}</span>
+              <strong>Semana {week.weekNumber}</strong>
+              {index === 0 ? <em>Completada</em> : null}
+              <b>{formatCurrency(week.totalGenerated)}</b>
+              <i aria-hidden="true">›</i>
+            </button>
+          ))}
+        </div>
+        {projectedWeeks.length > 5 ? (
+          <button className="showAllWeeks" type="button">
+            Ver todas las semanas
+            <span aria-hidden="true">⌄</span>
+          </button>
+        ) : null}
       </section>
 
       <section className="dashboardMainGrid">
