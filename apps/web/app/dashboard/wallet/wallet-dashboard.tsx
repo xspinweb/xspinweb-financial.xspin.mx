@@ -149,22 +149,6 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
     setError("");
   }
 
-  function editMethod(method: PaymentMethod) {
-    setSelectedType(method.type);
-    setEditingId(method.id);
-    setDraft({
-      accountHolder: method.accountHolder ?? "",
-      bankName: method.bankName ?? "",
-      clabe: method.clabe ?? "",
-      coin: method.coin ?? "Bitcoin (BTC)",
-      email: method.email ?? "",
-      paxumAccount: method.paxumAccount ?? "",
-      walletAddress: method.walletAddress ?? ""
-    });
-    setError("");
-    window.scrollTo({ behavior: "smooth", top: 0 });
-  }
-
   function deleteMethod(id: string) {
     setMethods((current) => {
       const methodWasPrimary = current.find((method) => method.id === id)?.isPrimary;
@@ -288,7 +272,6 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
             <div className="savedMethodsHead">
               <span>Metodo</span>
               <span>Informacion</span>
-              <span>Estado</span>
               <span>Principal</span>
               <span>Acciones</span>
             </div>
@@ -299,7 +282,6 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
                   <strong>{getMethodTitle(method)}</strong>
                 </div>
                 <span>{getMethodInfo(method)}</span>
-                <span className="walletStatus verified">Verificado</span>
                 <button
                   className={method.isPrimary ? "walletStatus primary" : "setPrimaryAction"}
                   type="button"
@@ -308,9 +290,6 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
                   {method.isPrimary ? "Principal" : "Marcar principal"}
                 </button>
                 <div className="walletRowActions">
-                  <button type="button" aria-label="Editar metodo" onClick={() => editMethod(method)}>
-                    <EditIcon />
-                  </button>
                   <button className="danger" type="button" aria-label="Eliminar metodo" onClick={() => deleteMethod(method.id)}>
                     <TrashIcon />
                   </button>
@@ -610,14 +589,6 @@ function InfoIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M11 10h2v7h-2Zm0-3h2v2h-2Zm1-5a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" />
-    </svg>
-  );
-}
-
-function EditIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="m4 16.8-.8 4 4-.8 10.7-10.7-3.2-3.2Zm15.2-8.9 1.1-1.1a1.5 1.5 0 0 0 0-2.1l-1-1a1.5 1.5 0 0 0-2.1 0L16.1 5Z" />
     </svg>
   );
 }
