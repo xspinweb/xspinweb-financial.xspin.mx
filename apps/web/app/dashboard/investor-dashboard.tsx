@@ -745,7 +745,8 @@ function GrowthSparkline({ weeks }: { weeks: ProjectionWeek[] }) {
   const last = points.at(-1);
   const areaPath = path ? `${path} L ${width - padding.right} ${height - padding.bottom} L ${padding.left} ${height - padding.bottom} Z` : "";
   const calloutLabel = formatChartCurrency(weeks.at(-1)?.totalGenerated ?? 0);
-  const growthCallout = last ? getChartCallout(last, calloutLabel, width, height, { right: 24, top: 12 }, 58, -12) : null;
+  const growthCallout = last ? getChartCallout(last, calloutLabel, width, height, { right: 18, top: 8 }, 82, -46) : null;
+  const growthCalloutHeight = 34;
 
   return (
     <svg className="growthSparkline" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
@@ -769,6 +770,10 @@ function GrowthSparkline({ weeks }: { weeks: ProjectionWeek[] }) {
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+        <filter id="growthCalloutShadow" x="-30%" y="-80%" width="160%" height="260%">
+          <feDropShadow dx="0" dy="7" floodColor="rgba(0, 0, 0, 0.62)" stdDeviation="7" />
+          <feDropShadow dx="0" dy="0" floodColor="rgba(53, 224, 161, 0.38)" stdDeviation="5" />
+        </filter>
       </defs>
       {path ? (
         <>
@@ -781,10 +786,11 @@ function GrowthSparkline({ weeks }: { weeks: ProjectionWeek[] }) {
               <circle cx={point.x} cy={point.y} fill="#f6fbff" r={index === points.length - 1 ? 5 : 3.3} />
             </g>
           ))}
-          {growthCallout ? (
-            <g className="growthCallout">
-              <rect x={growthCallout.x - growthCallout.width / 2} y={growthCallout.y} width={growthCallout.width} height="28" rx="8" />
-              <text x={growthCallout.x} y={growthCallout.y + 19} textAnchor="middle">
+          {growthCallout && last ? (
+            <g className="growthCallout" filter="url(#growthCalloutShadow)">
+              <path className="growthCalloutLeader" d={`M ${growthCallout.x} ${growthCallout.y + growthCalloutHeight} L ${last.x} ${Math.max(last.y - 10, 8)}`} />
+              <rect x={growthCallout.x - growthCallout.width / 2} y={growthCallout.y} width={growthCallout.width} height={growthCalloutHeight} rx="10" />
+              <text x={growthCallout.x} y={growthCallout.y + 22} textAnchor="middle">
                 {calloutLabel}
               </text>
             </g>

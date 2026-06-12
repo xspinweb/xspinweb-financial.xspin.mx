@@ -1244,11 +1244,35 @@ a {
   fill: rgba(53, 224, 161, 0.22);
 }
 
+.growthSparkline .growthCallout rect {
+  fill: rgba(5, 14, 22, 0.96);
+  stroke: rgba(53, 224, 161, 0.58);
+  stroke-width: 1.5;
+}
+
+.growthCalloutLeader {
+  fill: none;
+  opacity: 0.74;
+  stroke: rgba(53, 224, 161, 0.8);
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
 .growthSparkline text,
 .projectionCallout text {
   fill: #f6fbff;
   font-size: 12px;
   font-weight: 900;
+}
+
+.growthSparkline .growthCallout text {
+  fill: #ffffff;
+  font-size: 15px;
+  font-weight: 950;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.42);
+  stroke-linejoin: round;
+  stroke-width: 2px;
 }
 
 .growthLineHalo {
@@ -2960,7 +2984,7 @@ a {
   .growthSparkline {
     bottom: -28px;
     height: 210px;
-    opacity: 0.72;
+    opacity: 1;
     right: -110px;
     width: 120%;
   }
@@ -3091,7 +3115,7 @@ a {
   .growthSparkline {
     bottom: 10px;
     height: 150px;
-    opacity: 0.72;
+    opacity: 1;
     right: 8px;
     width: min(72%, 320px);
   }
