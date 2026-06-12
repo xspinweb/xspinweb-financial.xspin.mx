@@ -223,16 +223,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
   }
 
   function updatePaymentCarouselIndex(event: UIEvent<HTMLDivElement>) {
-    const nextIndex = getCarouselIndex(event.currentTarget, ".paymentTypeCard");
-    const nextType = methodOptions[nextIndex]?.type;
-
-    setPaymentCarouselIndex(nextIndex);
-
-    if (nextType && nextType !== selectedType) {
-      setSelectedType(nextType);
-      setDraft(initialDraft);
-      setError("");
-    }
+    setPaymentCarouselIndex(getCarouselIndex(event.currentTarget, ".paymentTypeCard"));
   }
 
   return (

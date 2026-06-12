@@ -3571,10 +3571,10 @@ a {
 
   .paymentTypeGrid {
     display: flex;
-    gap: 0;
+    gap: 12px;
     margin: 0;
     overflow-x: auto;
-    padding: 0;
+    padding: 0 0 4px;
     scroll-padding: 0;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
@@ -3587,8 +3587,6 @@ a {
   .paymentTypeCard {
     box-sizing: border-box;
     flex: 0 0 100%;
-    width: 100%;
-    max-width: 100%;
     grid-template-columns: 72px minmax(0, 1fr) 28px;
     min-height: 182px;
     padding: 18px;
