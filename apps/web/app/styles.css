@@ -3019,19 +3019,36 @@ a {
   }
 
   .metricCard {
-    grid-template-columns: 50px minmax(0, 1fr);
-    min-height: 108px;
-    padding: 16px;
+    align-items: start;
+    gap: 10px;
+    grid-template-columns: 1fr;
+    min-height: 126px;
+    padding: 16px 14px;
   }
 
   .metricIcon {
-    height: 48px;
-    width: 48px;
+    border-radius: 12px;
+    height: 42px;
+    width: 42px;
+  }
+
+  .metricIcon svg {
+    height: 22px;
+    width: 22px;
+  }
+
+  .dashboardCard span {
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
   }
 
   .dashboardCard strong {
-    font-size: 26px;
-    margin-top: 8px;
+    font-size: clamp(18px, 5vw, 21px);
+    line-height: 1.05;
+    margin-top: 0;
+    overflow-wrap: normal;
+    white-space: nowrap;
   }
 
   .tableHeader {
