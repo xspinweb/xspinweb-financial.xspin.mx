@@ -538,10 +538,9 @@ function getInitialReferralMovement(investment: Investment, visibleWeeks: Invest
 
 function calculateProjectedWeekTotal(baseAmount: number, referralMovement: number) {
   const weeklyBonus = roundMoney(referralMovement * projectionReferralBonusRate);
-  const rawYield = roundMoney(referralMovement * projectionReferralYieldRate);
-  const cappedYield = rawYield > baseAmount ? roundMoney(baseAmount * 0.75) : rawYield;
+  const weeklyYield = roundMoney(referralMovement * projectionReferralYieldRate);
 
-  return roundMoney(baseAmount + weeklyBonus + cappedYield);
+  return roundMoney(baseAmount + weeklyBonus + weeklyYield);
 }
 
 function projectNextReferralMovement(referralMovement: number) {

@@ -768,8 +768,7 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
 
 function getTotalGenerated(input: { principalAmount: number; referrals: Array<{ bonusAmount: number; referredAmount: number }> }) {
   const referralBonus = roundMoney(input.referrals.reduce((total, referral) => total + referral.bonusAmount, 0));
-  const rawYield = roundMoney(input.referrals.reduce((total, referral) => total + referral.referredAmount * config.defaultBusinessRules.referralYieldRate, 0));
-  const referralYield = rawYield > input.principalAmount ? roundMoney(input.principalAmount * 0.75) : rawYield;
+  const referralYield = roundMoney(input.referrals.reduce((total, referral) => total + referral.referredAmount * config.defaultBusinessRules.referralYieldRate, 0));
 
   return roundMoney(input.principalAmount + referralBonus + referralYield);
 }
@@ -797,8 +796,7 @@ function buildInvestmentWeeks(investment: WeeklyInvestmentInput) {
     });
     const weeklyQualifiedReferrals = weeklyReferralAmounts.filter((amount) => amount > 0).length;
     const weeklyBonus = roundMoney(weeklyReferralAmounts.reduce((total, amount) => total + amount * config.defaultBusinessRules.referralBonusRate, 0));
-    const rawYield = roundMoney(weeklyReferralAmounts.reduce((total, amount) => total + amount * config.defaultBusinessRules.referralYieldRate, 0));
-    const weeklyYield = rawYield > baseAmount ? roundMoney(baseAmount * 0.75) : rawYield;
+    const weeklyYield = roundMoney(weeklyReferralAmounts.reduce((total, amount) => total + amount * config.defaultBusinessRules.referralYieldRate, 0));
     const totalGenerated = roundMoney(baseAmount + weeklyBonus + weeklyYield);
 
     return {
