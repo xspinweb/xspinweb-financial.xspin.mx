@@ -262,9 +262,9 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
             {investments.map((investment, index) => {
               const currentWeek = getCurrentInvestmentWeek(investment);
               const weekNumber = currentWeek?.weekNumber ?? 1;
-              const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
-              const pendingReferrals = Math.max(investment.referrals.length - confirmedReferrals, 0);
-              const referralSummary = formatReferralSummary(confirmedReferrals, pendingReferrals);
+              const weeklyConfirmedReferrals = currentWeek?.weeklyQualifiedReferrals ?? 0;
+              const weeklyPendingReferrals = Math.max(investment.referrals.length - weeklyConfirmedReferrals, 0);
+              const referralSummary = formatReferralSummary(weeklyConfirmedReferrals, weeklyPendingReferrals);
               const progress = Math.round((weekNumber / projectionWeeks) * 100);
               const totalGenerated = currentWeek?.totalGenerated ?? investment.amount;
               const referralsClosed = (investment.paidWeeks ?? 0) >= 1;
