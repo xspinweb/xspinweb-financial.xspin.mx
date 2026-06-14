@@ -122,10 +122,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
     totalInvested > 0 && projectedBalance > totalInvested
       ? Math.round((totalGains / totalInvested) * 100)
       : 0;
-  const totalReferrals = investments.reduce(
-    (total, investment) => total + investment.referrals.filter((referral) => referral.invested).length,
-    0
-  );
+  const totalReferrals = investments.reduce((total, investment) => total + investment.referrals.length, 0);
 
   const firstName = getFirstName(userName);
   const currentWeekNumber = currentPrimaryWeek?.weekNumber ?? 1;
@@ -137,7 +134,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   const kpiCards = [
     { accent: "green", icon: "wallet", label: "Invertido", helper: "Total invertido", value: formatCurrency(totalInvested) },
     { accent: "green", icon: "chart", label: "Ganado", helper: "Ganancia acumulada", value: formatCurrency(totalGains) },
-    { accent: "purple", icon: "users", label: "Referidos", helper: "Confirmados", value: String(totalReferrals) },
+    { accent: "purple", icon: "users", label: "Referidos", helper: "Vinculados", value: String(totalReferrals) },
     { accent: "yellow", icon: "calendar", label: "Proximo pago", helper: getDaysUntilLabel(currentPrimaryWeek?.paymentAt), value: formatCurrency(nextPaymentAmount) }
   ];
 
@@ -266,6 +263,8 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
               const currentWeek = getCurrentInvestmentWeek(investment);
               const weekNumber = currentWeek?.weekNumber ?? 1;
               const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
+              const pendingReferrals = Math.max(investment.referrals.length - confirmedReferrals, 0);
+              const referralSummary = formatReferralSummary(confirmedReferrals, pendingReferrals);
               const progress = Math.round((weekNumber / projectionWeeks) * 100);
               const totalGenerated = currentWeek?.totalGenerated ?? investment.amount;
               const referralsClosed = (investment.paidWeeks ?? 0) >= 1;
@@ -326,7 +325,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                     <div>
                       <InviteIcon />
                       <span>Referidos</span>
-                      <strong>{confirmedReferrals} confirmados</strong>
+                      <strong>{referralSummary}</strong>
                     </div>
                   </div>
 
@@ -489,6 +488,22 @@ function getGroupStatusClass(statusLabel: string) {
   }
 
   return "pending";
+}
+
+function formatReferralSummary(confirmed: number, pending: number) {
+  if (confirmed === 0 && pending === 0) {
+    return "0 referidos";
+  }
+
+  if (confirmed === 0) {
+    return `${pending} ${pending === 1 ? "pendiente" : "pendientes"}`;
+  }
+
+  if (pending === 0) {
+    return `${confirmed} ${confirmed === 1 ? "confirmado" : "confirmados"}`;
+  }
+
+  return `${confirmed} ${confirmed === 1 ? "confirmado" : "confirmados"} / ${pending} ${pending === 1 ? "pendiente" : "pendientes"}`;
 }
 
 function InfoDot() {
