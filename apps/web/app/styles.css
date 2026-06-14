@@ -4810,6 +4810,8 @@ a {
 }
 
 .wealthGroupCard {
+  --group-accent: var(--green);
+  --group-accent-rgb: 53, 224, 161;
   background: radial-gradient(circle at 30% 0%, rgba(53, 224, 161, 0.12), transparent 28%), linear-gradient(180deg, rgba(15, 29, 43, 0.9), rgba(7, 16, 26, 0.94));
   border: 1px solid rgba(122, 151, 181, 0.2);
   border-radius: 14px;
@@ -4905,9 +4907,19 @@ a {
   color: var(--green);
 }
 
+.groupStatus.collected {
+  background: rgba(53, 224, 161, 0.14);
+  color: var(--green);
+}
+
+.groupStatus.collectable {
+  background: rgba(255, 203, 74, 0.15);
+  color: #ffcb4a;
+}
+
 .groupStatus.pending {
-  background: rgba(168, 85, 247, 0.15);
-  color: #c084fc;
+  background: rgba(255, 95, 129, 0.16);
+  color: #ff6b8a;
 }
 
 .groupProgressLine {
@@ -4922,10 +4934,31 @@ a {
 }
 
 .groupProgressLine em {
-  color: var(--green);
+  color: var(--group-accent);
   font-size: 12px;
   font-style: normal;
   font-weight: 900;
+}
+
+.wealthGroupCard .cycleSegments {
+  align-items: center;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+
+.wealthGroupCard .cycleSegments span {
+  background: rgba(159, 178, 196, 0.14);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.32);
+  display: block;
+  height: 8px;
+  min-width: 0;
+}
+
+.wealthGroupCard .cycleSegments span.active {
+  background: var(--group-accent);
+  box-shadow: 0 0 18px rgba(var(--group-accent-rgb), 0.32);
 }
 
 .groupCardMeta {
@@ -4944,6 +4977,7 @@ a {
 
 .groupCardMeta svg {
   color: var(--green);
+  fill: currentColor;
   grid-row: span 2;
   height: 18px;
   width: 18px;
@@ -4962,34 +4996,87 @@ a {
   padding-top: 12px;
 }
 
+.groupCollectAction {
+  align-items: center;
+  background: rgba(255, 203, 74, 0.1);
+  border: 1px solid rgba(255, 203, 74, 0.28);
+  border-radius: 12px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.groupCollectAction span {
+  color: rgba(255, 236, 190, 0.82);
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.groupCollectAction strong {
+  color: #ffcb4a;
+  display: block;
+  font-size: 14px;
+}
+
+.groupCollectAction .reinvestmentAction {
+  background: rgba(255, 203, 74, 0.16);
+  border-color: rgba(255, 203, 74, 0.36);
+  color: #ffcb4a;
+  height: 38px;
+  min-width: 38px;
+  width: 38px;
+}
+
+.groupCollectAction .reinvestmentAction svg {
+  fill: currentColor;
+  height: 20px;
+  width: 20px;
+}
+
+.tone-green {
+  --group-accent: var(--green);
+  --group-accent-rgb: 53, 224, 161;
+}
+
 .tone-blue .wealthGroupIcon,
 .tone-blue .inviteReferralAction {
+  --group-accent: #38a6ff;
+  --group-accent-rgb: 56, 166, 255;
   background: rgba(56, 166, 255, 0.16);
   color: #38a6ff;
 }
 
-.tone-blue .cycleSegments span.active {
-  background: #38a6ff;
+.tone-blue {
+  --group-accent: #38a6ff;
+  --group-accent-rgb: 56, 166, 255;
 }
 
 .tone-purple .wealthGroupIcon,
 .tone-purple .inviteReferralAction {
+  --group-accent: #a855f7;
+  --group-accent-rgb: 168, 85, 247;
   background: rgba(168, 85, 247, 0.18);
   color: #c084fc;
 }
 
-.tone-purple .cycleSegments span.active {
-  background: #a855f7;
+.tone-purple {
+  --group-accent: #a855f7;
+  --group-accent-rgb: 168, 85, 247;
 }
 
 .tone-orange .wealthGroupIcon,
 .tone-orange .inviteReferralAction {
+  --group-accent: #f59e0b;
+  --group-accent-rgb: 245, 158, 11;
   background: rgba(245, 158, 11, 0.18);
   color: #f59e0b;
 }
 
-.tone-orange .cycleSegments span.active {
-  background: #f59e0b;
+.tone-orange {
+  --group-accent: #f59e0b;
+  --group-accent-rgb: 245, 158, 11;
 }
 
 .cycleStatusContent {

@@ -271,7 +271,8 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
               const referralsClosed = (investment.paidWeeks ?? 0) >= 1;
               const tone = ["green", "blue", "purple", "orange"][index % 4];
               const selected = primaryInvestment?.id === investment.id;
-              const groupStatus = currentWeek?.statusLabel === "Pendiente" ? "Pendiente" : "Activo";
+              const groupStatus = currentWeek?.statusLabel ?? "Pendiente";
+              const canCollect = Boolean(currentWeek?.canReinvest);
 
               return (
                 <article
@@ -301,7 +302,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                     />
                   </header>
 
-                  <span className={`groupStatus ${groupStatus === "Pendiente" ? "pending" : "active"}`}>
+                  <span className={`groupStatus ${getGroupStatusClass(groupStatus)}`}>
                     {groupStatus}
                   </span>
                   <div className="groupProgressLine">
@@ -333,6 +334,20 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                     <span>Total generado</span>
                     <strong>{formatCurrency(totalGenerated)}</strong>
                   </div>
+                  {canCollect && currentWeek ? (
+                    <div className="groupCollectAction">
+                      <div>
+                        <span>Listo para cobrar</span>
+                        <strong>{formatCurrency(currentWeek.totalGenerated)}</strong>
+                      </div>
+                      <ReinvestmentModal
+                        investmentId={investment.id}
+                        totalGenerated={currentWeek.totalGenerated}
+                        weekNumber={currentWeek.weekNumber}
+                        onCompleted={loadPortfolio}
+                      />
+                    </div>
+                  ) : null}
                 </article>
               );
             })}
@@ -448,10 +463,8 @@ function getDaysUntilLabel(dateValue?: string) {
     return "Sin fecha";
   }
 
-  const today = new Date();
-  const target = new Date(dateValue);
-  today.setHours(0, 0, 0, 0);
-  target.setHours(0, 0, 0, 0);
+  const today = startOfDay(new Date());
+  const target = startOfDay(new Date(dateValue));
 
   const days = Math.max(0, Math.ceil((target.getTime() - today.getTime()) / 86400000));
 
@@ -464,6 +477,18 @@ function getDaysUntilLabel(dateValue?: string) {
   }
 
   return `En ${days} dias`;
+}
+
+function getGroupStatusClass(statusLabel: string) {
+  if (statusLabel === "Cobrada") {
+    return "collected";
+  }
+
+  if (statusLabel === "Por cobrar") {
+    return "collectable";
+  }
+
+  return "pending";
 }
 
 function InfoDot() {
@@ -1144,6 +1169,12 @@ function getTime(value?: string) {
   return value ? new Date(value).getTime() : 0;
 }
 
+function startOfDay(date: Date) {
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized;
+}
+
 function formatCompactCurrency(amount: number) {
   if (amount >= 1000) {
     const value = amount / 1000;
@@ -1164,9 +1195,9 @@ function capitalize(value: string) {
 function normalizeInvestmentWeek(week: InvestmentWeek, paidWeeks: number): InvestmentWeek {
   const startDate = new Date(week.startAt);
   const paymentDate = new Date(week.paymentAt);
-  const today = new Date();
+  const today = startOfDay(new Date());
   const isPaid = week.weekNumber <= paidWeeks;
-  const isComplete = today >= paymentDate;
+  const isComplete = today >= startOfDay(paymentDate);
   const canReinvest = week.weekNumber < projectionWeeks && week.canCollect && isComplete && !isPaid;
 
   return {
