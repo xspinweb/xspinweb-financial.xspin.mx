@@ -19,28 +19,21 @@ export default async function DashboardPage() {
 
   return (
     <div className="dashboardContent">
-      <section className="dashboardHero">
-        <div>
-          <span className="loginEyebrow">{isSuperAdmin ? "Super admin" : "Bienvenido de nuevo"}</span>
-          <h1>{isSuperAdmin ? "Resumen global" : "Mi tablero"}</h1>
-          <p>
-            {isSuperAdmin
-              ? "Vista general para controlar usuarios, ciclos, pagos, referidos y reportes."
-              : "Consulta tus inversiones, ganancias, pagos, referidos y bonos desde un solo lugar."}
-          </p>
-        </div>
-        {isSuperAdmin ? (
-          <div className="quickActions" aria-label="Acciones rapidas">
-            <a href="#" aria-label="Nuevo usuario" title="Nuevo usuario">
-              <UserPlusIcon />
-              <span>Usuario</span>
-            </a>
-          </div>
-        ) : null}
-      </section>
-
       {isSuperAdmin ? (
         <>
+          <section className="dashboardHero">
+            <div>
+              <span className="loginEyebrow">Super admin</span>
+              <h1>Resumen global</h1>
+              <p>Vista general para controlar usuarios, ciclos, pagos, referidos y reportes.</p>
+            </div>
+            <div className="quickActions" aria-label="Acciones rapidas">
+              <a href="#" aria-label="Nuevo usuario" title="Nuevo usuario">
+                <UserPlusIcon />
+                <span>Usuario</span>
+              </a>
+            </div>
+          </section>
           <section className="dashboardCards">
             {adminCards.map((card) => (
               <article className="dashboardCard" key={card.label}>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { NewInvestmentModal } from "./new-investment-modal";
 
@@ -70,8 +71,6 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   const [investorCode, setInvestorCode] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedInvestmentId, setSelectedInvestmentId] = useState("");
-  const [selectedWeekNumber, setSelectedWeekNumber] = useState(1);
-  const [showAllPortfolioWeeks, setShowAllPortfolioWeeks] = useState(false);
 
   useEffect(() => {
     void loadPortfolio();
@@ -114,11 +113,8 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   }
 
   const primaryInvestment = investments.find((investment) => investment.id === selectedInvestmentId) ?? investments[0];
-  const primaryWeeks = primaryInvestment?.weeks ?? [];
   const currentPrimaryWeek = getCurrentInvestmentWeek(primaryInvestment);
-  const selectedWeek = primaryWeeks.find((week) => week.weekNumber === selectedWeekNumber) ?? currentPrimaryWeek ?? primaryWeeks[0];
   const projectedWeeks = buildPortfolioProjection(investments);
-  const visiblePortfolioWeeks = showAllPortfolioWeeks ? projectedWeeks : projectedWeeks.slice(0, 3);
   const totalInvested = roundMoney(investments.reduce((total, investment) => total + investment.amount, 0));
   const projectedBalance = projectedWeeks.at(-1)?.totalGenerated ?? totalInvested;
   const totalGains = roundMoney(Math.max(projectedBalance - totalInvested, 0));
@@ -131,18 +127,19 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
     0
   );
 
-  const cards = useMemo(() => {
-    return [
-      { icon: "wallet", label: "Inversion total", value: formatCurrency(totalInvested) },
-      { icon: "chart", label: "Ganancias totales", value: formatCurrency(totalGains) },
-      { icon: "percent", label: "Rendimiento", value: `${projectedReturn}%` },
-      { icon: "users", label: "Referidos totales", value: String(totalReferrals) }
-    ];
-  }, [projectedReturn, totalGains, totalInvested, totalReferrals]);
-
-  useEffect(() => {
-    setSelectedWeekNumber(currentPrimaryWeek?.weekNumber ?? primaryWeeks[0]?.weekNumber ?? 1);
-  }, [primaryInvestment?.id, currentPrimaryWeek?.weekNumber, primaryWeeks]);
+  const firstName = getFirstName(userName);
+  const currentWeekNumber = currentPrimaryWeek?.weekNumber ?? 1;
+  const cycleProgress = Math.round((currentWeekNumber / projectionWeeks) * 100);
+  const cycleProjection = buildTwelveWeekProjection(primaryInvestment);
+  const nextPaymentLabel = currentPrimaryWeek?.paymentLabel ?? primaryInvestment?.nextPaymentAt ?? "-";
+  const nextPaymentAmount = currentPrimaryWeek?.totalGenerated ?? 0;
+  const currentCycleLabel = primaryInvestment?.name ? `${primaryInvestment.name} ${currentWeekNumber} de ${projectionWeeks}` : "-";
+  const kpiCards = [
+    { accent: "green", icon: "wallet", label: "Invertido", helper: "Total invertido", value: formatCurrency(totalInvested) },
+    { accent: "green", icon: "chart", label: "Ganado", helper: "Ganancia acumulada", value: formatCurrency(totalGains) },
+    { accent: "purple", icon: "users", label: "Referidos", helper: "Confirmados", value: String(totalReferrals) },
+    { accent: "yellow", icon: "calendar", label: "Proximo pago", helper: getDaysUntilLabel(currentPrimaryWeek?.paymentAt), value: formatCurrency(nextPaymentAmount) }
+  ];
 
   async function handleInvestmentCreated(amount: number) {
     if (!userEmail) {
@@ -207,326 +204,181 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   }
 
   return (
-    <>
-      <section className="dashboardGrowthGrid">
-        <article className="growthBalanceCard">
-          <div>
-            <h2>Tu inversion esta creciendo</h2>
-            <span>Saldo proyectado</span>
-            <strong className="projectedBalanceValue">
-              {formatCurrency(projectedBalance)} <small>MXN</small>
-            </strong>
-            <em>+{projectedReturn}% de rendimiento esperado</em>
-          </div>
-          <GrowthSparkline weeks={projectedWeeks} />
-        </article>
-      </section>
+    <section className="wealthDashboard">
+      <div className="wealthIntro">
+        <p>
+          Hola, <strong>{firstName}</strong>
+        </p>
+        <h1>
+          Tu patrimonio proyectado <InfoDot />
+        </h1>
+      </div>
 
-      <section className="dashboardCards metricCards">
-        {cards.map((card) => (
-          <article className="dashboardCard metricCard" key={card.label}>
-            <div className="metricIcon">
+      <article className="wealthHeroCard">
+        <div className="wealthHeroCopy">
+          <strong className="wealthAmount">
+            {formatCurrency(projectedBalance)} <small>MXN</small>
+          </strong>
+          <span className="wealthReturn">
+            +{projectedReturn}% <em>de rendimiento esperado</em>
+          </span>
+          <div className="wealthNextPayment">
+            <CalendarIcon />
+            <span>Proximo pago</span>
+            <strong>{nextPaymentLabel}</strong>
+          </div>
+        </div>
+        <GrowthSparkline weeks={projectedWeeks} />
+      </article>
+
+      <section className="wealthKpis" aria-label="Resumen financiero">
+        {kpiCards.map((card) => (
+          <article className={`wealthKpi wealthKpi-${card.accent}`} key={card.label}>
+            <div className="wealthKpiIcon">
               <MetricIcon name={card.icon} />
             </div>
-            <div>
-              <span>{card.label}</span>
-              <strong>{card.value}</strong>
-            </div>
+            <span>{card.label}</span>
+            <strong>{card.value}</strong>
+            <small>{card.helper}</small>
           </article>
         ))}
       </section>
 
-      <section className="dashboardProjectionGrid">
-        <article className="projectionPanel">
-          <div className="panelTitle">
-            <h2>Proyeccion de crecimiento</h2>
-            <span>8 semanas</span>
-            <a className="detailPill" href="#weekly-history">Ver detalle</a>
+      <section className="wealthGroupsPanel">
+        <div className="wealthSectionHeader">
+          <h2>Mis grupos de inversion</h2>
+          <NewInvestmentModal onInvestmentCreated={handleInvestmentCreated} />
+        </div>
+
+        {isLoading ? (
+          <div className="emptyInvestments compactEmpty">
+            <strong>Cargando inversiones</strong>
+            <span>Estamos consultando tu tablero.</span>
           </div>
-          <div className="projectionContent">
-            <ProjectionChart weeks={projectedWeeks} />
-            <div className="projectionList">
-              {projectedWeeks.length === 0 ? (
-                <span className="emptyProjection">Sin semanas disponibles</span>
-              ) : (
-                projectedWeeks.map((week) => (
-                  <div key={`projection-${week.weekNumber}`}>
-                    <span>Semana {week.weekNumber}</span>
-                    <strong>{formatCurrency(week.totalGenerated)}</strong>
+        ) : investments.length === 0 ? (
+          <div className="emptyInvestments compactEmpty">
+            <strong>Sin inversiones activas</strong>
+            <span>Cuando realices una nueva inversion, aparecera aqui con su grupo y ciclo.</span>
+          </div>
+        ) : (
+          <div className="wealthGroupCarousel" aria-label="Grupos de inversion">
+            {investments.map((investment, index) => {
+              const currentWeek = getCurrentInvestmentWeek(investment);
+              const weekNumber = currentWeek?.weekNumber ?? 1;
+              const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
+              const progress = Math.round((weekNumber / projectionWeeks) * 100);
+              const totalGenerated = currentWeek?.totalGenerated ?? investment.amount;
+              const referralsClosed = (investment.paidWeeks ?? 0) >= 1;
+              const tone = ["green", "blue", "purple", "orange"][index % 4];
+              const selected = primaryInvestment?.id === investment.id;
+              const groupStatus = currentWeek?.statusLabel === "Pendiente" ? "Pendiente" : "Activo";
+
+              return (
+                <article
+                  className={`wealthGroupCard tone-${tone} ${selected ? "selected" : ""}`}
+                  key={investment.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedInvestmentId(investment.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      setSelectedInvestmentId(investment.id);
+                    }
+                  }}
+                >
+                  <header>
+                    <span className="wealthGroupIcon">
+                      <BankIcon />
+                    </span>
+                    <div>
+                      <strong>{investment.group}</strong>
+                      <small>{investment.name}</small>
+                    </div>
+                    <InviteReferralModal
+                      disabled={referralsClosed}
+                      investmentId={investment.id}
+                      investorCode={investorCode}
+                    />
+                  </header>
+
+                  <span className={`groupStatus ${groupStatus === "Pendiente" ? "pending" : "active"}`}>
+                    {groupStatus}
+                  </span>
+                  <div className="groupProgressLine">
+                    <div>
+                      <span>Semana {weekNumber} de {projectionWeeks}</span>
+                      <em>{progress}%</em>
+                    </div>
+                    <div className="cycleSegments" aria-hidden="true">
+                      {Array.from({ length: projectionWeeks }, (_, segmentIndex) => (
+                        <span className={segmentIndex < weekNumber ? "active" : ""} key={`${investment.id}-wealth-segment-${segmentIndex}`} />
+                      ))}
+                    </div>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-        </article>
-      </section>
 
-      <section className="portfolioBreakdown">
-        <div className="tableHeader">
-          <h2>Desglose por semana</h2>
-        </div>
-        <div className="portfolioWeekRows">
-          {visiblePortfolioWeeks.map((week, index) => (
-            <button className={index === 0 ? "active" : ""} key={`portfolio-week-${week.weekNumber}`} type="button">
-              <span>{week.weekNumber}</span>
-              <strong>Semana {week.weekNumber}</strong>
-              {index === 0 ? <em>Completada</em> : null}
-              <b>{formatCurrency(week.totalGenerated)}</b>
-              <i aria-hidden="true">›</i>
-            </button>
-          ))}
-        </div>
-        {projectedWeeks.length > 3 ? (
-          <button className={showAllPortfolioWeeks ? "showAllWeeks open" : "showAllWeeks"} type="button" onClick={() => setShowAllPortfolioWeeks((current) => !current)}>
-            {showAllPortfolioWeeks ? "Ver menos semanas" : "Ver todas las semanas"}
-            <span aria-hidden="true">⌄</span>
-          </button>
-        ) : null}
-      </section>
-
-      <section className="dashboardMainGrid">
-        <section className="investmentPanel">
-          <div className="tableHeader">
-            <div className="panelTitle">
-              <ChartIcon />
-              <h2>
-                <span className="desktopSectionTitle">Mis inversiones</span>
-                <span className="mobileSectionTitle">Mis grupos</span>
-              </h2>
-            </div>
-            <NewInvestmentModal onInvestmentCreated={handleInvestmentCreated} />
-          </div>
-
-          {isLoading ? (
-            <div className="emptyInvestments">
-              <strong>Cargando inversiones</strong>
-              <span>Estamos consultando tu tablero.</span>
-            </div>
-          ) : investments.length === 0 ? (
-            <div className="emptyInvestments">
-              <strong>Sin inversiones activas</strong>
-              <span>Cuando realices una nueva inversion, aparecera aqui con su grupo, ciclo y fecha de proximo pago.</span>
-            </div>
-          ) : (
-            <div className="investmentList">
-              {investments.map((investment, index) => {
-                const confirmedReferrals = investment.referrals.filter((referral) => referral.invested).length;
-                const currentWeek = getCurrentInvestmentWeek(investment);
-                const nextPaymentLabel = currentWeek?.paymentLabel ?? investment.nextPaymentAt;
-                const currentWeekNumber = currentWeek?.weekNumber ?? 1;
-                const cycleProgress = Math.round((currentWeekNumber / projectionWeeks) * 100);
-                const currentTotalGenerated = currentWeek?.totalGenerated ?? investment.amount;
-                const referralsClosed = (investment.paidWeeks ?? 0) >= 1;
-                const toneClass = ["groupToneGreen", "groupToneBlue", "groupTonePurple", "groupToneOrange"][index % 4];
-
-                return (
-                  <details className={`investmentItem ${toneClass} ${primaryInvestment?.id === investment.id ? "selectedInvestment" : ""}`} key={investment.id}>
-                    <summary
-                      onClick={(event) => {
-                        if ((event.target as HTMLElement).closest("button,a")) {
-                          return;
-                        }
-
-                        setSelectedInvestmentId(investment.id);
-
-                        if (window.innerWidth <= 620) {
-                          event.preventDefault();
-                        }
-                      }}
-                    >
-                      <div className="investmentSummaryMain">
-                        <span>{investment.name}</span>
-                        <strong>{investment.group}</strong>
-                      </div>
-                      <div className="investmentCycleCell">
-                        <span>Ciclo</span>
-                        <strong>{investment.cycle}</strong>
-                      </div>
-                      <div className="investmentDateCell">
-                        <span>Fecha</span>
-                        <strong>{investment.investedAt}</strong>
-                      </div>
-                      <div className="investmentReferralCell">
-                        <span>Referidos</span>
-                        <strong>{confirmedReferrals}</strong>
-                      </div>
-                      <div className="investmentPaymentCell">
-                        <span>Proximo pago</span>
-                        <strong>{nextPaymentLabel}</strong>
-                      </div>
-                      <div className="mobileCycleProgress">
-                        <span>Progreso del ciclo</span>
-                        <strong>Semana <em>{currentWeekNumber}</em> de {projectionWeeks}</strong>
-                        <div className="cycleSegments" aria-hidden="true">
-                          {Array.from({ length: projectionWeeks }, (_, index) => (
-                            <span className={index < currentWeekNumber ? "active" : ""} key={`${investment.id}-segment-${index}`} />
-                          ))}
-                        </div>
-                        <b>{cycleProgress}%</b>
-                      </div>
-                      <div className="mobileInvestmentStats">
-                        <div>
-                          <CalendarIcon />
-                          <span>Proximo pago</span>
-                          <strong>{nextPaymentLabel}</strong>
-                        </div>
-                        <div>
-                          <InviteIcon />
-                          <span>Referidos</span>
-                          <strong>{confirmedReferrals} confirmados</strong>
-                        </div>
-                      </div>
-                      <div className="mobileInvestmentTotal">
-                        <span>Total generado</span>
-                        <strong>{formatCurrency(currentTotalGenerated)}</strong>
-                      </div>
-                      <InviteReferralModal
-                        disabled={referralsClosed}
-                        investmentId={investment.id}
-                        investorCode={investorCode}
-                      />
-                    </summary>
-
-                    <div className="referralPanel">
-                      <details className="referralsAccordion">
-                        <summary>
-                          <strong>Referidos</strong>
-                          <span>{investment.referrals.length}</span>
-                        </summary>
-                        {investment.referrals.length === 0 ? (
-                          <p className="emptyReferralText">Aun no hay referidos vinculados a esta inversion.</p>
-                        ) : (
-                          <div className="referralList">
-                            {investment.referrals.map((referral) => (
-                              <div className="referralItem" key={`${investment.id}-${referral.name}`}>
-                                <div>
-                                  <strong>{referral.name}</strong>
-                                  <span>{referral.investedAt}</span>
-                                </div>
-                                <span className={referral.invested ? "statusPill statusGreen" : "statusPill statusRed"}>
-                                  {referral.invested ? "Confirmado" : "Pendiente"}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </details>
+                  <div className="groupCardMeta">
+                    <div>
+                      <CalendarIcon />
+                      <span>Proximo pago</span>
+                      <strong>{currentWeek?.paymentLabel ?? investment.nextPaymentAt}</strong>
                     </div>
-                  </details>
-                );
-              })}
-            </div>
-          )}
-        </section>
+                    <div>
+                      <InviteIcon />
+                      <span>Referidos</span>
+                      <strong>{confirmedReferrals} confirmados</strong>
+                    </div>
+                  </div>
 
-        <section className="investmentPanel weeklyPanel" id="weekly-history">
-          <div className="tableHeader">
-            <div className="panelTitle">
-              <CalendarIcon />
-              <h2>Historial semanal</h2>
-            </div>
+                  <div className="groupCardTotal">
+                    <span>Total generado</span>
+                    <strong>{formatCurrency(totalGenerated)}</strong>
+                  </div>
+                </article>
+              );
+            })}
           </div>
-          <div className="weekList weeklyTimeline">
-            {primaryWeeks.length === 0 ? (
-              <div className="emptyInvestments">
-                <strong>Sin historial semanal</strong>
-                <span>Las semanas apareceran cuando exista una inversion activa.</span>
+        )}
+      </section>
+
+      <section className="cycleStatusPanel">
+        <h2>Estado del ciclo actual</h2>
+        <div className="cycleStatusContent">
+          <div className="cycleRingWrap">
+            <div className="cycleRing" style={{ "--cycle-progress": `${cycleProgress * 3.6}deg` } as CSSProperties}>
+              <div>
+                <strong>{cycleProgress}%</strong>
+                <span>Completado</span>
               </div>
-            ) : (
-              <>
-                <p>Consulta el detalle de tus semanas de inversion</p>
-                <div className="weekSelector" aria-label="Seleccionar semana">
-                  {primaryWeeks.map((week) => (
-                    <button
-                      className={week.weekNumber === selectedWeek?.weekNumber ? "active" : ""}
-                      key={`${primaryInvestment?.id}-selector-${week.weekNumber}`}
-                      type="button"
-                      onClick={() => setSelectedWeekNumber(week.weekNumber)}
-                    >
-                      <strong>{week.weekNumber}</strong>
-                      <span>de {projectionWeeks}</span>
-                    </button>
-                  ))}
-                  {primaryWeeks.length < projectionWeeks ? (
-                    <button className="weekSelectorNext" type="button" aria-label="Semanas futuras" disabled>
-                      ›
-                    </button>
-                  ) : null}
-                </div>
-
-                {selectedWeek ? (
-                  <article className="selectedWeekCard">
-                    <header>
-                      <h3>Semana {selectedWeek.weekNumber} de {projectionWeeks}</h3>
-                      <span className={`statusPill ${selectedWeek.statusClass}`}>{selectedWeek.statusLabel}</span>
-                    </header>
-
-                    <div className="weekDateGrid">
-                      <div>
-                        <CalendarIcon />
-                        <span>Inicio</span>
-                        <strong>{selectedWeek.startLabel}</strong>
-                      </div>
-                      <div>
-                        <CalendarIcon />
-                        <span>Pago</span>
-                        <strong>{selectedWeek.paymentLabel}</strong>
-                      </div>
-                    </div>
-
-                    <div className="weekMetricGrid">
-                      <div>
-                        <MetricIcon name="wallet" />
-                        <span>Monto base</span>
-                        <strong>{formatCurrency(selectedWeek.baseAmount)}</strong>
-                      </div>
-                      <div>
-                        <MetricIcon name="users" />
-                        <span>Referidos confirmados</span>
-                        <strong>{primaryInvestment?.referrals.filter((referral) => referral.invested).length ?? 0}</strong>
-                      </div>
-                      <div>
-                        <BonusIcon />
-                        <span>Bono semanal</span>
-                        <strong>{formatCurrency(selectedWeek.weeklyBonus)}</strong>
-                      </div>
-                      <div>
-                        <MetricIcon name="chart" />
-                        <span>Rendimiento calculado</span>
-                        <strong>{formatCurrency(selectedWeek.weeklyYield)}</strong>
-                      </div>
-                      <div>
-                        <MetricIcon name="wallet" />
-                        <span>Total generado</span>
-                        <strong>{formatCurrency(selectedWeek.totalGenerated)}</strong>
-                      </div>
-                      {selectedWeek.canReinvest && primaryInvestment ? (
-                        <div className="weekActionCard">
-                          <span>Reinversion</span>
-                          <ReinvestmentModal
-                            investmentId={primaryInvestment.id}
-                            totalGenerated={selectedWeek.totalGenerated}
-                            weekNumber={selectedWeek.weekNumber}
-                            onCompleted={loadPortfolio}
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <p className="weekInfoNote">
-                      El pago se realizara el {selectedWeek.paymentLabel}. Los montos pueden variar segun el rendimiento del ciclo.
-                    </p>
-                  </article>
-                ) : null}
-              </>
-            )}
+            </div>
+            <p>{currentCycleLabel}</p>
           </div>
-        </section>
+
+          <div className="cycleWeekRows">
+            {Array.from({ length: projectionWeeks }, (_, index) => {
+              const weekNumber = index + 1;
+              const week = cycleProjection[index];
+              const isCompleted = weekNumber < currentWeekNumber;
+              const isCurrent = weekNumber === currentWeekNumber;
+              const status = isCompleted ? "Completada" : isCurrent ? "Actual" : "Pendiente";
+
+              return (
+                <div
+                  className={`cycleWeekRow ${isCompleted ? "completed" : ""} ${isCurrent ? "current" : ""}`}
+                  key={`cycle-status-${weekNumber}`}
+                >
+                  <span className="cycleWeekMarker" aria-hidden="true" />
+                  <span>Semana {weekNumber}</span>
+                  <strong>{status}</strong>
+                  <b>{formatCurrency(week?.totalGenerated ?? 0)}</b>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </section>
-    </>
+    </section>
   );
 }
-
 function buildTwelveWeekProjection(investment?: Investment): ProjectionWeek[] {
   if (!investment) {
     return [];
@@ -585,6 +437,49 @@ function buildPortfolioProjection(investments: Investment[]): ProjectionWeek[] {
     ),
     weekNumber: index + 1
   }));
+}
+
+function getFirstName(name: string) {
+  return name.trim().split(/\s+/)[0] || "Usuario";
+}
+
+function getDaysUntilLabel(dateValue?: string) {
+  if (!dateValue) {
+    return "Sin fecha";
+  }
+
+  const today = new Date();
+  const target = new Date(dateValue);
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+
+  const days = Math.max(0, Math.ceil((target.getTime() - today.getTime()) / 86400000));
+
+  if (days === 0) {
+    return "Hoy";
+  }
+
+  if (days === 1) {
+    return "En 1 dia";
+  }
+
+  return `En ${days} dias`;
+}
+
+function InfoDot() {
+  return (
+    <span className="infoDot" aria-label="Informacion de proyeccion">
+      i
+    </span>
+  );
+}
+
+function BankIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 10.2 12 4l9 6.2v1.5H3v-1.5Zm2 3h2v5H5v-5Zm4 0h2v5H9v-5Zm4 0h2v5h-2v-5Zm4 0h2v5h-2v-5ZM4 19.5h16V21H4v-1.5Z" />
+    </svg>
+  );
 }
 
 function getInitialReferralMovement(investment: Investment, visibleWeeks: InvestmentWeek[], initialBase: number) {
