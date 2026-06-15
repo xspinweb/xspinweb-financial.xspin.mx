@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type ProfileDashboardProps = {
   role: string;
@@ -11,8 +11,98 @@ type ProfileDashboardProps = {
 
 type ProfileTab = "personal" | "security" | "identity";
 
+type ProfileForm = {
+  address: string;
+  birthDate: string;
+  city: string;
+  country: string;
+  email: string;
+  fullName: string;
+  phone: string;
+};
+
 export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboardProps) {
   const [activeTab, setActiveTab] = useState<ProfileTab>("personal");
+  const [form, setForm] = useState<ProfileForm>({
+    address: "",
+    birthDate: "",
+    city: "CDMX",
+    country: "MX",
+    email: userEmail,
+    fullName: userName,
+    phone: ""
+  });
+  const [status, setStatus] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadProfile() {
+      const response = await fetch(`/api/investor/profile?email=${encodeURIComponent(userEmail)}`);
+
+      if (!response.ok) {
+        return;
+      }
+
+      const profile = (await response.json()) as ProfileForm;
+
+      if (isCurrent) {
+        setForm({
+          address: profile.address ?? "",
+          birthDate: profile.birthDate ?? "",
+          city: profile.city || "CDMX",
+          country: profile.country || "MX",
+          email: profile.email || userEmail,
+          fullName: profile.fullName || userName,
+          phone: profile.phone ?? ""
+        });
+      }
+    }
+
+    void loadProfile();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [userEmail, userName]);
+
+  function updateField(field: keyof ProfileForm, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
+    setStatus("");
+  }
+
+  async function saveProfile() {
+    setIsSaving(true);
+    setStatus("");
+
+    const response = await fetch("/api/investor/profile", {
+      body: JSON.stringify(form),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "PUT"
+    });
+
+    if (!response.ok) {
+      setStatus(await getResponseErrorMessage(response));
+      setIsSaving(false);
+      return;
+    }
+
+    const profile = (await response.json()) as ProfileForm;
+    setForm({
+      address: profile.address ?? "",
+      birthDate: profile.birthDate ?? "",
+      city: profile.city || "CDMX",
+      country: profile.country || "MX",
+      email: profile.email || userEmail,
+      fullName: profile.fullName || userName,
+      phone: profile.phone ?? ""
+    });
+    setStatus("Informacion guardada correctamente.");
+    setIsSaving(false);
+  }
 
   return (
     <>
@@ -28,7 +118,7 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
         </button>
       </nav>
 
-      {(activeTab === "personal" || activeTab === "security" || activeTab === "identity") && (
+      {activeTab === "personal" && (
         <section className="profilePanel personalProfilePanel">
           <ProfileSectionHeader
             icon={<UserIcon />}
@@ -38,8 +128,8 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
           />
 
           <div className="profileFormGrid">
-            <ProfileField label="Nombre completo" defaultValue={userName} />
-            <ProfileField label="Correo electronico" defaultValue={userEmail} />
+            <ProfileField label="Nombre completo" value={form.fullName} onChange={(value) => updateField("fullName", value)} />
+            <ProfileField label="Correo electronico" value={form.email} onChange={(value) => updateField("email", value)} readOnly />
             <label className="profileField">
               <span>Telefono</span>
               <div className="phoneFieldGroup">
@@ -48,35 +138,38 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
                   +52
                   <ChevronIcon />
                 </button>
-                <input defaultValue="55 1234 5678" />
+                <input value={form.phone} onChange={(event) => updateField("phone", event.target.value)} placeholder="55 1234 5678" />
               </div>
             </label>
-            <ProfileField label="Fecha de nacimiento" defaultValue="15 / 06 / 1990" icon={<CalendarIcon />} />
+            <ProfileField label="Fecha de nacimiento" type="date" value={form.birthDate} onChange={(value) => updateField("birthDate", value)} icon={<CalendarIcon />} />
             <label className="profileField">
               <span>Pais</span>
-              <select defaultValue="MX">
+              <select value={form.country} onChange={(event) => updateField("country", event.target.value)}>
                 <option value="MX">Mexico</option>
               </select>
             </label>
             <label className="profileField">
               <span>Ciudad</span>
-              <select defaultValue="CDMX">
+              <select value={form.city} onChange={(event) => updateField("city", event.target.value)}>
                 <option value="CDMX">Ciudad de Mexico</option>
                 <option value="GDL">Guadalajara</option>
                 <option value="MTY">Monterrey</option>
               </select>
             </label>
-            <ProfileField className="wide" label="Direccion (opcional)" defaultValue="Av. Reforma 123, Col. Centro, C.P. 06000" />
+            <ProfileField className="wide" label="Direccion (opcional)" value={form.address} onChange={(value) => updateField("address", value)} />
           </div>
 
           <div className="profileActions">
             <span>{role}</span>
-            <button type="button">Guardar cambios</button>
+            <button type="button" onClick={saveProfile} disabled={isSaving}>
+              {isSaving ? "Guardando" : "Guardar cambios"}
+            </button>
           </div>
+          {status ? <p className={status.includes("correctamente") ? "profileSaveStatus success" : "profileSaveStatus"}>{status}</p> : null}
         </section>
       )}
 
-      {(activeTab === "security" || activeTab === "personal" || activeTab === "identity") && (
+      {activeTab === "security" && (
         <section className="profilePanel">
           <ProfileSectionHeader
             icon={<ShieldIcon />}
@@ -94,7 +187,7 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
         </section>
       )}
 
-      {(activeTab === "identity" || activeTab === "personal" || activeTab === "security") && (
+      {activeTab === "identity" && (
         <section className="profilePanel">
           <ProfileSectionHeader
             icon={<IdentityIcon />}
@@ -142,21 +235,27 @@ function ProfileSectionHeader({
 
 function ProfileField({
   className = "",
-  defaultValue,
   icon,
-  label
+  label,
+  onChange,
+  readOnly = false,
+  type = "text",
+  value
 }: {
   className?: string;
-  defaultValue: string;
   icon?: ReactNode;
   label: string;
+  onChange: (value: string) => void;
+  readOnly?: boolean;
+  type?: string;
+  value: string;
 }) {
   return (
     <label className={`profileField ${className}`}>
       <span>{label}</span>
       <div>
         {icon}
-        <input defaultValue={defaultValue} />
+        <input readOnly={readOnly} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
       </div>
     </label>
   );
@@ -172,7 +271,7 @@ function ProfileRow({
   title
 }: {
   action?: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   status?: string;
   statusTone?: "green" | "yellow";
   subtitle: string;
@@ -201,6 +300,11 @@ function ProfileRow({
       ) : null}
     </article>
   );
+}
+
+async function getResponseErrorMessage(response: Response) {
+  const data = (await response.json().catch(() => null)) as { error?: string } | null;
+  return data?.error ?? "No se pudo guardar la informacion.";
 }
 
 function UserIcon() {

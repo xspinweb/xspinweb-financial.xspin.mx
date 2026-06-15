@@ -52,6 +52,16 @@ const walletWithdrawSchema = z.object({
   email: z.string().email()
 });
 
+const investorProfileSchema = z.object({
+  address: z.string().optional(),
+  birthDate: z.string().optional(),
+  city: z.string().optional(),
+  country: z.string().optional(),
+  email: z.string().email(),
+  fullName: z.string().min(1),
+  phone: z.string().optional()
+});
+
 type PortfolioInvestment = {
   id: string;
   principalAmount: unknown;
@@ -179,6 +189,20 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     const email = z.string().email().parse(url.searchParams.get("email"));
     const portfolio = await getPortfolio(email);
     sendJson(res, 200, portfolio);
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/investor/profile") {
+    const email = z.string().email().parse(url.searchParams.get("email"));
+    const profile = await getInvestorProfile(email);
+    sendJson(res, 200, profile);
+    return;
+  }
+
+  if (req.method === "PUT" && url.pathname === "/investor/profile") {
+    const input = investorProfileSchema.parse(await readJson(req));
+    const profile = await updateInvestorProfile(input);
+    sendJson(res, 200, profile);
     return;
   }
 
@@ -404,6 +428,60 @@ async function getPayoutMethods(email: string) {
   }
 
   return investor.payoutMethods.map(formatPayoutMethod);
+}
+
+async function getInvestorProfile(email: string) {
+  const investor = await prisma.investor.findFirst({
+    where: { email }
+  });
+
+  if (!investor) {
+    return {
+      address: "",
+      birthDate: "",
+      city: "",
+      country: "MX",
+      email,
+      fullName: "",
+      phone: ""
+    };
+  }
+
+  return formatInvestorProfile(investor);
+}
+
+async function updateInvestorProfile(input: z.infer<typeof investorProfileSchema>) {
+  const current = await prisma.investor.findFirst({
+    where: { email: input.email }
+  });
+  const data = {
+    address: cleanNullable(input.address),
+    birthDate: parseProfileDate(input.birthDate),
+    city: cleanNullable(input.city),
+    country: cleanNullable(input.country) ?? "MX",
+    fullName: input.fullName,
+    phone: cleanNullable(input.phone)
+  };
+
+  const investor = current
+    ? await prisma.investor.update({
+        data,
+        where: { id: current.id }
+      })
+    : await prisma.investor.create({
+      data: {
+        address: cleanNullable(input.address),
+        birthDate: parseProfileDate(input.birthDate),
+        city: cleanNullable(input.city),
+        country: cleanNullable(input.country) ?? "MX",
+        email: input.email,
+        fullName: input.fullName,
+        investorCode: await createUniqueInvestorCode(prisma),
+        phone: cleanNullable(input.phone)
+      }
+    });
+
+  return formatInvestorProfile(investor);
 }
 
 async function createPayoutMethod(input: z.infer<typeof payoutMethodSchema>) {
@@ -1129,9 +1207,43 @@ function formatPayoutMethod(method: {
   };
 }
 
+function formatInvestorProfile(investor: {
+  address?: string | null;
+  birthDate?: Date | null;
+  city?: string | null;
+  country?: string | null;
+  email?: string | null;
+  fullName?: string | null;
+  phone?: string | null;
+}) {
+  return {
+    address: investor.address ?? "",
+    birthDate: investor.birthDate ? investor.birthDate.toISOString().slice(0, 10) : "",
+    city: investor.city ?? "",
+    country: investor.country ?? "MX",
+    email: investor.email ?? "",
+    fullName: investor.fullName ?? "",
+    phone: investor.phone ?? ""
+  };
+}
+
+function parseProfileDate(value?: string) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function cleanOptional(value?: string) {
   const clean = value?.trim();
   return clean ? clean : undefined;
+}
+
+function cleanNullable(value?: string) {
+  const clean = value?.trim();
+  return clean ? clean : null;
 }
 
 async function stripeRequest<T>(path: string, payload?: Record<string, string>, method: "GET" | "POST" = "POST") {
@@ -1178,5 +1290,5 @@ function sendJson(res: ServerResponse, statusCode: number, payload: unknown) {
 function setCorsHeaders(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
 }

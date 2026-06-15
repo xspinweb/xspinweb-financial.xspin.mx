@@ -70,6 +70,10 @@ model Investor {
   investorCode          String           @unique
   fullName              String?
   phone                 String?
+  birthDate             DateTime?
+  country               String?
+  city                  String?
+  address               String?
   email                 String?
   status                InvestorStatus   @default(ACTIVE)
   referredByInvestorId  String?
