@@ -3565,37 +3565,19 @@ a {
 
 .levelBadgeIcon {
   align-items: center;
-  aspect-ratio: 1;
-  background:
-    linear-gradient(145deg, rgba(5, 13, 22, 0.98), rgba(14, 27, 40, 0.86)) padding-box,
-    linear-gradient(145deg, var(--level-color), rgba(255, 255, 255, 0.28)) border-box;
-  border: 2px solid transparent;
-  clip-path: polygon(50% 0, 92% 24%, 92% 76%, 50% 100%, 8% 76%, 8% 24%);
-  color: var(--level-color);
   display: flex;
   filter: drop-shadow(0 0 26px var(--level-glow));
   justify-content: center;
   margin: 0 auto;
-  max-width: 180px;
-  padding: 36px;
+  max-width: 210px;
   width: 100%;
 }
 
-.levelBadgeIcon span {
-  align-items: center;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.1));
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  display: flex;
-  height: 74px;
-  justify-content: center;
-  width: 74px;
-}
-
-.levelBadgeIcon svg {
-  fill: currentColor;
-  height: 42px;
-  width: 42px;
+.levelBadgeIcon img {
+  display: block;
+  height: auto;
+  object-fit: contain;
+  width: 100%;
 }
 
 .level-explorer {
@@ -4609,8 +4591,7 @@ a {
   }
 
   .profileLevelCard .levelBadgeIcon {
-    max-width: 150px;
-    padding: 30px;
+    max-width: 170px;
   }
 
   .profileLevelInfo dl div {
@@ -5825,23 +5806,21 @@ a {
 
 .investorLevelBadge {
   align-items: center;
-  aspect-ratio: 1;
-  background:
-    linear-gradient(145deg, rgba(5, 13, 22, 0.98), rgba(14, 27, 40, 0.86)) padding-box,
-    linear-gradient(145deg, var(--level-color), rgba(255, 255, 255, 0.25)) border-box;
-  border: 2px solid transparent;
-  clip-path: polygon(50% 0, 92% 24%, 92% 76%, 50% 100%, 8% 76%, 8% 24%);
-  color: var(--level-color);
+  border-radius: 14px;
   display: flex;
   filter: drop-shadow(0 0 18px var(--level-glow));
+  height: 74px;
   justify-content: center;
-  padding: 18px;
+  overflow: hidden;
+  width: 74px;
 }
 
-.investorLevelBadge svg {
-  fill: currentColor;
-  height: 34px;
-  width: 34px;
+.investorLevelBadge img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+  width: 100%;
 }
 
 .investorLevelStrip > div:nth-child(2) strong {

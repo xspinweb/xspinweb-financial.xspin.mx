@@ -684,17 +684,9 @@ function getLevelStars(levelKey: LevelKey) {
 }
 
 function LevelBadgeIcon({ levelKey }: { levelKey: LevelKey }) {
-  const icon = {
-    builder: <BlocksIcon />,
-    elite: <CrownIcon />,
-    explorer: <CompassIcon />,
-    legend: <LegendIcon />,
-    starter: <GrowthIcon />
-  }[levelKey];
-
   return (
     <div className={`levelBadgeIcon level-${levelKey}`}>
-      <span>{icon}</span>
+      <img src={`/badges/${levelKey}.png`} alt={`Insignia ${levelKey}`} />
     </div>
   );
 }
@@ -703,46 +695,6 @@ function TrophyIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M7 3h10v3h3v2a6 6 0 0 1-5.3 6 5 5 0 0 1-1.7 1.4V18h4v2H7v-2h4v-2.6A5 5 0 0 1 9.3 14 6 6 0 0 1 4 8V6h3Zm10 5V5H7v3a5 5 0 0 0 10 0Zm2 .1V8h-2a7 7 0 0 1-.5 2.5A4 4 0 0 0 19 8.1ZM7.5 10.5A7 7 0 0 1 7 8H5a4 4 0 0 0 2.5 2.5Z" />
-    </svg>
-  );
-}
-
-function CompassIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="m16.8 5.2-3.1 8.5-8.5 3.1 3.1-8.5Zm-5.1 5.1-1.4 3.4 3.4-1.4Z" />
-    </svg>
-  );
-}
-
-function GrowthIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 19h16v2H4Zm2-2h3v-6H6Zm5 0h3V7h-3Zm5 0h3V4h-3Zm-9.6-6.8 1.4-1.4 3.2 3.1 6-6h-3V4h6v6h-2V7.4l-7 7Z" />
-    </svg>
-  );
-}
-
-function BlocksIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M10 3h4l3 2v4l-3 2h-4L7 9V5Zm-5 9h4l3 2v4l-3 2H5l-3-2v-4Zm10 0h4l3 2v4l-3 2h-4l-3-2v-4Z" />
-    </svg>
-  );
-}
-
-function CrownIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="m4 18-1-9 5 3 4-7 4 7 5-3-1 9Zm1 2h14v2H5Z" />
-    </svg>
-  );
-}
-
-function LegendIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 2 14.2 8.1 20 5.8l-2.3 5.8L22 14l-4.3 2.4 2.3 5.8-5.8-2.3L12 22l-2.2-2.1L4 22.2l2.3-5.8L2 14l4.3-2.4L4 5.8l5.8 2.3Z" />
     </svg>
   );
 }
