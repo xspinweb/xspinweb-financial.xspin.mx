@@ -433,12 +433,6 @@ function InvestorLevelStrip({ level }: { level: InvestorLevel }) {
       </div>
       <div>
         <strong>{level.current.name}</strong>
-        <span>{level.current.requirement}</span>
-      </div>
-      <div className="investorLevelProgress">
-        <b>{level.progressToNext}%</b>
-        <span>{level.next ? `al siguiente nivel: ${level.next.name}` : "nivel maximo alcanzado"}</span>
-        <i><em style={{ width: `${level.progressToNext}%` }} /></i>
       </div>
     </section>
   );

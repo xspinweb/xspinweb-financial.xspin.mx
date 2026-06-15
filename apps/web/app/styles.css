@@ -6242,8 +6242,13 @@ a {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   display: grid;
   gap: 16px;
-  grid-template-columns: 74px minmax(0, 1fr) minmax(160px, 240px);
-  padding: 14px 16px;
+  grid-template-columns: 118px minmax(0, 1fr);
+  min-height: 142px;
+  padding: 16px 20px;
+}
+
+.investorLevelStrip > div:nth-child(2) {
+  min-width: 0;
 }
 
 .investorLevelBadge {
@@ -6251,60 +6256,26 @@ a {
   border-radius: 14px;
   display: flex;
   filter: drop-shadow(0 0 18px var(--level-glow));
-  height: 74px;
+  height: 118px;
   justify-content: center;
-  overflow: hidden;
-  width: 74px;
+  overflow: visible;
+  width: 118px;
 }
 
 .investorLevelBadge img {
   display: block;
-  height: 100%;
-  object-fit: cover;
-  object-position: center bottom;
+  height: 112%;
+  object-fit: contain;
+  object-position: center;
   width: 100%;
 }
 
 .investorLevelStrip > div:nth-child(2) strong {
   color: var(--level-color);
   display: block;
-  font-size: 22px;
+  font-size: clamp(28px, 5vw, 52px);
   line-height: 1;
   text-transform: uppercase;
-}
-
-.investorLevelStrip > div:nth-child(2) span,
-.investorLevelProgress span {
-  color: var(--muted);
-  display: block;
-  font-size: 13px;
-  margin-top: 6px;
-}
-
-.investorLevelProgress {
-  display: grid;
-  gap: 6px;
-  justify-items: end;
-}
-
-.investorLevelProgress b {
-  color: var(--level-color);
-  font-size: 24px;
-}
-
-.investorLevelProgress i {
-  background: rgba(159, 178, 196, 0.16);
-  border-radius: 999px;
-  height: 8px;
-  overflow: hidden;
-  width: 100%;
-}
-
-.investorLevelProgress em {
-  background: linear-gradient(90deg, var(--level-color), var(--green));
-  border-radius: inherit;
-  display: block;
-  height: 100%;
 }
 
 .wealthKpis {
