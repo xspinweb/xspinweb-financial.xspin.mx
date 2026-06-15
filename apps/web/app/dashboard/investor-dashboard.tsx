@@ -1087,7 +1087,7 @@ function ReinvestmentModal({
                   <strong>{formatCurrency(reinvestAmount)}</strong>
                 </div>
                 <div>
-                  <span>Retiro disponible</span>
+                  <span>Saldo reservado</span>
                   <strong>{formatCurrency(withdrawalAmount)}</strong>
                 </div>
               </div>
@@ -1097,9 +1097,6 @@ function ReinvestmentModal({
               <div className="modalActions reinvestmentActions">
                 <button className="secondaryModalAction" type="button" onClick={closeModal} disabled={isSubmitting}>
                   Cancelar
-                </button>
-                <button className="secondaryModalAction" type="button" disabled={isSubmitting || withdrawalAmount <= 0} onClick={submitReinvestment}>
-                  Retiro
                 </button>
                 <button className="primaryModalAction" type="button" onClick={submitReinvestment} disabled={isSubmitting}>
                   {isSubmitting ? "Procesando" : "Reinvertir"}
