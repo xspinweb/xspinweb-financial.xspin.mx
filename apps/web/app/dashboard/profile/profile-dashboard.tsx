@@ -512,6 +512,7 @@ function TwoFactorModal({
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(30);
+  const [setupStep, setSetupStep] = useState<"scan" | "code">("scan");
   const codeInputRef = useRef<HTMLInputElement | null>(null);
   const isSetup = mode === "setup";
 
@@ -593,6 +594,12 @@ function TwoFactorModal({
     await navigator.clipboard?.writeText(setup.secret).catch(() => undefined);
   }
 
+  function goToCodeStep() {
+    setError("");
+    setSetupStep("code");
+    window.setTimeout(() => codeInputRef.current?.focus(), 80);
+  }
+
   async function submit() {
     if (!/^\d{6}$/.test(code)) {
       setError("Ingresa el codigo de 6 digitos de tu app.");
@@ -635,18 +642,14 @@ function TwoFactorModal({
           </button>
         </div>
 
-        <div className="twoFactorHero">
-          <h2 id="two-factor-title">
-            {isSetup ? <>Configurar <span>autenticador</span></> : <>Desactivar <span>autenticador</span></>}
-          </h2>
-          <p>
-            {isSetup
-              ? "Agrega esta clave en Google Authenticator, Authy, Microsoft Authenticator o cualquier app TOTP."
-              : "Ingresa un codigo vigente de tu app de autenticacion para desactivar esta capa de seguridad."}
-          </p>
-        </div>
+        {!isSetup ? (
+          <div className="twoFactorHero">
+            <h2 id="two-factor-title">Desactivar <span>autenticador</span></h2>
+            <p>Ingresa un codigo vigente de tu app de autenticacion para desactivar esta capa de seguridad.</p>
+          </div>
+        ) : null}
 
-        {isSetup ? (
+        {isSetup && setupStep === "scan" ? (
           <section className="twoFactorStep">
             <div className="twoFactorStepTitle">
               <b>1</b>
@@ -667,11 +670,12 @@ function TwoFactorModal({
                   <code>{setup?.secret ?? "Generando clave..."}</code>
                   <CopyIcon />
                 </button>
-                <p><InfoIcon /> Copia esta clave y guardala en un lugar seguro. La necesitaras si cambias de dispositivo.</p>
               </div>
             </div>
           </section>
-        ) : (
+        ) : null}
+
+        {!isSetup ? (
           <section className="twoFactorStep twoFactorDisableStep">
             <div className="twoFactorStepTitle">
               <b>1</b>
@@ -681,9 +685,9 @@ function TwoFactorModal({
               </div>
             </div>
           </section>
-        )}
+        ) : null}
 
-        <section className="twoFactorStep">
+        {(!isSetup || setupStep === "code") ? <section className="twoFactorStep">
           <div className="twoFactorStepTitle">
             <b>2</b>
             <div>
@@ -703,7 +707,7 @@ function TwoFactorModal({
             />
             <div aria-hidden="true">
               {Array.from({ length: 6 }, (_, index) => (
-                <i key={`two-factor-digit-${index}`}>{code[index] ? "•" : ""}</i>
+                <i key={`two-factor-digit-${index}`}>{code[index] ? "*" : ""}</i>
               ))}
             </div>
           </label>
@@ -713,7 +717,7 @@ function TwoFactorModal({
               <span>{secondsLeft}</span>
             </div>
           </div>
-        </section>
+        </section> : null}
 
         {error ? <p className="modalError">{error}</p> : null}
 
@@ -721,10 +725,16 @@ function TwoFactorModal({
           <button className="secondaryModalAction" type="button" onClick={onClose} disabled={isSubmitting}>
             Cancelar
           </button>
-          <button className="primaryModalAction" type="button" onClick={submit} disabled={isSubmitting || (isSetup && !setup)}>
-            <ShieldCheckIcon />
-            {isSubmitting ? "Verificando" : isSetup ? "Activar 2FA" : "Desactivar 2FA"}
-          </button>
+          {isSetup && setupStep === "scan" ? (
+            <button className="primaryModalAction" type="button" onClick={goToCodeStep} disabled={!setup}>
+              Siguiente
+            </button>
+          ) : (
+            <button className="primaryModalAction" type="button" onClick={submit} disabled={isSubmitting || (isSetup && !setup)}>
+              <ShieldCheckIcon />
+              {isSubmitting ? "Verificando" : isSetup ? "Activar" : "Desactivar 2FA"}
+            </button>
+          )}
         </div>
         <p className="twoFactorFooter"><LockIcon /> La autenticacion en dos pasos anade una capa extra de seguridad para proteger tu cuenta.</p>
       </section>
@@ -863,14 +873,6 @@ function CopyIcon() {
   );
 }
 
-function InfoIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M11 10h2v8h-2Zm0-4h2v2h-2Zm1-4a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16Z" />
-    </svg>
-  );
-}
-
 function DeviceIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -926,3 +928,4 @@ function ChevronIcon() {
     </svg>
   );
 }
+
