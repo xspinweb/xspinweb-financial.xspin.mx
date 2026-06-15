@@ -35,6 +35,6 @@ export function getNavItems(role: AppRole): NavItem[] {
     { label: "Inicio", href: "/dashboard", icon: "home" },
     { label: "Historial", href: "/dashboard#weekly-history", icon: "history" },
     { label: "Wallet", href: "/dashboard/wallet", icon: "wallet" },
-    { label: "Perfil", href: "#", icon: "profile" }
+    { label: "Perfil", href: "/dashboard/profile", icon: "profile" }
   ];
 }
