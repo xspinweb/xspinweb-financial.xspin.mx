@@ -296,8 +296,8 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
           ) : (
             <div className="emptyWalletState compactWalletEmpty">
               <CalendarIcon />
-              <strong>Sin pagos programados</strong>
-              <span>Cuando tus grupos avancen, veras aqui tus proximos pagos.</span>
+              <strong>Sin pagos cobrados</strong>
+              <span>Cuando cobres una semana, veras aqui el saldo enviado a tu wallet.</span>
             </div>
           )}
         </div>
@@ -753,28 +753,29 @@ function getWalletSummary(portfolio: PortfolioResponse) {
 function getScheduledPayments(portfolio: PortfolioResponse) {
   return portfolio.investments
     .flatMap((investment, investmentIndex) =>
-      (investment.weeks ?? []).map((week) => {
+      (investment.weeks ?? []).flatMap((week) => {
         const paidWeeks = investment.paidWeeks ?? 0;
         const isCompleted = week.weekNumber <= paidWeeks;
-        const isNext = week.weekNumber === paidWeeks + 1;
-        const paidAmount = getPaidWeekAmount(investment.payments ?? [], week.weekNumber);
-        const projectedWalletAmount = week.weekNumber >= 8 ? Number(week.totalGenerated) : Number(week.totalGenerated) * 0.18;
 
-        return {
-          amount: roundWalletAmount(isCompleted ? paidAmount : projectedWalletAmount),
+        if (!isCompleted) {
+          return [];
+        }
+
+        const paidAmount = getPaidWeekAmount(investment.payments ?? [], week.weekNumber);
+
+        return [{
+          amount: roundWalletAmount(paidAmount),
           dateLabel: formatWalletDate(new Date(week.paymentAt)),
           group: investment.group,
           investmentIndex,
-          label: isCompleted ? "Completado" : isNext ? "Proximo" : "Pendiente",
-          status: isCompleted ? "completed" : isNext ? "next" : "pending",
+          label: "Completado",
+          status: "completed",
           weekNumber: week.weekNumber
-        };
+        }];
       })
     )
     .sort((current, next) => {
-      if (current.status === "next" && next.status !== "next") return -1;
-      if (current.status !== "next" && next.status === "next") return 1;
-      return current.weekNumber - next.weekNumber || current.investmentIndex - next.investmentIndex;
+      return current.investmentIndex - next.investmentIndex || current.weekNumber - next.weekNumber;
     })
     .slice(0, 4);
 }
