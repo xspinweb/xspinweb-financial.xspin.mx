@@ -2,6 +2,7 @@
 
 import type { ReactNode, UIEvent } from "react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type PaymentType = "bank" | "paypal" | "paxum" | "crypto";
 
@@ -478,8 +479,8 @@ function WalletWithdrawModal({
         Retirar saldo
       </button>
 
-      {isOpen ? (
-        <div className="modalOverlay" role="presentation">
+      {isOpen ? createPortal(
+        <div className="modalOverlay walletModalOverlay" role="presentation">
           <section className="investmentModal walletWithdrawModal" role="dialog" aria-modal="true" aria-labelledby="wallet-withdraw-title">
             <div className="modalHeader">
               <div>
@@ -520,7 +521,8 @@ function WalletWithdrawModal({
               </button>
             </div>
           </section>
-        </div>
+        </div>,
+        document.body
       ) : null}
     </>
   );

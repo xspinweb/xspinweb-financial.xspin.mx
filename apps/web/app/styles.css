@@ -2876,6 +2876,14 @@ a {
 
 .walletWithdrawModal {
   max-width: 560px;
+  max-height: calc(100dvh - 36px);
+  overflow: auto;
+  padding: 22px;
+}
+
+.walletModalOverlay {
+  z-index: 10000;
+  overflow-y: auto;
 }
 
 .walletWithdrawSummary {
@@ -2886,7 +2894,6 @@ a {
   background:
     radial-gradient(circle at 15% 0%, rgba(53, 224, 161, 0.14), transparent 44%),
     rgba(8, 17, 28, 0.76);
-  margin-top: 20px;
   padding: 18px;
 }
 
