@@ -647,9 +647,11 @@ function getScheduledPayments(portfolio: PortfolioResponse) {
         const paidWeeks = investment.paidWeeks ?? 0;
         const isCompleted = week.weekNumber <= paidWeeks;
         const isNext = week.weekNumber === paidWeeks + 1;
+        const paidAmount = getPaidWeekAmount(investment.payments ?? [], week.weekNumber);
+        const projectedWalletAmount = week.weekNumber >= 8 ? Number(week.totalGenerated) : Number(week.totalGenerated) * 0.18;
 
         return {
-          amount: Number(week.totalGenerated),
+          amount: roundWalletAmount(isCompleted ? paidAmount : projectedWalletAmount),
           dateLabel: formatWalletDate(new Date(week.paymentAt)),
           group: investment.group,
           investmentIndex,
@@ -665,6 +667,15 @@ function getScheduledPayments(portfolio: PortfolioResponse) {
       return current.weekNumber - next.weekNumber || current.investmentIndex - next.investmentIndex;
     })
     .slice(0, 4);
+}
+
+function getPaidWeekAmount(payments: PortfolioPayment[], weekNumber: number) {
+  const payment = payments.find((currentPayment) => currentPayment.notes?.toLowerCase().startsWith(`semana ${weekNumber}:`));
+  return Number(payment?.amount ?? 0);
+}
+
+function roundWalletAmount(amount: number) {
+  return Math.round(amount * 100) / 100;
 }
 
 function formatMoney(amount: number) {
