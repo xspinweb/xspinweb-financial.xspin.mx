@@ -22,6 +22,10 @@ const reinvestSchema = z.object({
   weekNumber: z.number().int().min(1).max(config.defaultBusinessRules.totalCycleWeeks).optional()
 });
 
+const collectSchema = z.object({
+  weekNumber: z.number().int().min(1).max(config.defaultBusinessRules.totalCycleWeeks).optional()
+});
+
 const payoutMethodSchema = z.object({
   accountHolder: z.string().optional(),
   bankName: z.string().optional(),
@@ -211,6 +215,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   }
 
   const reinvestMatch = url.pathname.match(/^\/investments\/([^/]+)\/reinvest$/);
+  const collectMatch = url.pathname.match(/^\/investments\/([^/]+)\/collect$/);
   const primaryPayoutMethodMatch = url.pathname.match(/^\/payout-methods\/([^/]+)\/primary$/);
   const payoutMethodMatch = url.pathname.match(/^\/payout-methods\/([^/]+)$/);
 
@@ -231,6 +236,13 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   if (req.method === "POST" && reinvestMatch) {
     const input = reinvestSchema.parse(await readJson(req));
     const result = await reinvestInvestment(reinvestMatch[1], input);
+    sendJson(res, 201, result);
+    return;
+  }
+
+  if (req.method === "POST" && collectMatch) {
+    const input = collectSchema.parse(await readJson(req));
+    const result = await collectFinalInvestment(collectMatch[1], input);
     sendJson(res, 201, result);
     return;
   }
@@ -760,6 +772,108 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
       reinvestedAmount,
       totalGenerated,
       withdrawalAmount,
+      weekNumber
+    };
+  });
+}
+
+async function collectFinalInvestment(investmentId: string, input: z.infer<typeof collectSchema>) {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const investment = await tx.investment.findUniqueOrThrow({
+      where: { id: investmentId },
+      include: {
+        payments: {
+          orderBy: { paidAt: "asc" },
+          select: {
+            notes: true,
+            paidAt: true
+          }
+        },
+        referralsSource: {
+          include: {
+            referredInvestor: {
+              include: {
+                investments: {
+                  include: {
+                    payments: {
+                      orderBy: { paidAt: "asc" },
+                      select: {
+                        notes: true,
+                        paidAt: true
+                      }
+                    }
+                  },
+                  orderBy: { createdAt: "desc" },
+                  take: 1
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+    const paidWeeks = investment.payments.length;
+    const weekNumber = input.weekNumber ?? paidWeeks + 1;
+    const totalWeeks = config.defaultBusinessRules.totalCycleWeeks;
+
+    if (weekNumber !== paidWeeks + 1) {
+      throw new Error("La semana seleccionada no esta disponible para cobro.");
+    }
+
+    if (weekNumber !== totalWeeks) {
+      throw new Error(`El cierre final solo esta disponible en la semana ${totalWeeks}.`);
+    }
+
+    if (paidWeeks >= totalWeeks) {
+      throw new Error(`Esta inversion ya concluyo sus ${totalWeeks} semanas.`);
+    }
+
+    const paymentDate = addDays(investment.createdAt, weekNumber * config.defaultBusinessRules.cycleDays);
+
+    if (new Date() < paymentDate) {
+      throw new Error("La fecha de pago final aun no ha llegado.");
+    }
+
+    const referrals = investment.referralsSource as ReinvestReferral[];
+
+    if (referrals.length < 2) {
+      throw new Error("El cobro final requiere al menos 2 referidos vinculados.");
+    }
+
+    const week = buildInvestmentWeeks(investment)[weekNumber - 1];
+
+    if (!week || week.baseAmount <= 0) {
+      throw new Error("Esta semana no tiene capital base para cobro final.");
+    }
+
+    if (!week.canCollect) {
+      throw new Error(`El cobro final requiere que los ${referrals.length} referidos vinculados hayan invertido o reinvertido.`);
+    }
+
+    const totalGenerated = week.totalGenerated;
+    const payment = await tx.payment.create({
+      data: {
+        investorId: investment.investorId,
+        investmentId: investment.id,
+        groupId: investment.groupId,
+        amount: totalGenerated,
+        paymentType: "YIELD",
+        notes: `Semana ${weekNumber}: cierre final, retiro ${totalGenerated}`
+      }
+    });
+
+    await tx.investment.update({
+      data: {
+        paidAt: new Date(),
+        status: "PAID"
+      },
+      where: { id: investment.id }
+    });
+
+    return {
+      payment,
+      totalGenerated,
+      withdrawalAmount: totalGenerated,
       weekNumber
     };
   });

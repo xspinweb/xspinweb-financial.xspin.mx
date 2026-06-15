@@ -15,6 +15,7 @@ type Referral = {
 type InvestmentWeek = {
   baseAmount: number;
   canCollect: boolean;
+  canCollectFinal?: boolean;
   canReinvest?: boolean;
   paymentAt: string;
   paymentLabel?: string;
@@ -271,7 +272,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
               const tone = ["green", "blue", "purple", "orange"][index % 4];
               const selected = primaryInvestment?.id === investment.id;
               const groupStatus = currentWeek?.statusLabel ?? "Pendiente";
-              const canCollect = Boolean(currentWeek?.canReinvest);
+              const canCollect = Boolean(currentWeek?.canReinvest || currentWeek?.canCollectFinal);
 
               return (
                 <article
@@ -339,12 +340,21 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
                         <span>Listo para cobrar</span>
                         <strong>{formatCurrency(currentWeek.totalGenerated)}</strong>
                       </div>
-                      <ReinvestmentModal
-                        investmentId={investment.id}
-                        totalGenerated={currentWeek.totalGenerated}
-                        weekNumber={currentWeek.weekNumber}
-                        onCompleted={loadPortfolio}
-                      />
+                      {currentWeek.canCollectFinal ? (
+                        <FinalCollectModal
+                          investmentId={investment.id}
+                          totalGenerated={currentWeek.totalGenerated}
+                          weekNumber={currentWeek.weekNumber}
+                          onCompleted={loadPortfolio}
+                        />
+                      ) : (
+                        <ReinvestmentModal
+                          investmentId={investment.id}
+                          totalGenerated={currentWeek.totalGenerated}
+                          weekNumber={currentWeek.weekNumber}
+                          onCompleted={loadPortfolio}
+                        />
+                      )}
                     </div>
                   ) : null}
                 </article>
@@ -1103,10 +1113,141 @@ function ReinvestmentModal({
   );
 }
 
+function FinalCollectModal({
+  investmentId,
+  onCompleted,
+  totalGenerated,
+  weekNumber
+}: {
+  investmentId: string;
+  onCompleted: () => Promise<void>;
+  totalGenerated: number;
+  weekNumber: number;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeModal();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  function closeModal() {
+    setIsOpen(false);
+    setError("");
+    setIsSubmitting(false);
+  }
+
+  async function submitCollection() {
+    setError("");
+    setIsSubmitting(true);
+
+    const response = await fetch(`/api/investments/${investmentId}/collect`, {
+      body: JSON.stringify({
+        weekNumber
+      }),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "POST"
+    });
+
+    if (!response.ok) {
+      setError(await getResponseErrorMessage(response));
+      setIsSubmitting(false);
+      return;
+    }
+
+    await onCompleted();
+    closeModal();
+  }
+
+  return (
+    <>
+      <button
+        className="reinvestmentAction finalCollectAction"
+        type="button"
+        aria-label="Abrir cobro final"
+        title="Cobro final"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsOpen(true);
+        }}
+      >
+        <WalletIcon />
+      </button>
+
+      {isOpen ? (
+        <div className="modalOverlay" role="presentation">
+          <section className="investmentModal reinvestmentModal" role="dialog" aria-modal="true" aria-labelledby={`collect-${investmentId}`}>
+            <div className="reinvestmentContent">
+              <div className="modalHeader">
+                <div>
+                  <span className="loginEyebrow">Cobro final</span>
+                  <h2 id={`collect-${investmentId}`}>Ciclo {weekNumber} concluido</h2>
+                </div>
+                <button className="modalClose" type="button" aria-label="Cerrar" onClick={closeModal}>
+                  x
+                </button>
+              </div>
+
+              <p className="reinvestmentText">
+                Esta es la ultima semana del ciclo. El monto generado queda disponible para retiro total.
+              </p>
+
+              <div className="reinvestmentGrid finalCollectGrid">
+                <div>
+                  <span>Total generado</span>
+                  <strong>{formatCurrency(totalGenerated)}</strong>
+                </div>
+                <div>
+                  <span>Retiro disponible</span>
+                  <strong>{formatCurrency(totalGenerated)}</strong>
+                </div>
+              </div>
+
+              {error ? <p className="modalError">{error}</p> : null}
+
+              <div className="modalActions reinvestmentActions">
+                <button className="secondaryModalAction" type="button" onClick={closeModal} disabled={isSubmitting}>
+                  Cancelar
+                </button>
+                <button className="primaryModalAction" type="button" onClick={submitCollection} disabled={isSubmitting}>
+                  {isSubmitting ? "Procesando" : "Cobrar"}
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 function ReinvestmentIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 3a9 9 0 0 1 8.3 5.5l-1.9.8A7 7 0 0 0 6.1 7.9H9v2H3V4h2v2.2A9 9 0 0 1 12 3Zm6.9 10.7H15v-2h6v5.9h-2v-2.2A9 9 0 0 1 3.7 15.5l1.9-.8a7 7 0 0 0 12.3 1.4h-3v-2.4h4Z" />
+    </svg>
+  );
+}
+
+function WalletIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 6h14a2 2 0 0 1 2 2v2h-5a4 4 0 0 0 0 8h5v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Zm0 2v11h14v-1h-3a6 6 0 0 1 0-12H4Zm11 4h7v4h-7a2 2 0 0 1 0-4Zm0 2v0a.5.5 0 0 0 0 1h1v-1Z" />
     </svg>
   );
 }
@@ -1213,14 +1354,16 @@ function normalizeInvestmentWeek(week: InvestmentWeek, paidWeeks: number): Inves
   const isPaid = week.weekNumber <= paidWeeks;
   const isComplete = today >= startOfDay(paymentDate);
   const canReinvest = week.weekNumber < projectionWeeks && week.canCollect && isComplete && !isPaid;
+  const canCollectFinal = week.weekNumber === projectionWeeks && week.canCollect && isComplete && !isPaid;
 
   return {
     ...week,
+    canCollectFinal,
     canReinvest,
     paymentLabel: formatDate(paymentDate),
     startLabel: formatDate(startDate),
-    statusClass: isPaid ? "statusGreen" : canReinvest ? "statusYellow" : "statusRed",
-    statusLabel: isPaid ? "Cobrada" : canReinvest ? "Por cobrar" : "Pendiente"
+    statusClass: isPaid ? "statusGreen" : canReinvest || canCollectFinal ? "statusYellow" : "statusRed",
+    statusLabel: isPaid ? "Cobrada" : canReinvest || canCollectFinal ? "Por cobrar" : "Pendiente"
   };
 }
 
