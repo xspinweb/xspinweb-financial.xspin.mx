@@ -75,6 +75,8 @@ model Investor {
   city                  String?
   address               String?
   twoFactorEnabled      Boolean          @default(false)
+  twoFactorSecret       String?
+  twoFactorVerifiedAt   DateTime?
   email                 String?
   status                InvestorStatus   @default(ACTIVE)
   referredByInvestorId  String?

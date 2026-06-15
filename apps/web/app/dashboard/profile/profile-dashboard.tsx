@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { PaymentSettingsDashboard } from "../wallet/wallet-dashboard";
 
 type ProfileDashboardProps = {
-  role: string;
   userEmail: string;
   userName: string;
 };
@@ -40,7 +39,32 @@ type SecurityInfo = {
   twoFactorEnabled: boolean;
 };
 
-export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboardProps) {
+type InvestorLevel = {
+  completedCycles: number;
+  current: {
+    key: LevelKey;
+    name: string;
+    requirement: string;
+  };
+  next: {
+    key: LevelKey;
+    name: string;
+    requirement: string;
+  } | null;
+  progressToNext: number;
+  totalInvested: number;
+  totalReferrals: number;
+};
+
+type LevelKey = "explorer" | "starter" | "builder" | "elite" | "legend";
+
+type TwoFactorSetup = {
+  otpauthUrl: string;
+  secret: string;
+  twoFactorEnabled: boolean;
+};
+
+export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps) {
   const [activeTab, setActiveTab] = useState<ProfileTab>("personal");
   const [form, setForm] = useState<ProfileForm>({
     address: "",
@@ -61,6 +85,8 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
   const [securityDetail, setSecurityDetail] = useState<"sessions" | "activity" | null>(null);
   const [securityStatus, setSecurityStatus] = useState("");
   const [isSavingSecurity, setIsSavingSecurity] = useState(false);
+  const [level, setLevel] = useState<InvestorLevel | null>(null);
+  const [twoFactorModalMode, setTwoFactorModalMode] = useState<"setup" | "disable" | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
@@ -118,6 +144,30 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
     };
   }, [userEmail]);
 
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadLevel() {
+      const response = await fetch(`/api/investor/level?email=${encodeURIComponent(userEmail)}`);
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = (await response.json()) as InvestorLevel;
+
+      if (isCurrent) {
+        setLevel(data);
+      }
+    }
+
+    void loadLevel();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [userEmail]);
+
   function updateField(field: keyof ProfileForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
     setStatus("");
@@ -155,36 +205,16 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
     setIsSaving(false);
   }
 
-  async function toggleTwoFactor() {
-    const nextValue = !security.twoFactorEnabled;
-    setIsSavingSecurity(true);
-    setSecurityStatus("");
-
-    const response = await fetch("/api/investor/security", {
-      body: JSON.stringify({
-        email: form.email || userEmail,
-        twoFactorEnabled: nextValue
-      }),
-      headers: {
-        "Content-Type": "application/json"
-      },
-      method: "PUT"
-    });
-
-    if (!response.ok) {
-      setSecurityStatus(await getResponseErrorMessage(response));
-      setIsSavingSecurity(false);
-      return;
-    }
-
-    const data = (await response.json()) as SecurityInfo;
+  function updateSecurity(data: SecurityInfo, message: string) {
     setSecurity(data);
-    setSecurityStatus(nextValue ? "2FA activado correctamente." : "2FA desactivado correctamente.");
-    setIsSavingSecurity(false);
+    setSecurityStatus(message);
+    setTwoFactorModalMode(null);
   }
 
   return (
     <>
+      {level ? <ProfileLevelCard level={level} /> : null}
+
       <nav className="profileTabs" aria-label="Secciones de perfil">
         <button className={activeTab === "personal" ? "active" : ""} type="button" onClick={() => setActiveTab("personal")}>
           Informacion personal
@@ -242,7 +272,6 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
           </div>
 
           <div className="profileActions">
-            <span>{role}</span>
             <button type="button" onClick={saveProfile} disabled={isSaving}>
               {isSaving ? "Guardando" : "Guardar cambios"}
             </button>
@@ -264,10 +293,11 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
             <ProfileRow
               icon={<ShieldIcon />}
               title="Autenticacion en dos pasos (2FA)"
-              subtitle="Anade una capa extra de seguridad a tu cuenta."
-              switchActive={security.twoFactorEnabled}
-              switchLabel={security.twoFactorEnabled ? "Activado" : "Desactivado"}
-              onSwitch={toggleTwoFactor}
+              subtitle={security.twoFactorEnabled ? "Tu cuenta esta protegida con una app de autenticacion." : "Configura Google Authenticator, Authy o una app compatible."}
+              status={security.twoFactorEnabled ? "Activado" : "Pendiente"}
+              statusTone={security.twoFactorEnabled ? "green" : "yellow"}
+              action={security.twoFactorEnabled ? "Desactivar" : "Configurar"}
+              onAction={() => setTwoFactorModalMode(security.twoFactorEnabled ? "disable" : "setup")}
               disabled={isSavingSecurity}
             />
             <ProfileRow
@@ -288,6 +318,14 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
           {securityStatus ? <p className={securityStatus.includes("correctamente") ? "profileSaveStatus success" : "profileSaveStatus"}>{securityStatus}</p> : null}
           {securityDetail === "sessions" ? <SecuritySessions sessions={security.sessions} /> : null}
           {securityDetail === "activity" ? <SecurityActivity activity={security.activity} /> : null}
+          {twoFactorModalMode ? (
+            <TwoFactorModal
+              email={form.email || userEmail}
+              mode={twoFactorModalMode}
+              onClose={() => setTwoFactorModalMode(null)}
+              onCompleted={updateSecurity}
+            />
+          ) : null}
         </section>
       )}
 
@@ -411,7 +449,7 @@ function ProfileRow({
         </button>
       ) : null}
       {action ? (
-        <button type="button" onClick={onAction}>
+        <button type="button" onClick={onAction} disabled={disabled}>
           {action}
           <ChevronIcon />
         </button>
@@ -429,7 +467,7 @@ function SecuritySessions({ sessions }: { sessions: SecurityInfo["sessions"] }) 
           <DeviceIcon />
           <div>
             <strong>{session.device}</strong>
-            <span>{session.browser} · {session.status}</span>
+            <span>{session.browser} - {session.status}</span>
           </div>
           <time>{formatProfileDateTime(session.lastActiveAt)}</time>
         </article>
@@ -456,9 +494,257 @@ function SecurityActivity({ activity }: { activity: SecurityInfo["activity"] }) 
   );
 }
 
+function TwoFactorModal({
+  email,
+  mode,
+  onClose,
+  onCompleted
+}: {
+  email: string;
+  mode: "setup" | "disable";
+  onClose: () => void;
+  onCompleted: (security: SecurityInfo, message: string) => void;
+}) {
+  const [setup, setSetup] = useState<TwoFactorSetup | null>(null);
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSetup = mode === "setup";
+
+  useEffect(() => {
+    if (!isSetup) {
+      return;
+    }
+
+    let isCurrent = true;
+
+    async function loadSetup() {
+      const response = await fetch("/api/investor/security/2fa/setup", {
+        body: JSON.stringify({ email }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST"
+      });
+
+      if (!response.ok) {
+        setError(await getResponseErrorMessage(response));
+        return;
+      }
+
+      const data = (await response.json()) as TwoFactorSetup;
+
+      if (isCurrent) {
+        setSetup(data);
+      }
+    }
+
+    void loadSetup();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [email, isSetup]);
+
+  async function submit() {
+    if (!/^\d{6}$/.test(code)) {
+      setError("Ingresa el codigo de 6 digitos de tu app.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError("");
+
+    const response = await fetch(isSetup ? "/api/investor/security/2fa/verify" : "/api/investor/security/2fa/disable", {
+      body: JSON.stringify({
+        code,
+        email,
+        secret: setup?.secret
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST"
+    });
+
+    if (!response.ok) {
+      setError(await getResponseErrorMessage(response));
+      setIsSubmitting(false);
+      return;
+    }
+
+    const security = (await response.json()) as SecurityInfo;
+    onCompleted(security, isSetup ? "2FA activado correctamente." : "2FA desactivado correctamente.");
+  }
+
+  return (
+    <div className="modalOverlay walletModalOverlay" role="presentation">
+      <section className="investmentModal twoFactorModal" role="dialog" aria-modal="true" aria-labelledby="two-factor-title">
+        <div className="modalHeader">
+          <div>
+            <span className="loginEyebrow">Seguridad 2FA</span>
+            <h2 id="two-factor-title">{isSetup ? "Configurar autenticador" : "Desactivar autenticador"}</h2>
+          </div>
+          <button className="modalClose" type="button" aria-label="Cerrar" onClick={onClose}>
+            x
+          </button>
+        </div>
+
+        {isSetup ? (
+          <div className="twoFactorSetupBox">
+            <p>Agrega esta clave en Google Authenticator, Authy, Microsoft Authenticator o cualquier app TOTP.</p>
+            <code>{setup?.secret ?? "Generando clave..."}</code>
+            {setup?.otpauthUrl ? <small>{setup.otpauthUrl}</small> : null}
+          </div>
+        ) : (
+          <p className="twoFactorHint">Ingresa un codigo vigente de tu app de autenticacion para confirmar que deseas desactivar 2FA.</p>
+        )}
+
+        <label className="profileField twoFactorCodeField">
+          <span>Codigo de 6 digitos</span>
+          <div>
+            <input inputMode="numeric" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" />
+          </div>
+        </label>
+
+        {error ? <p className="modalError">{error}</p> : null}
+
+        <div className="modalActions walletWithdrawActions">
+          <button className="secondaryModalAction" type="button" onClick={onClose} disabled={isSubmitting}>
+            Cancelar
+          </button>
+          <button className="primaryModalAction" type="button" onClick={submit} disabled={isSubmitting || (isSetup && !setup)}>
+            {isSubmitting ? "Verificando" : isSetup ? "Activar 2FA" : "Desactivar 2FA"}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ProfileLevelCard({ level }: { level: InvestorLevel }) {
+  return (
+    <section className={`profileLevelCard level-${level.current.key}`}>
+      <LevelBadgeIcon levelKey={level.current.key} />
+      <div className="profileLevelInfo">
+        <span>Tu nivel actual</span>
+        <strong>{level.current.name}</strong>
+        <div className="profileStars" aria-hidden="true">
+          {Array.from({ length: getLevelStars(level.current.key) }, (_, index) => (
+            <i key={`profile-star-${index}`}>*</i>
+          ))}
+        </div>
+        <p>{level.current.requirement}</p>
+        <dl>
+          <div>
+            <dt>Miembro desde</dt>
+            <dd>Jun 2026</dd>
+          </div>
+          <div>
+            <dt>Ciclos completados</dt>
+            <dd>{level.completedCycles}</dd>
+          </div>
+          <div>
+            <dt>Inversion total</dt>
+            <dd>{formatCurrency(level.totalInvested)}</dd>
+          </div>
+          <div>
+            <dt>Referidos totales</dt>
+            <dd>{level.totalReferrals}</dd>
+          </div>
+        </dl>
+      </div>
+      <div className="profileNextLevel">
+        <TrophyIcon />
+        <span>Proximo nivel</span>
+        <strong>{level.next ? level.next.name : "Maximo alcanzado"}</strong>
+      </div>
+    </section>
+  );
+}
+
 async function getResponseErrorMessage(response: Response) {
   const data = (await response.json().catch(() => null)) as { error?: string } | null;
   return data?.error ?? "No se pudo guardar la informacion.";
+}
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("es-MX", {
+    currency: "MXN",
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+    style: "currency"
+  }).format(amount);
+}
+
+function getLevelStars(levelKey: LevelKey) {
+  return {
+    builder: 3,
+    elite: 4,
+    explorer: 1,
+    legend: 5,
+    starter: 2
+  }[levelKey];
+}
+
+function LevelBadgeIcon({ levelKey }: { levelKey: LevelKey }) {
+  const icon = {
+    builder: <BlocksIcon />,
+    elite: <CrownIcon />,
+    explorer: <CompassIcon />,
+    legend: <LegendIcon />,
+    starter: <GrowthIcon />
+  }[levelKey];
+
+  return (
+    <div className={`levelBadgeIcon level-${levelKey}`}>
+      <span>{icon}</span>
+    </div>
+  );
+}
+
+function TrophyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 3h10v3h3v2a6 6 0 0 1-5.3 6 5 5 0 0 1-1.7 1.4V18h4v2H7v-2h4v-2.6A5 5 0 0 1 9.3 14 6 6 0 0 1 4 8V6h3Zm10 5V5H7v3a5 5 0 0 0 10 0Zm2 .1V8h-2a7 7 0 0 1-.5 2.5A4 4 0 0 0 19 8.1ZM7.5 10.5A7 7 0 0 1 7 8H5a4 4 0 0 0 2.5 2.5Z" />
+    </svg>
+  );
+}
+
+function CompassIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m16.8 5.2-3.1 8.5-8.5 3.1 3.1-8.5Zm-5.1 5.1-1.4 3.4 3.4-1.4Z" />
+    </svg>
+  );
+}
+
+function GrowthIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 19h16v2H4Zm2-2h3v-6H6Zm5 0h3V7h-3Zm5 0h3V4h-3Zm-9.6-6.8 1.4-1.4 3.2 3.1 6-6h-3V4h6v6h-2V7.4l-7 7Z" />
+    </svg>
+  );
+}
+
+function BlocksIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M10 3h4l3 2v4l-3 2h-4L7 9V5Zm-5 9h4l3 2v4l-3 2H5l-3-2v-4Zm10 0h4l3 2v4l-3 2h-4l-3-2v-4Z" />
+    </svg>
+  );
+}
+
+function CrownIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m4 18-1-9 5 3 4-7 4 7 5-3-1 9Zm1 2h14v2H5Z" />
+    </svg>
+  );
+}
+
+function LegendIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2 14.2 8.1 20 5.8l-2.3 5.8L22 14l-4.3 2.4 2.3 5.8-5.8-2.3L12 22l-2.2-2.1L4 22.2l2.3-5.8L2 14l4.3-2.4L4 5.8l5.8 2.3Z" />
+    </svg>
+  );
 }
 
 function formatProfileDateTime(value: string) {

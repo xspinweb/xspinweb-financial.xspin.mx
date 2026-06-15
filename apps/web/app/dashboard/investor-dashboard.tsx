@@ -58,9 +58,26 @@ type InvestorDashboardProps = {
 type PortfolioResponse = {
   investor: {
     code: string;
+    level?: InvestorLevel;
   } | null;
   investments: Investment[];
 };
+
+type InvestorLevel = {
+  current: {
+    key: LevelKey;
+    name: string;
+    requirement: string;
+  };
+  next: {
+    key: LevelKey;
+    name: string;
+    requirement: string;
+  } | null;
+  progressToNext: number;
+};
+
+type LevelKey = "explorer" | "starter" | "builder" | "elite" | "legend";
 
 const projectionWeeks = 8;
 const projectionReinvestRate = 0.82;
@@ -70,6 +87,7 @@ const projectionReferralYieldRate = 0.27;
 export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProps) {
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [investorCode, setInvestorCode] = useState("");
+  const [investorLevel, setInvestorLevel] = useState<InvestorLevel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedInvestmentId, setSelectedInvestmentId] = useState("");
 
@@ -106,6 +124,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
       }));
 
     setInvestorCode(portfolio.investor?.code ?? "");
+    setInvestorLevel(portfolio.investor?.level ?? null);
     setInvestments(sortedInvestments);
     setSelectedInvestmentId((currentId) =>
       sortedInvestments.some((investment) => investment.id === currentId) ? currentId : sortedInvestments[0]?.id ?? ""
@@ -228,6 +247,8 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
         </div>
         <GrowthSparkline weeks={projectedWeeks} />
       </article>
+
+      {investorLevel ? <InvestorLevelStrip level={investorLevel} /> : null}
 
       <section className="wealthKpis" aria-label="Resumen financiero">
         {kpiCards.map((card) => (
@@ -403,6 +424,42 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
     </section>
   );
 }
+
+function InvestorLevelStrip({ level }: { level: InvestorLevel }) {
+  return (
+    <section className={`investorLevelStrip level-${level.current.key}`}>
+      <div className="investorLevelBadge">
+        <LevelBadgeSymbol levelKey={level.current.key} />
+      </div>
+      <div>
+        <strong>{level.current.name}</strong>
+        <span>{level.current.requirement}</span>
+      </div>
+      <div className="investorLevelProgress">
+        <b>{level.progressToNext}%</b>
+        <span>{level.next ? `al siguiente nivel: ${level.next.name}` : "nivel maximo alcanzado"}</span>
+        <i><em style={{ width: `${level.progressToNext}%` }} /></i>
+      </div>
+    </section>
+  );
+}
+
+function LevelBadgeSymbol({ levelKey }: { levelKey: LevelKey }) {
+  const path = {
+    builder: "M10 3h4l3 2v4l-3 2h-4L7 9V5Zm-5 9h4l3 2v4l-3 2H5l-3-2v-4Zm10 0h4l3 2v4l-3 2h-4l-3-2v-4Z",
+    elite: "m4 18-1-9 5 3 4-7 4 7 5-3-1 9Zm1 2h14v2H5Z",
+    explorer: "m16.8 5.2-3.1 8.5-8.5 3.1 3.1-8.5Zm-5.1 5.1-1.4 3.4 3.4-1.4Z",
+    legend: "M12 2 14.2 8.1 20 5.8l-2.3 5.8L22 14l-4.3 2.4 2.3 5.8-5.8-2.3L12 22l-2.2-2.1L4 22.2l2.3-5.8L2 14l4.3-2.4L4 5.8l5.8 2.3Z",
+    starter: "M4 19h16v2H4Zm2-2h3v-6H6Zm5 0h3V7h-3Zm5 0h3V4h-3Zm-9.6-6.8 1.4-1.4 3.2 3.1 6-6h-3V4h6v6h-2V7.4l-7 7Z"
+  }[levelKey];
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d={path} />
+    </svg>
+  );
+}
+
 function buildTwelveWeekProjection(investment?: Investment): ProjectionWeek[] {
   if (!investment) {
     return [];

@@ -1,3 +1,4 @@
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
@@ -62,9 +63,14 @@ const investorProfileSchema = z.object({
   phone: z.string().optional()
 });
 
-const investorSecuritySchema = z.object({
+const twoFactorSetupSchema = z.object({
+  email: z.string().email()
+});
+
+const twoFactorVerifySchema = z.object({
+  code: z.string().regex(/^\d{6}$/),
   email: z.string().email(),
-  twoFactorEnabled: z.boolean()
+  secret: z.string().min(16).optional()
 });
 
 type PortfolioInvestment = {
@@ -74,6 +80,7 @@ type PortfolioInvestment = {
   cycleNumber: number;
   createdAt: Date;
   paymentDueAt: Date;
+  status: string;
   payments: Array<{
     id: string;
     amount: unknown;
@@ -218,9 +225,30 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     return;
   }
 
-  if (req.method === "PUT" && url.pathname === "/investor/security") {
-    const input = investorSecuritySchema.parse(await readJson(req));
-    const security = await updateInvestorSecurity(input);
+  if (req.method === "GET" && url.pathname === "/investor/level") {
+    const email = z.string().email().parse(url.searchParams.get("email"));
+    const level = await getInvestorLevel(email);
+    sendJson(res, 200, level);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/investor/security/2fa/setup") {
+    const input = twoFactorSetupSchema.parse(await readJson(req));
+    const setup = await createTwoFactorSetup(input.email);
+    sendJson(res, 201, setup);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/investor/security/2fa/verify") {
+    const input = twoFactorVerifySchema.parse(await readJson(req));
+    const security = await verifyTwoFactorSetup(input);
+    sendJson(res, 200, security);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/investor/security/2fa/disable") {
+    const input = twoFactorVerifySchema.omit({ secret: true }).parse(await readJson(req));
+    const security = await disableTwoFactor(input);
     sendJson(res, 200, security);
     return;
   }
@@ -395,6 +423,7 @@ async function getPortfolio(email: string) {
       id: investor.id,
       code: investor.investorCode,
       email: investor.email,
+      level: buildInvestorLevel(investments),
       name: investor.fullName
     },
     walletPayments: investor.payments.map((payment) => ({
@@ -511,15 +540,58 @@ async function getInvestorSecurity(email: string) {
   return formatInvestorSecurity(investor, email);
 }
 
-async function updateInvestorSecurity(input: z.infer<typeof investorSecuritySchema>) {
+async function getInvestorLevel(email: string) {
+  const investor = await prisma.investor.findFirst({
+    include: {
+      investments: {
+        include: {
+          payments: {
+            select: { id: true }
+          },
+          referralsSource: {
+            select: { id: true }
+          }
+        }
+      }
+    },
+    where: { email }
+  });
+
+  return buildInvestorLevel((investor?.investments ?? []) as Array<{
+    principalAmount: unknown;
+    payments: unknown[];
+    referralsSource: unknown[];
+    status: string;
+  }>);
+}
+
+async function createTwoFactorSetup(email: string) {
+  const investor = await getOrCreateInvestor(prisma, { email });
+  const secret = generateBase32Secret();
+
+  return {
+    otpauthUrl: buildOtpAuthUrl(email, secret),
+    secret,
+    twoFactorEnabled: investor.twoFactorEnabled
+  };
+}
+
+async function verifyTwoFactorSetup(input: z.infer<typeof twoFactorVerifySchema>) {
   const current = await prisma.investor.findFirst({
     where: { email: input.email }
   });
+  const secret = normalizeBase32Secret(input.secret ?? current?.twoFactorSecret ?? "");
+
+  if (!secret || !verifyTotpCode(secret, input.code)) {
+    throw new Error("Codigo 2FA invalido. Revisa tu app de autenticacion.");
+  }
 
   const investor = current
     ? await prisma.investor.update({
         data: {
-          twoFactorEnabled: input.twoFactorEnabled
+          twoFactorEnabled: true,
+          twoFactorSecret: secret,
+          twoFactorVerifiedAt: new Date()
         },
         where: { id: current.id }
       })
@@ -527,11 +599,34 @@ async function updateInvestorSecurity(input: z.infer<typeof investorSecuritySche
         data: {
           email: input.email,
           investorCode: await createUniqueInvestorCode(prisma),
-          twoFactorEnabled: input.twoFactorEnabled
+          twoFactorEnabled: true,
+          twoFactorSecret: secret,
+          twoFactorVerifiedAt: new Date()
         }
       });
 
   return formatInvestorSecurity(investor, input.email);
+}
+
+async function disableTwoFactor(input: Omit<z.infer<typeof twoFactorVerifySchema>, "secret">) {
+  const investor = await prisma.investor.findFirst({
+    where: { email: input.email }
+  });
+
+  if (!investor?.twoFactorSecret || !verifyTotpCode(investor.twoFactorSecret, input.code)) {
+    throw new Error("Codigo 2FA invalido. No se pudo desactivar.");
+  }
+
+  const updated = await prisma.investor.update({
+    data: {
+      twoFactorEnabled: false,
+      twoFactorSecret: null,
+      twoFactorVerifiedAt: null
+    },
+    where: { id: investor.id }
+  });
+
+  return formatInvestorSecurity(updated, input.email);
 }
 
 async function createPayoutMethod(input: z.infer<typeof payoutMethodSchema>) {
@@ -1210,6 +1305,156 @@ async function createUniqueInvestorCode(tx: Prisma.TransactionClient) {
   }
 
   throw new Error("No se pudo generar un codigo unico de inversionista");
+}
+
+function buildInvestorLevel(investments: Array<{
+  principalAmount: unknown;
+  payments?: unknown[];
+  referralsSource?: unknown[];
+  status?: string;
+}>) {
+  const investmentCount = investments.length;
+  const completedCycles = investments.filter((investment) =>
+    investment.status === "PAID" || (investment.payments?.length ?? 0) >= config.defaultBusinessRules.totalCycleWeeks
+  ).length;
+  const totalInvested = roundMoney(investments.reduce((total, investment) => total + Number(investment.principalAmount ?? 0), 0));
+  const totalReferrals = investments.reduce((total, investment) => total + (investment.referralsSource?.length ?? 0), 0);
+  const levels = [
+    { key: "explorer", name: "Explorer", requirement: "Registrado, sin inversion" },
+    { key: "starter", name: "Starter", requirement: "Primera inversion realizada" },
+    { key: "builder", name: "Builder", requirement: "Completa su primer ciclo de 8 semanas" },
+    { key: "elite", name: "Elite", requirement: "Completa 3 ciclos o alcanza volumen de inversion" },
+    { key: "legend", name: "Legend", requirement: "Historial destacado y actividad constante" }
+  ];
+  let index = 0;
+
+  if (investmentCount >= 1) index = 1;
+  if (completedCycles >= 1) index = 2;
+  if (completedCycles >= 3 || totalInvested >= 10000) index = 3;
+  if (completedCycles >= 8 || totalInvested >= 50000 || totalReferrals >= 25) index = 4;
+
+  const nextProgress = getLevelProgress(index, {
+    completedCycles,
+    investmentCount,
+    totalInvested,
+    totalReferrals
+  });
+
+  return {
+    completedCycles,
+    current: levels[index],
+    next: levels[index + 1] ?? null,
+    progressToNext: nextProgress,
+    totalInvested,
+    totalReferrals
+  };
+}
+
+function getLevelProgress(index: number, stats: {
+  completedCycles: number;
+  investmentCount: number;
+  totalInvested: number;
+  totalReferrals: number;
+}) {
+  if (index >= 4) return 100;
+  if (index === 0) return stats.investmentCount > 0 ? 100 : 0;
+  if (index === 1) return clampPercent((stats.completedCycles / 1) * 100);
+  if (index === 2) return clampPercent(Math.max((stats.completedCycles / 3) * 100, (stats.totalInvested / 10000) * 100));
+  return clampPercent(Math.max((stats.completedCycles / 8) * 100, (stats.totalInvested / 50000) * 100, (stats.totalReferrals / 25) * 100));
+}
+
+function clampPercent(value: number) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function generateBase32Secret() {
+  return base32Encode(randomBytes(20));
+}
+
+function buildOtpAuthUrl(email: string, secret: string) {
+  const issuer = "XSPIN Financial";
+  const label = `${issuer}:${email}`;
+
+  return `otpauth://totp/${encodeURIComponent(label)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+}
+
+function verifyTotpCode(secret: string, code: string) {
+  const cleanSecret = normalizeBase32Secret(secret);
+  const currentCounter = Math.floor(Date.now() / 1000 / 30);
+
+  return [-1, 0, 1].some((offset) => {
+    const expected = generateTotpCode(cleanSecret, currentCounter + offset);
+
+    return safeCompare(expected, code);
+  });
+}
+
+function generateTotpCode(secret: string, counter: number) {
+  const key = base32Decode(secret);
+  const buffer = Buffer.alloc(8);
+  buffer.writeBigUInt64BE(BigInt(counter));
+
+  const digest = createHmac("sha1", key).update(buffer).digest();
+  const offset = digest[digest.length - 1] & 0xf;
+  const binary =
+    ((digest[offset] & 0x7f) << 24) |
+    ((digest[offset + 1] & 0xff) << 16) |
+    ((digest[offset + 2] & 0xff) << 8) |
+    (digest[offset + 3] & 0xff);
+
+  return String(binary % 1000000).padStart(6, "0");
+}
+
+function safeCompare(expected: string, received: string) {
+  const expectedBuffer = Buffer.from(expected);
+  const receivedBuffer = Buffer.from(received);
+
+  return expectedBuffer.length === receivedBuffer.length && timingSafeEqual(expectedBuffer, receivedBuffer);
+}
+
+function base32Encode(buffer: Buffer) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = "";
+  let output = "";
+
+  for (const byte of buffer) {
+    bits += byte.toString(2).padStart(8, "0");
+  }
+
+  for (let index = 0; index < bits.length; index += 5) {
+    const chunk = bits.slice(index, index + 5).padEnd(5, "0");
+    output += alphabet[Number.parseInt(chunk, 2)];
+  }
+
+  return output;
+}
+
+function base32Decode(value: string) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const clean = normalizeBase32Secret(value);
+  let bits = "";
+
+  for (const character of clean) {
+    const index = alphabet.indexOf(character);
+
+    if (index === -1) {
+      throw new Error("Clave 2FA invalida.");
+    }
+
+    bits += index.toString(2).padStart(5, "0");
+  }
+
+  const bytes: number[] = [];
+
+  for (let index = 0; index + 8 <= bits.length; index += 8) {
+    bytes.push(Number.parseInt(bits.slice(index, index + 8), 2));
+  }
+
+  return Buffer.from(bytes);
+}
+
+function normalizeBase32Secret(value: string) {
+  return value.replace(/[\s=]/g, "").toUpperCase();
 }
 
 function parseReferralTarget(referredByCode?: string, sourceInvestmentId?: string) {
