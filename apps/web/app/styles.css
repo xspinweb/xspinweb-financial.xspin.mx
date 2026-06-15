@@ -3961,6 +3961,22 @@ a {
   }
 }
 
+@keyframes identityGhostFade {
+  0%, 24% {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+  68% {
+    opacity: 0.34;
+    transform: scale(1.025);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.04);
+    visibility: hidden;
+  }
+}
+
 .identityInstructionCard {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
@@ -4131,11 +4147,12 @@ a {
   color: var(--ink);
   cursor: pointer;
   font: inherit;
-  text-align: left;
+  text-align: center;
 }
 
 .identityReadyButton span {
   align-self: center;
+  justify-self: center;
 }
 
 .identitySidePill {
@@ -4169,6 +4186,23 @@ a {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.identityCameraGhost {
+  position: absolute;
+  inset: 18% 19%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  animation: identityGhostFade 3.4s ease-out forwards;
+}
+
+.identityCameraGhost .mockIne {
+  width: min(88%, 520px);
+  opacity: 0.9;
+  transform: scale(0.96);
+  box-shadow: 0 0 42px rgba(53, 224, 161, 0.22), 0 24px 70px rgba(0, 0, 0, 0.3);
 }
 
 .identityCameraFallback {

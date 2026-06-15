@@ -978,6 +978,34 @@ function IdentityVerificationModal({
               ) : (
                 <video ref={videoRef} playsInline muted />
               )}
+              <div className="identityCameraGhost" key={side} aria-hidden="true">
+                <div className={`mockIne ${side === "front" ? "front" : "back"}`}>
+                  {side === "front" ? (
+                    <>
+                      <header>
+                        <b>INE</b>
+                        <span>Instituto Nacional Electoral</span>
+                      </header>
+                      <i />
+                      <div>
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                      <em />
+                    </>
+                  ) : (
+                    <>
+                      <i />
+                      <i />
+                      <span />
+                      <span />
+                      <span />
+                    </>
+                  )}
+                </div>
+              </div>
               <div className="identityFrameOverlay" aria-hidden="true">
                 <span />
                 <span />
