@@ -712,7 +712,6 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
     }
 
     const referrals = investment.referralsSource as ReinvestReferral[];
-    const confirmedReferrals = referrals.filter((referral: ReinvestReferral) => Boolean(referral.referredInvestor.investments[0])).length;
     const paymentDate = addDays(investment.createdAt, weekNumber * config.defaultBusinessRules.cycleDays);
 
     if (paidWeeks >= config.defaultBusinessRules.totalCycleWeeks) {
@@ -723,8 +722,8 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
       throw new Error(`La semana ${config.defaultBusinessRules.totalCycleWeeks} es cierre final y no permite reinversion.`);
     }
 
-    if (confirmedReferrals < 2) {
-      throw new Error("La reinversion requiere al menos 2 referidos confirmados.");
+    if (referrals.length < 2) {
+      throw new Error("La reinversion requiere al menos 2 referidos vinculados.");
     }
 
     if (new Date() < paymentDate) {
@@ -738,7 +737,7 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
     }
 
     if (!week.canCollect) {
-      throw new Error("Esta semana requiere al menos 2 referidos con reinversion confirmada.");
+      throw new Error(`Esta semana requiere que los ${referrals.length} referidos vinculados hayan invertido o reinvertido.`);
     }
 
     const totalGenerated = week.totalGenerated;
@@ -794,6 +793,7 @@ function buildInvestmentWeeks(investment: WeeklyInvestmentInput) {
 
       return getReinvestedAmount(referredInvestment.payments[weekNumber - 2]?.notes);
     });
+    const linkedReferrals = investment.referralsSource.length;
     const weeklyQualifiedReferrals = weeklyReferralAmounts.filter((amount) => amount > 0).length;
     const weeklyBonus = roundMoney(weeklyReferralAmounts.reduce((total, amount) => total + amount * config.defaultBusinessRules.referralBonusRate, 0));
     const weeklyYield = roundMoney(weeklyReferralAmounts.reduce((total, amount) => total + amount * config.defaultBusinessRules.referralYieldRate, 0));
@@ -801,7 +801,7 @@ function buildInvestmentWeeks(investment: WeeklyInvestmentInput) {
 
     return {
       baseAmount,
-      canCollect: baseAmount > 0 && weeklyQualifiedReferrals >= 2,
+      canCollect: baseAmount > 0 && linkedReferrals >= 2 && weeklyQualifiedReferrals === linkedReferrals,
       paymentAt: addDays(investment.createdAt, weekNumber * config.defaultBusinessRules.cycleDays),
       startAt: addDays(investment.createdAt, (weekNumber - 1) * config.defaultBusinessRules.cycleDays),
       totalGenerated,
