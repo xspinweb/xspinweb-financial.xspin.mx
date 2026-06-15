@@ -47,6 +47,11 @@ const deletePayoutMethodSchema = z.object({
   email: z.string().email()
 });
 
+const walletWithdrawSchema = z.object({
+  acceptedTerms: z.literal(true),
+  email: z.string().email()
+});
+
 type PortfolioInvestment = {
   id: string;
   principalAmount: unknown;
@@ -191,6 +196,13 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/wallet/withdraw") {
+    const input = walletWithdrawSchema.parse(await readJson(req));
+    const result = await requestWalletWithdrawal(input);
+    sendJson(res, 201, result);
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/investments") {
     const input = createInvestmentSchema.parse(await readJson(req));
     await assertReferralTargetOpen(input.referredByCode, input.sourceInvestmentId);
@@ -275,6 +287,18 @@ async function getPortfolio(email: string) {
   const investor = await prisma.investor.findFirst({
     where: { email },
     include: {
+      payments: {
+        orderBy: { paidAt: "asc" },
+        select: {
+          amount: true,
+          notes: true,
+          paidAt: true
+        },
+        where: {
+          investmentId: null,
+          paymentType: "FULL_PAYOUT"
+        }
+      },
       investments: {
         include: {
           group: true,
@@ -330,6 +354,11 @@ async function getPortfolio(email: string) {
       email: investor.email,
       name: investor.fullName
     },
+    walletPayments: investor.payments.map((payment) => ({
+      amount: Number(payment.amount),
+      notes: payment.notes,
+      paidAt: payment.paidAt
+    })),
     investments: investments.map((investment: PortfolioInvestment) => ({
       id: investment.id,
       name: investor.fullName,
@@ -490,6 +519,59 @@ async function deletePayoutMethod(methodId: string, email: string) {
     }
 
     return { ok: true };
+  });
+}
+
+async function requestWalletWithdrawal(input: z.infer<typeof walletWithdrawSchema>) {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const investor = await tx.investor.findFirst({
+      include: {
+        payments: {
+          select: {
+            amount: true,
+            investmentId: true
+          },
+          where: {
+            paymentType: {
+              in: ["YIELD", "FULL_PAYOUT"]
+            }
+          }
+        },
+        payoutMethods: {
+          where: { isPrimary: true },
+          take: 1
+        }
+      },
+      where: { email: input.email }
+    });
+
+    if (!investor) {
+      throw new Error("No se encontro el inversionista.");
+    }
+
+    if (!investor.payoutMethods.length) {
+      throw new Error("Configura un metodo de retiro principal antes de solicitar el pago.");
+    }
+
+    const availableBalance = roundMoney(investor.payments.reduce((total, payment) => total + Number(payment.amount), 0));
+
+    if (availableBalance <= 0) {
+      throw new Error("No tienes saldo disponible para retirar.");
+    }
+
+    const payment = await tx.payment.create({
+      data: {
+        amount: -availableBalance,
+        investorId: investor.id,
+        paymentType: "FULL_PAYOUT",
+        notes: `Wallet: retiro solicitado por ${availableBalance}. Pago estimado en 1-2 dias.`
+      }
+    });
+
+    return {
+      amount: availableBalance,
+      payment
+    };
   });
 }
 

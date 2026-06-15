@@ -40,6 +40,7 @@ type PortfolioInvestment = {
 
 type PortfolioResponse = {
   investments: PortfolioInvestment[];
+  walletPayments?: PortfolioPayment[];
 };
 
 type MethodDraft = {
@@ -107,50 +108,38 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
   const [paymentCarouselIndex, setPaymentCarouselIndex] = useState(0);
   const [savedCarouselIndex, setSavedCarouselIndex] = useState(0);
 
-  useEffect(() => {
-    let isCurrent = true;
+  async function loadWalletData() {
+    setIsLoadingMethods(true);
+    setError("");
 
-    async function loadWalletData() {
-      setIsLoadingMethods(true);
-      setError("");
+    try {
+      const [methodsResponse, portfolioResponse] = await Promise.all([
+        fetch(`/api/payout-methods?email=${encodeURIComponent(userEmail)}`),
+        fetch(`/api/investments/portfolio?email=${encodeURIComponent(userEmail)}`)
+      ]);
 
-      try {
-        const [methodsResponse, portfolioResponse] = await Promise.all([
-          fetch(`/api/payout-methods?email=${encodeURIComponent(userEmail)}`),
-          fetch(`/api/investments/portfolio?email=${encodeURIComponent(userEmail)}`)
-        ]);
-
-        if (!methodsResponse.ok) {
-          throw new Error(await getResponseErrorMessage(methodsResponse));
-        }
-
-        if (!portfolioResponse.ok) {
-          throw new Error(await getResponseErrorMessage(portfolioResponse));
-        }
-
-        const methodsData = (await methodsResponse.json()) as PaymentMethod[];
-        const portfolioData = (await portfolioResponse.json()) as PortfolioResponse;
-
-        if (isCurrent) {
-          setMethods(methodsData);
-          setPortfolio(portfolioData);
-        }
-      } catch (requestError) {
-        if (isCurrent) {
-          setError(requestError instanceof Error ? requestError.message : "No se pudieron cargar tus metodos de pago.");
-        }
-      } finally {
-        if (isCurrent) {
-          setIsLoadingMethods(false);
-        }
+      if (!methodsResponse.ok) {
+        throw new Error(await getResponseErrorMessage(methodsResponse));
       }
+
+      if (!portfolioResponse.ok) {
+        throw new Error(await getResponseErrorMessage(portfolioResponse));
+      }
+
+      const methodsData = (await methodsResponse.json()) as PaymentMethod[];
+      const portfolioData = (await portfolioResponse.json()) as PortfolioResponse;
+
+      setMethods(methodsData);
+      setPortfolio(portfolioData);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "No se pudieron cargar tus metodos de pago.");
+    } finally {
+      setIsLoadingMethods(false);
     }
+  }
 
-    loadWalletData();
-
-    return () => {
-      isCurrent = false;
-    };
+  useEffect(() => {
+    void loadWalletData();
   }, [userEmail]);
 
   function updateDraft(field: keyof MethodDraft, value: string) {
@@ -266,6 +255,8 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
 
   const walletSummary = getWalletSummary(portfolio);
   const scheduledPayments = getScheduledPayments(portfolio);
+  const primaryMethod = methods.find((method) => method.isPrimary) ?? methods[0];
+  const visibleMethods = primaryMethod ? [primaryMethod] : [];
 
   return (
     <>
@@ -275,10 +266,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
           <strong>{formatMoney(walletSummary.availableBalance)} <em>MXN</em></strong>
           <p>Ganancias disponibles para retiro</p>
         </div>
-        <button className="walletWithdrawButton" type="button">
-          <WithdrawIcon />
-          Retirar saldo
-        </button>
+        <WalletWithdrawModal amount={walletSummary.availableBalance} onCompleted={loadWalletData} userEmail={userEmail} />
       </section>
 
       <section className="walletSchedulePanel">
@@ -287,7 +275,6 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
             <CalendarIcon />
             <h2>Pagos programados</h2>
           </div>
-          <button type="button">Ver calendario <ChevronIcon /></button>
         </div>
 
         <div className="walletScheduleList">
@@ -345,7 +332,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
               <span>Principal</span>
               <span>Acciones</span>
             </div>
-            {methods.map((method) => (
+            {visibleMethods.map((method) => (
               <div className="savedMethodRow" key={method.id}>
                 <div>
                   <PaymentBrandIcon type={method.type} />
@@ -367,7 +354,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
               </div>
             ))}
           </div>
-          <CarouselDots activeIndex={savedCarouselIndex} count={methods.length} />
+          <CarouselDots activeIndex={savedCarouselIndex} count={visibleMethods.length} />
           </>
         )}
       </section>
@@ -414,6 +401,128 @@ function CarouselDots({ activeIndex, count }: { activeIndex: number; count: numb
         <span className={index === activeIndex ? "active" : ""} key={index} />
       ))}
     </div>
+  );
+}
+
+function WalletWithdrawModal({
+  amount,
+  onCompleted,
+  userEmail
+}: {
+  amount: number;
+  onCompleted: () => Promise<void>;
+  userEmail: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const hasBalance = amount > 0;
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeModal();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  function closeModal() {
+    setIsOpen(false);
+    setAcceptedTerms(false);
+    setError("");
+    setIsSubmitting(false);
+  }
+
+  async function submitWithdrawal() {
+    if (!acceptedTerms) {
+      setError("Debes aceptar terminos y condiciones para solicitar el retiro.");
+      return;
+    }
+
+    setError("");
+    setIsSubmitting(true);
+
+    const response = await fetch("/api/wallet/withdraw", {
+      body: JSON.stringify({
+        acceptedTerms,
+        email: userEmail
+      }),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "POST"
+    });
+
+    if (!response.ok) {
+      setError(await getResponseErrorMessage(response));
+      setIsSubmitting(false);
+      return;
+    }
+
+    await onCompleted();
+    closeModal();
+  }
+
+  return (
+    <>
+      <button className="walletWithdrawButton" type="button" disabled={!hasBalance} onClick={() => setIsOpen(true)}>
+        <WithdrawIcon />
+        Retirar saldo
+      </button>
+
+      {isOpen ? (
+        <div className="modalOverlay" role="presentation">
+          <section className="investmentModal walletWithdrawModal" role="dialog" aria-modal="true" aria-labelledby="wallet-withdraw-title">
+            <div className="modalHeader">
+              <div>
+                <span className="loginEyebrow">Retiro wallet</span>
+                <h2 id="wallet-withdraw-title">Confirmar retiro</h2>
+              </div>
+              <button className="modalClose" type="button" aria-label="Cerrar" onClick={closeModal}>
+                x
+              </button>
+            </div>
+
+            <div className="walletWithdrawSummary">
+              <span>Monto a retirar</span>
+              <strong>{formatMoney(amount)} MXN</strong>
+              <p>El pago sera realizado en un plazo de 1 a 2 dias habiles al metodo principal registrado.</p>
+            </div>
+
+            <label className="walletTermsCheck">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(event) => {
+                  setAcceptedTerms(event.target.checked);
+                  setError("");
+                }}
+              />
+              <span>Acepto terminos y condiciones del retiro.</span>
+            </label>
+
+            {error ? <p className="modalError">{error}</p> : null}
+
+            <div className="modalActions walletWithdrawActions">
+              <button className="secondaryModalAction" type="button" onClick={closeModal} disabled={isSubmitting}>
+                Cancelar
+              </button>
+              <button className="primaryModalAction" type="button" onClick={submitWithdrawal} disabled={isSubmitting || !acceptedTerms}>
+                {isSubmitting ? "Procesando" : "Retirar"}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -630,13 +739,14 @@ function getMethodTitle(method: PaymentMethod) {
 }
 
 function getWalletSummary(portfolio: PortfolioResponse) {
-  const availableBalance = portfolio.investments.reduce((investmentTotal, investment) => {
+  const investmentPaymentsTotal = portfolio.investments.reduce((investmentTotal, investment) => {
     const paymentTotal = investment.payments?.reduce((total, payment) => total + Number(payment.amount), 0) ?? 0;
     return investmentTotal + paymentTotal;
   }, 0);
+  const walletPaymentsTotal = portfolio.walletPayments?.reduce((total, payment) => total + Number(payment.amount), 0) ?? 0;
 
   return {
-    availableBalance
+    availableBalance: roundWalletAmount(investmentPaymentsTotal + walletPaymentsTotal)
   };
 }
 
