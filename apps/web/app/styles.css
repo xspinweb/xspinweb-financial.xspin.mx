@@ -3688,46 +3688,359 @@ a {
   font-size: 13px;
 }
 
+.twoFactorOverlay {
+  align-items: flex-start;
+  overflow-y: auto;
+  padding: 32px 16px;
+}
+
 .twoFactorModal {
-  max-width: 640px;
+  background:
+    radial-gradient(circle at 80% 10%, rgba(30, 189, 255, 0.12), transparent 32%),
+    radial-gradient(circle at 14% 12%, rgba(53, 224, 161, 0.12), transparent 24%),
+    linear-gradient(145deg, rgba(11, 22, 34, 0.98), rgba(5, 12, 21, 0.98));
+  border: 1px solid rgba(159, 178, 196, 0.22);
+  border-radius: 22px;
+  box-shadow: 0 34px 110px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  gap: 22px;
+  max-width: 960px;
+  padding: 32px;
 }
 
-.twoFactorSetupBox {
-  background: rgba(53, 224, 161, 0.07);
-  border: 1px solid rgba(53, 224, 161, 0.22);
-  border-radius: 14px;
+.twoFactorHeader,
+.twoFactorBadge,
+.twoFactorStepTitle,
+.twoFactorTimerRow,
+.twoFactorActions,
+.twoFactorFooter {
+  align-items: center;
+  display: flex;
+}
+
+.twoFactorHeader {
+  justify-content: space-between;
+}
+
+.twoFactorBadge {
+  gap: 12px;
+}
+
+.twoFactorBadge > svg {
+  background: rgba(53, 224, 161, 0.11);
+  border-radius: 12px;
+  color: var(--green);
+  fill: currentColor;
+  height: 52px;
+  padding: 12px;
+  width: 52px;
+}
+
+.twoFactorBadge span {
+  background: rgba(53, 224, 161, 0.08);
+  border: 1px solid rgba(53, 224, 161, 0.2);
+  border-radius: 999px;
+  color: var(--green);
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  padding: 11px 24px;
+  text-transform: uppercase;
+}
+
+.twoFactorHero {
+  max-width: 580px;
+}
+
+.twoFactorHero h2 {
+  color: var(--text);
+  font-size: clamp(42px, 6vw, 58px);
+  line-height: 1.04;
+  margin: 0;
+}
+
+.twoFactorHero h2 span {
+  color: var(--cyan);
+  display: block;
+}
+
+.twoFactorHero p {
+  color: var(--muted);
+  font-size: 21px;
+  line-height: 1.48;
+  margin: 24px 0 0;
+}
+
+.twoFactorStep {
+  background:
+    radial-gradient(circle at 22% 0%, rgba(53, 224, 161, 0.08), transparent 32%),
+    linear-gradient(145deg, rgba(15, 28, 42, 0.78), rgba(7, 15, 25, 0.9));
+  border: 1px solid rgba(159, 178, 196, 0.16);
+  border-radius: 20px;
   display: grid;
-  gap: 10px;
-  padding: 16px;
+  gap: 26px;
+  padding: 28px;
 }
 
-.twoFactorSetupBox p,
-.twoFactorSetupBox small,
-.twoFactorHint {
+.twoFactorStepTitle {
+  gap: 18px;
+}
+
+.twoFactorStepTitle b {
+  align-items: center;
+  border: 2px solid rgba(53, 224, 161, 0.42);
+  border-radius: 999px;
+  color: var(--green);
+  display: flex;
+  flex: 0 0 auto;
+  font-size: 22px;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.twoFactorStepTitle strong {
+  color: var(--text);
+  display: block;
+  font-size: 25px;
+  line-height: 1.15;
+}
+
+.twoFactorStepTitle span {
+  color: var(--muted);
+  display: block;
+  font-size: 19px;
+  margin-top: 6px;
+}
+
+.twoFactorQrGrid {
+  align-items: center;
+  display: grid;
+  gap: 34px;
+  grid-template-columns: 250px 40px minmax(0, 1fr);
+}
+
+.twoFactorQrFrame {
+  align-items: center;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 0 0 3px rgba(53, 224, 161, 0.9), 0 0 28px rgba(53, 224, 161, 0.28);
+  display: flex;
+  height: 220px;
+  justify-content: center;
+  position: relative;
+  width: 220px;
+}
+
+.twoFactorQrFrame > img:not(.twoFactorQrLogo) {
+  border-radius: 10px;
+  height: 198px;
+  width: 198px;
+}
+
+.twoFactorQrFrame > span {
+  color: #06111c;
+  font-weight: 950;
+}
+
+.twoFactorQrLogo {
+  background: rgba(4, 12, 20, 0.92);
+  border-radius: 14px;
+  height: 54px;
+  left: 50%;
+  padding: 10px;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 54px;
+}
+
+.twoFactorDivider {
+  align-items: center;
+  border-left: 1px solid rgba(159, 178, 196, 0.2);
+  color: var(--green);
+  display: flex;
+  font-weight: 950;
+  height: 190px;
+  justify-content: center;
+  position: relative;
+}
+
+.twoFactorDivider::before {
+  background: rgba(53, 224, 161, 0.12);
+  border: 1px solid rgba(53, 224, 161, 0.36);
+  border-radius: 999px;
+  content: "";
+  height: 40px;
+  left: -20px;
+  position: absolute;
+  width: 40px;
+  z-index: -1;
+}
+
+.twoFactorSecretPanel {
+  display: grid;
+  gap: 14px;
+}
+
+.twoFactorSecretPanel > span,
+.twoFactorOtpField > span {
+  color: var(--muted);
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.twoFactorSecretPanel button {
+  align-items: stretch;
+  background: rgba(4, 12, 21, 0.72);
+  border: 1px solid rgba(159, 178, 196, 0.18);
+  border-radius: 14px;
+  color: var(--green);
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 74px;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+}
+
+.twoFactorSecretPanel code {
+  color: var(--green);
+  font-family: Consolas, Monaco, monospace;
+  font-size: 21px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  padding: 20px;
+}
+
+.twoFactorSecretPanel button svg {
+  align-self: stretch;
+  background: rgba(159, 178, 196, 0.08);
+  fill: var(--muted);
+  height: 100%;
+  padding: 22px;
+  width: 74px;
+}
+
+.twoFactorSecretPanel p,
+.twoFactorTimerRow p,
+.twoFactorFooter {
   color: var(--muted);
   margin: 0;
 }
 
-.twoFactorSetupBox code {
-  background: rgba(4, 12, 21, 0.72);
-  border: 1px solid rgba(159, 178, 196, 0.16);
-  border-radius: 10px;
-  color: var(--green);
-  display: block;
-  font-size: 18px;
+.twoFactorSecretPanel p,
+.twoFactorTimerRow p {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+.twoFactorSecretPanel p svg,
+.twoFactorTimerRow p svg,
+.twoFactorFooter svg {
+  fill: var(--green);
+  flex: 0 0 auto;
+  height: 24px;
+  width: 24px;
+}
+
+.twoFactorOtpField {
+  cursor: text;
+  display: grid;
+  gap: 14px;
+  position: relative;
+}
+
+.twoFactorOtpField input {
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 1px;
+}
+
+.twoFactorOtpField > div {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.twoFactorOtpField i {
+  align-items: center;
+  background: linear-gradient(180deg, rgba(15, 28, 42, 0.88), rgba(5, 13, 22, 0.92));
+  border: 1px solid rgba(53, 224, 161, 0.32);
+  border-radius: 12px;
+  color: var(--muted);
+  display: flex;
+  font-size: 36px;
+  font-style: normal;
   font-weight: 950;
-  letter-spacing: 1px;
-  overflow-wrap: anywhere;
-  padding: 14px;
+  height: 94px;
+  justify-content: center;
 }
 
-.twoFactorSetupBox small {
-  font-size: 11px;
-  overflow-wrap: anywhere;
+.twoFactorTimerRow {
+  gap: 18px;
+  justify-content: space-between;
 }
 
-.twoFactorCodeField {
-  margin-top: 16px;
+.twoFactorTimerRow p {
+  color: var(--green);
+}
+
+.twoFactorTimerRow p span {
+  color: var(--muted);
+}
+
+.twoFactorTimer {
+  align-items: center;
+  background:
+    radial-gradient(circle closest-side, rgba(7, 15, 25, 0.98) 72%, transparent 74% 100%),
+    conic-gradient(var(--green) var(--timer-progress), rgba(159, 178, 196, 0.18) 0);
+  border-radius: 999px;
+  display: flex;
+  flex: 0 0 auto;
+  height: 64px;
+  justify-content: center;
+  width: 64px;
+}
+
+.twoFactorTimer span {
+  color: var(--green);
+  font-size: 22px;
+  font-weight: 950;
+}
+
+.twoFactorActions {
+  gap: 22px;
+  grid-template-columns: 1fr 1.2fr;
+}
+
+.twoFactorActions button {
+  min-height: 74px;
+}
+
+.twoFactorActions .primaryModalAction {
+  align-items: center;
+  display: inline-flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.twoFactorActions .primaryModalAction svg {
+  fill: currentColor;
+  height: 24px;
+  width: 24px;
+}
+
+.twoFactorFooter {
+  gap: 14px;
+  justify-content: center;
+  line-height: 1.45;
 }
 
 .walletSecurityPanel,
@@ -4581,6 +4894,135 @@ a {
 
   .profilePanel {
     padding: 18px;
+  }
+
+  .twoFactorOverlay {
+    padding: 18px 10px;
+  }
+
+  .twoFactorModal {
+    border-radius: 18px;
+    gap: 18px;
+    padding: 18px;
+    width: min(100%, 560px);
+  }
+
+  .twoFactorBadge > svg {
+    height: 44px;
+    width: 44px;
+  }
+
+  .twoFactorBadge span {
+    font-size: 13px;
+    padding: 9px 14px;
+  }
+
+  .twoFactorHero h2 {
+    font-size: 36px;
+  }
+
+  .twoFactorHero p {
+    font-size: 16px;
+    margin-top: 14px;
+  }
+
+  .twoFactorStep {
+    border-radius: 16px;
+    gap: 18px;
+    padding: 18px;
+  }
+
+  .twoFactorStepTitle {
+    align-items: flex-start;
+  }
+
+  .twoFactorStepTitle b {
+    font-size: 18px;
+    height: 36px;
+    width: 36px;
+  }
+
+  .twoFactorStepTitle strong {
+    font-size: 18px;
+  }
+
+  .twoFactorStepTitle span,
+  .twoFactorSecretPanel > span,
+  .twoFactorOtpField > span {
+    font-size: 14px;
+  }
+
+  .twoFactorQrGrid {
+    gap: 18px;
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .twoFactorQrFrame {
+    height: 210px;
+    width: 210px;
+  }
+
+  .twoFactorQrFrame > img:not(.twoFactorQrLogo) {
+    height: 188px;
+    width: 188px;
+  }
+
+  .twoFactorDivider {
+    border-left: 0;
+    border-top: 1px solid rgba(159, 178, 196, 0.2);
+    height: auto;
+    padding-top: 10px;
+    width: 100%;
+  }
+
+  .twoFactorDivider::before {
+    left: calc(50% - 20px);
+    top: -20px;
+  }
+
+  .twoFactorSecretPanel {
+    width: 100%;
+  }
+
+  .twoFactorSecretPanel button {
+    grid-template-columns: minmax(0, 1fr) 54px;
+  }
+
+  .twoFactorSecretPanel code {
+    font-size: 14px;
+    padding: 14px;
+  }
+
+  .twoFactorSecretPanel button svg {
+    padding: 16px;
+    width: 54px;
+  }
+
+  .twoFactorOtpField > div {
+    gap: 8px;
+  }
+
+  .twoFactorOtpField i {
+    border-radius: 10px;
+    font-size: 26px;
+    height: 58px;
+  }
+
+  .twoFactorTimerRow,
+  .twoFactorActions,
+  .twoFactorFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .twoFactorTimer {
+    align-self: center;
+  }
+
+  .twoFactorActions button {
+    min-height: 58px;
+    width: 100%;
   }
 
   .profileLevelCard {

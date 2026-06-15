@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import QRCode from "qrcode";
 import { PaymentSettingsDashboard } from "../wallet/wallet-dashboard";
 
 type ProfileDashboardProps = {
@@ -506,9 +507,12 @@ function TwoFactorModal({
   onCompleted: (security: SecurityInfo, message: string) => void;
 }) {
   const [setup, setSetup] = useState<TwoFactorSetup | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(30);
+  const codeInputRef = useRef<HTMLInputElement | null>(null);
   const isSetup = mode === "setup";
 
   useEffect(() => {
@@ -544,6 +548,51 @@ function TwoFactorModal({
     };
   }, [email, isSetup]);
 
+  useEffect(() => {
+    if (!setup?.otpauthUrl) {
+      setQrDataUrl("");
+      return;
+    }
+
+    let isCurrent = true;
+
+    QRCode.toDataURL(setup.otpauthUrl, {
+      color: {
+        dark: "#04101b",
+        light: "#ffffff"
+      },
+      margin: 1,
+      width: 260
+    }).then((dataUrl) => {
+      if (isCurrent) {
+        setQrDataUrl(dataUrl);
+      }
+    }).catch(() => {
+      if (isCurrent) {
+        setQrDataUrl("");
+      }
+    });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [setup?.otpauthUrl]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      const currentSecond = Math.floor(Date.now() / 1000);
+      const remaining = 30 - (currentSecond % 30);
+      setSecondsLeft(remaining === 30 ? 30 : remaining);
+    }, 500);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  async function copySecret() {
+    if (!setup?.secret) return;
+    await navigator.clipboard?.writeText(setup.secret).catch(() => undefined);
+  }
+
   async function submit() {
     if (!/^\d{6}$/.test(code)) {
       setError("Ingresa el codigo de 6 digitos de tu app.");
@@ -574,45 +623,110 @@ function TwoFactorModal({
   }
 
   return (
-    <div className="modalOverlay walletModalOverlay" role="presentation">
+    <div className="modalOverlay walletModalOverlay twoFactorOverlay" role="presentation">
       <section className="investmentModal twoFactorModal" role="dialog" aria-modal="true" aria-labelledby="two-factor-title">
-        <div className="modalHeader">
-          <div>
-            <span className="loginEyebrow">Seguridad 2FA</span>
-            <h2 id="two-factor-title">{isSetup ? "Configurar autenticador" : "Desactivar autenticador"}</h2>
+        <div className="twoFactorHeader">
+          <div className="twoFactorBadge">
+            <ShieldIcon />
+            <span>Seguridad 2FA</span>
           </div>
           <button className="modalClose" type="button" aria-label="Cerrar" onClick={onClose}>
             x
           </button>
         </div>
 
+        <div className="twoFactorHero">
+          <h2 id="two-factor-title">
+            {isSetup ? <>Configurar <span>autenticador</span></> : <>Desactivar <span>autenticador</span></>}
+          </h2>
+          <p>
+            {isSetup
+              ? "Agrega esta clave en Google Authenticator, Authy, Microsoft Authenticator o cualquier app TOTP."
+              : "Ingresa un codigo vigente de tu app de autenticacion para desactivar esta capa de seguridad."}
+          </p>
+        </div>
+
         {isSetup ? (
-          <div className="twoFactorSetupBox">
-            <p>Agrega esta clave en Google Authenticator, Authy, Microsoft Authenticator o cualquier app TOTP.</p>
-            <code>{setup?.secret ?? "Generando clave..."}</code>
-            {setup?.otpauthUrl ? <small>{setup.otpauthUrl}</small> : null}
-          </div>
+          <section className="twoFactorStep">
+            <div className="twoFactorStepTitle">
+              <b>1</b>
+              <div>
+                <strong>Escanea el codigo QR con tu app</strong>
+                <span>O ingresa la clave manualmente si tu app lo permite.</span>
+              </div>
+            </div>
+            <div className="twoFactorQrGrid">
+              <div className="twoFactorQrFrame">
+                {qrDataUrl ? <img src={qrDataUrl} alt="Codigo QR para configurar 2FA" /> : <span>QR</span>}
+                <img className="twoFactorQrLogo" src="/logos/xspin-mark.svg" alt="" aria-hidden="true" />
+              </div>
+              <span className="twoFactorDivider">o</span>
+              <div className="twoFactorSecretPanel">
+                <span>Clave secreta</span>
+                <button type="button" onClick={copySecret} disabled={!setup?.secret}>
+                  <code>{setup?.secret ?? "Generando clave..."}</code>
+                  <CopyIcon />
+                </button>
+                <p><InfoIcon /> Copia esta clave y guardala en un lugar seguro. La necesitaras si cambias de dispositivo.</p>
+              </div>
+            </div>
+          </section>
         ) : (
-          <p className="twoFactorHint">Ingresa un codigo vigente de tu app de autenticacion para confirmar que deseas desactivar 2FA.</p>
+          <section className="twoFactorStep twoFactorDisableStep">
+            <div className="twoFactorStepTitle">
+              <b>1</b>
+              <div>
+                <strong>Confirma tu codigo actual</strong>
+                <span>Usaremos este codigo para validar que eres tu.</span>
+              </div>
+            </div>
+          </section>
         )}
 
-        <label className="profileField twoFactorCodeField">
-          <span>Codigo de 6 digitos</span>
-          <div>
-            <input inputMode="numeric" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" />
+        <section className="twoFactorStep">
+          <div className="twoFactorStepTitle">
+            <b>2</b>
+            <div>
+              <strong>Ingresa el codigo de 6 digitos</strong>
+              <span>Escribe el codigo que muestra tu app para verificar que todo esta configurado correctamente.</span>
+            </div>
           </div>
-        </label>
+          <label className="twoFactorOtpField" onClick={() => codeInputRef.current?.focus()}>
+            <span>Codigo de 6 digitos</span>
+            <input
+              ref={codeInputRef}
+              inputMode="numeric"
+              maxLength={6}
+              value={code}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+              aria-label="Codigo de 6 digitos"
+            />
+            <div aria-hidden="true">
+              {Array.from({ length: 6 }, (_, index) => (
+                <i key={`two-factor-digit-${index}`}>{code[index] ? "•" : ""}</i>
+              ))}
+            </div>
+          </label>
+          <div className="twoFactorTimerRow">
+            <p><ShieldCheckIcon /> Este codigo cambia cada 30 segundos y es unico.<br /><span>Manten tu cuenta protegida.</span></p>
+            <div className="twoFactorTimer" style={{ "--timer-progress": `${(secondsLeft / 30) * 100}%` } as CSSProperties}>
+              <span>{secondsLeft}</span>
+            </div>
+          </div>
+        </section>
 
         {error ? <p className="modalError">{error}</p> : null}
 
-        <div className="modalActions walletWithdrawActions">
+        <div className="twoFactorActions">
           <button className="secondaryModalAction" type="button" onClick={onClose} disabled={isSubmitting}>
             Cancelar
           </button>
           <button className="primaryModalAction" type="button" onClick={submit} disabled={isSubmitting || (isSetup && !setup)}>
+            <ShieldCheckIcon />
             {isSubmitting ? "Verificando" : isSetup ? "Activar 2FA" : "Desactivar 2FA"}
           </button>
         </div>
+        <p className="twoFactorFooter"><LockIcon /> La autenticacion en dos pasos anade una capa extra de seguridad para proteger tu cuenta.</p>
       </section>
     </div>
   );
@@ -729,6 +843,30 @@ function LockIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M7 10V7a5 5 0 0 1 10 0v3h1.2c.7 0 1.3.6 1.3 1.3v8.2c0 .7-.6 1.3-1.3 1.3H5.8c-.7 0-1.3-.6-1.3-1.3v-8.2c0-.7.6-1.3 1.3-1.3Zm2 0h6V7a3 3 0 0 0-6 0Z" />
+    </svg>
+  );
+}
+
+function ShieldCheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2.5 20 6v5.7c0 5-3.2 8.6-8 10-4.8-1.4-8-5-8-10V6Zm0 2.2L6 7.3v4.4c0 3.7 2.2 6.5 6 7.8 3.8-1.3 6-4.1 6-7.8V7.3Zm-1 9.5 4.8-5 1.4 1.4-6.2 6.5-3.7-3.7 1.4-1.4Z" />
+    </svg>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8 7h10c.8 0 1.5.7 1.5 1.5v10c0 .8-.7 1.5-1.5 1.5H8c-.8 0-1.5-.7-1.5-1.5v-10C6.5 7.7 7.2 7 8 7Zm1.5 2v9h8V9ZM4.5 4h10v2h-8v8h-2Z" />
+    </svg>
+  );
+}
+
+function InfoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M11 10h2v8h-2Zm0-4h2v2h-2Zm1-4a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16Z" />
     </svg>
   );
 }
