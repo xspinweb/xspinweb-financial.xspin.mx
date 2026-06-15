@@ -73,6 +73,18 @@ const twoFactorVerifySchema = z.object({
   secret: z.string().min(16).optional()
 });
 
+const identityImageSchema = z.string()
+  .regex(/^data:image\/(jpeg|jpg|png|webp);base64,/)
+  .max(1_600_000);
+
+const identityVerificationSchema = z.object({
+  backImage: identityImageSchema.optional(),
+  email: z.string().email(),
+  frontImage: identityImageSchema.optional()
+}).refine((input) => input.frontImage || input.backImage, {
+  message: "Agrega al menos una fotografia de identificacion."
+});
+
 type PortfolioInvestment = {
   id: string;
   principalAmount: unknown;
@@ -229,6 +241,20 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     const email = z.string().email().parse(url.searchParams.get("email"));
     const level = await getInvestorLevel(email);
     sendJson(res, 200, level);
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/investor/identity") {
+    const email = z.string().email().parse(url.searchParams.get("email"));
+    const identity = await getInvestorIdentityVerification(email);
+    sendJson(res, 200, identity);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/investor/identity") {
+    const input = identityVerificationSchema.parse(await readJson(req));
+    const identity = await updateInvestorIdentityVerification(input);
+    sendJson(res, 200, identity);
     return;
   }
 
@@ -563,6 +589,45 @@ async function getInvestorLevel(email: string) {
     referralsSource: unknown[];
     status: string;
   }>);
+}
+
+async function getInvestorIdentityVerification(email: string) {
+  const investor = await prisma.investor.findFirst({
+    include: {
+      identityVerification: true
+    },
+    where: { email }
+  });
+
+  return formatIdentityVerification(investor?.identityVerification ?? null);
+}
+
+async function updateInvestorIdentityVerification(input: z.infer<typeof identityVerificationSchema>) {
+  const investor = await getOrCreateInvestor(prisma, { email: input.email });
+  const current = await prisma.identityVerification.findUnique({
+    where: { investorId: investor.id }
+  });
+  const hasFront = Boolean(input.frontImage ?? current?.officialIdFront);
+  const hasBack = Boolean(input.backImage ?? current?.officialIdBack);
+
+  const identity = await prisma.identityVerification.upsert({
+    create: {
+      investorId: investor.id,
+      officialIdBack: input.backImage,
+      officialIdFront: input.frontImage,
+      status: hasFront && hasBack ? "SUBMITTED" : "PENDING",
+      submittedAt: hasFront && hasBack ? new Date() : null
+    },
+    update: {
+      ...(input.backImage ? { officialIdBack: input.backImage } : {}),
+      ...(input.frontImage ? { officialIdFront: input.frontImage } : {}),
+      status: hasFront && hasBack ? "SUBMITTED" : "PENDING",
+      submittedAt: hasFront && hasBack ? new Date() : current?.submittedAt ?? null
+    },
+    where: { investorId: investor.id }
+  });
+
+  return formatIdentityVerification(identity);
 }
 
 async function createTwoFactorSetup(email: string) {
@@ -1519,6 +1584,22 @@ function formatInvestorProfile(investor: {
     email: investor.email ?? "",
     fullName: investor.fullName ?? "",
     phone: investor.phone ?? ""
+  };
+}
+
+function formatIdentityVerification(identity: {
+  officialIdBack?: string | null;
+  officialIdFront?: string | null;
+  status?: string;
+  submittedAt?: Date | null;
+  updatedAt?: Date;
+} | null) {
+  return {
+    backImage: identity?.officialIdBack ?? "",
+    frontImage: identity?.officialIdFront ?? "",
+    status: identity?.status ?? "PENDING",
+    submittedAt: identity?.submittedAt?.toISOString() ?? "",
+    updatedAt: identity?.updatedAt?.toISOString() ?? ""
   };
 }
 

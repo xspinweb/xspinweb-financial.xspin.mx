@@ -65,6 +65,14 @@ type TwoFactorSetup = {
   twoFactorEnabled: boolean;
 };
 
+type IdentityVerification = {
+  backImage: string;
+  frontImage: string;
+  status: "PENDING" | "SUBMITTED" | "VERIFIED" | "REJECTED";
+  submittedAt: string;
+  updatedAt: string;
+};
+
 export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps) {
   const [activeTab, setActiveTab] = useState<ProfileTab>("personal");
   const [form, setForm] = useState<ProfileForm>({
@@ -88,6 +96,14 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
   const [isSavingSecurity, setIsSavingSecurity] = useState(false);
   const [level, setLevel] = useState<InvestorLevel | null>(null);
   const [twoFactorModalMode, setTwoFactorModalMode] = useState<"setup" | "disable" | null>(null);
+  const [identity, setIdentity] = useState<IdentityVerification>({
+    backImage: "",
+    frontImage: "",
+    status: "PENDING",
+    submittedAt: "",
+    updatedAt: ""
+  });
+  const [identityModalOpen, setIdentityModalOpen] = useState(false);
 
   useEffect(() => {
     let isCurrent = true;
@@ -139,6 +155,30 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
     }
 
     void loadSecurity();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [userEmail]);
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadIdentity() {
+      const response = await fetch(`/api/investor/identity?email=${encodeURIComponent(userEmail)}`);
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = (await response.json()) as IdentityVerification;
+
+      if (isCurrent) {
+        setIdentity(data);
+      }
+    }
+
+    void loadIdentity();
 
     return () => {
       isCurrent = false;
@@ -340,14 +380,26 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
           />
 
           <div className="profileRows">
-            <ProfileRow icon={<DocumentIcon />} title="Identificacion oficial" subtitle="INE, Pasaporte o Licencia de conducir" status="Verificado" action="Ver documento" />
-            <ProfileRow icon={<ReceiptIcon />} title="Comprobante de domicilio" subtitle="Recibo de luz, agua, gas o estado de cuenta" status="Pendiente" statusTone="yellow" action="Subir documento" />
+            <ProfileRow
+              icon={<DocumentIcon />}
+              title="Identificacion oficial"
+              subtitle={identity.frontImage && identity.backImage ? "Anverso y reverso capturados correctamente." : "INE, Pasaporte o Licencia de conducir"}
+              status={getIdentityStatusLabel(identity.status, Boolean(identity.frontImage && identity.backImage))}
+              statusTone={identity.status === "VERIFIED" || identity.status === "SUBMITTED" ? "green" : "yellow"}
+              action="Capturar"
+              actionIcon={<CameraIcon />}
+              onAction={() => setIdentityModalOpen(true)}
+            />
+            <ProfileRow icon={<ReceiptIcon />} title="Comprobante de domicilio" subtitle="Recibo de luz, agua, gas o estado de cuenta" status="Pendiente" statusTone="yellow" />
           </div>
-
-          <button className="verifyDocumentsAction" type="button">
-            <IdentityIcon />
-            Verificar documentos
-          </button>
+          {identityModalOpen ? (
+            <IdentityVerificationModal
+              email={form.email || userEmail}
+              identity={identity}
+              onClose={() => setIdentityModalOpen(false)}
+              onSaved={setIdentity}
+            />
+          ) : null}
         </section>
       )}
 
@@ -412,6 +464,7 @@ function ProfileField({
 
 function ProfileRow({
   action,
+  actionIcon,
   disabled = false,
   icon,
   onAction,
@@ -424,6 +477,7 @@ function ProfileRow({
   title
 }: {
   action?: string;
+  actionIcon?: ReactNode;
   disabled?: boolean;
   icon: ReactNode;
   onAction?: () => void;
@@ -451,8 +505,9 @@ function ProfileRow({
       ) : null}
       {action ? (
         <button type="button" onClick={onAction} disabled={disabled}>
+          {actionIcon}
           {action}
-          <ChevronIcon />
+          {actionIcon ? null : <ChevronIcon />}
         </button>
       ) : null}
     </article>
@@ -742,6 +797,380 @@ function TwoFactorModal({
   );
 }
 
+function IdentityVerificationModal({
+  email,
+  identity,
+  onClose,
+  onSaved
+}: {
+  email: string;
+  identity: IdentityVerification;
+  onClose: () => void;
+  onSaved: (identity: IdentityVerification) => void;
+}) {
+  const [view, setView] = useState<"intro" | "capture" | "done">("intro");
+  const [side, setSide] = useState<"front" | "back">(identity.frontImage && !identity.backImage ? "back" : "front");
+  const [frontImage, setFrontImage] = useState(identity.frontImage);
+  const [backImage, setBackImage] = useState(identity.backImage);
+  const [cameraError, setCameraError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (view !== "capture") {
+      stopIdentityCamera(streamRef.current);
+      streamRef.current = null;
+      return;
+    }
+
+    let isCurrent = true;
+
+    async function startCamera() {
+      setCameraError("");
+      stopIdentityCamera(streamRef.current);
+      streamRef.current = null;
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraError("Tu navegador no permitio abrir la camara. Puedes usar galeria.");
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            facingMode: { ideal: "environment" },
+            height: { ideal: 900 },
+            width: { ideal: 1400 }
+          }
+        });
+
+        if (!isCurrent) {
+          stopIdentityCamera(stream);
+          return;
+        }
+
+        streamRef.current = stream;
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play().catch(() => undefined);
+        }
+      } catch {
+        if (isCurrent) {
+          setCameraError("No se pudo abrir la camara. Revisa permisos o usa galeria.");
+        }
+      }
+    }
+
+    void startCamera();
+
+    return () => {
+      isCurrent = false;
+      stopIdentityCamera(streamRef.current);
+      streamRef.current = null;
+    };
+  }, [view, side]);
+
+  async function savePhoto(nextSide: "front" | "back", imageDataUrl: string) {
+    setIsSaving(true);
+    setStatusMessage("");
+
+    const response = await fetch("/api/investor/identity", {
+      body: JSON.stringify({
+        email,
+        ...(nextSide === "front" ? { frontImage: imageDataUrl } : { backImage: imageDataUrl })
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST"
+    });
+
+    if (!response.ok) {
+      setStatusMessage(await getResponseErrorMessage(response));
+      setIsSaving(false);
+      return;
+    }
+
+    const data = (await response.json()) as IdentityVerification;
+    onSaved(data);
+    setFrontImage(data.frontImage);
+    setBackImage(data.backImage);
+    setIsSaving(false);
+
+    if (nextSide === "front") {
+      setSide("back");
+      setStatusMessage("");
+      return;
+    }
+
+    setView("done");
+  }
+
+  async function capturePhoto() {
+    if (!videoRef.current) {
+      setCameraError("La camara todavia no esta lista.");
+      return;
+    }
+
+    const imageDataUrl = await captureIdentityFrame(videoRef.current);
+
+    if (!imageDataUrl) {
+      setCameraError("No se pudo tomar la foto. Intenta de nuevo.");
+      return;
+    }
+
+    await savePhoto(side, imageDataUrl);
+  }
+
+  async function useGalleryFile(file?: File) {
+    if (!file) return;
+    const imageDataUrl = await compressIdentityImage(file);
+
+    if (!imageDataUrl) {
+      setCameraError("No se pudo leer la imagen seleccionada.");
+      return;
+    }
+
+    await savePhoto(side, imageDataUrl);
+  }
+
+  return (
+    <div className="identityOverlay" role="presentation">
+      <section className="identityFlowModal" role="dialog" aria-modal="true" aria-labelledby="identity-title">
+        <header className="identityFlowHeader">
+          <button type="button" aria-label={view === "intro" ? "Cerrar" : "Regresar"} onClick={view === "intro" ? onClose : () => setView("intro")}>
+            <ArrowBackIcon />
+          </button>
+          <h2 id="identity-title">Verificacion de identidad</h2>
+          <button type="button" aria-label="Cerrar" onClick={onClose}>
+            <ShieldCheckIcon />
+          </button>
+        </header>
+
+        <IdentityStepper activeStep={view === "done" ? 3 : 2} completedStep={view === "done" ? 2 : 1} />
+
+        {view === "intro" ? (
+          <div className="identityIntro">
+            <h3>Fotografia tu INE</h3>
+            <p>Para continuar, necesitamos fotos claras del anverso y reverso de tu INE.</p>
+
+            <IdentityInstructionCard
+              number="1"
+              title="Anverso"
+              text="Coloca tu INE sobre una superficie plana y toma una foto donde se vean todos los datos claramente."
+              label="Frente de tu INE"
+              variant="front"
+            />
+            <IdentityInstructionCard
+              number="2"
+              title="Reverso"
+              text="Ahora voltea tu INE y toma una foto del reverso. Asegurate de que el codigo de barras se vea completo."
+              label="Reverso de tu INE"
+              variant="back"
+            />
+
+            <div className="identityProtectedCard">
+              <ShieldCheckIcon />
+              <div>
+                <strong>Tus datos estan protegidos</strong>
+                <span>Utilizamos cifrado de extremo a extremo para mantener tu informacion segura.</span>
+              </div>
+              <LockIcon />
+            </div>
+
+            <button className="identityReadyButton" type="button" onClick={() => setView("capture")}>
+              <CameraIcon />
+              <span>
+                <strong>Listo para tomar la foto?</strong>
+                <small>Asegurate de estar en un lugar con buena iluminacion.</small>
+              </span>
+            </button>
+          </div>
+        ) : null}
+
+        {view === "capture" ? (
+          <div className="identityCapture">
+            <span className="identitySidePill">{side === "front" ? "1 / 2  Anverso" : "2 / 2  Reverso"}</span>
+            <h3>{side === "front" ? "Captura el anverso de tu INE" : "Captura el reverso de tu INE"}</h3>
+            <p>{side === "front" ? "Asegurate de que todos los datos sean legibles, sin reflejos y que la tarjeta este dentro del marco." : "Asegurate de que el codigo de barras y el codigo QR sean legibles y que la tarjeta este dentro del marco."}</p>
+
+            <div className="identityCameraStage">
+              <span className="identityAutoBadge">Auto</span>
+              {cameraError ? (
+                <div className="identityCameraFallback">
+                  <CameraIcon />
+                  <strong>{cameraError}</strong>
+                  <span>Tambien puedes cargar una foto desde galeria.</span>
+                </div>
+              ) : (
+                <video ref={videoRef} playsInline muted />
+              )}
+              <div className="identityFrameOverlay" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+              <div className="identityCaptureHint">
+                <ShieldCheckIcon />
+                <span>{side === "front" ? "Coloca tu INE sobre una superficie plana. Asegurate de que se vean todos los bordes." : "Voltea tu INE y coloca el reverso sobre una superficie plana. Asegurate de que se vean todos los bordes."}</span>
+              </div>
+            </div>
+
+            <div className="identityCaptureControls">
+              <button type="button" onClick={() => undefined}>
+                <LightbulbIcon />
+                Consejos
+              </button>
+              <button className="identityShutter" type="button" onClick={capturePhoto} disabled={isSaving} aria-label="Tomar foto" />
+              <button type="button" onClick={() => fileInputRef.current?.click()}>
+                <GalleryIcon />
+                Galeria
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(event) => void useGalleryFile(event.target.files?.[0])}
+              />
+            </div>
+
+            <div className="identityProtectedCard compact">
+              <IdentityIcon />
+              <div>
+                <strong>Tus datos estan protegidos</strong>
+                <span>Utilizamos cifrado de extremo a extremo para mantener tu informacion segura.</span>
+              </div>
+              <LockIcon />
+            </div>
+          </div>
+        ) : null}
+
+        {view === "done" ? (
+          <div className="identityDone">
+            <ShieldCheckIcon />
+            <h3>Documentos capturados</h3>
+            <p>Tu identificacion quedo enviada para revision.</p>
+            <div className="identityPreviewGrid">
+              {frontImage ? <img src={frontImage} alt="Anverso capturado" /> : null}
+              {backImage ? <img src={backImage} alt="Reverso capturado" /> : null}
+            </div>
+            <button className="primaryModalAction" type="button" onClick={onClose}>
+              Continuar
+            </button>
+          </div>
+        ) : null}
+
+        {statusMessage ? <p className="modalError identityModalError">{statusMessage}</p> : null}
+      </section>
+    </div>
+  );
+}
+
+function IdentityStepper({ activeStep, completedStep }: { activeStep: number; completedStep: number }) {
+  return (
+    <div className="identityStepper" aria-label="Progreso de verificacion">
+      {[
+        ["Informacion", 1],
+        ["INE", 2],
+        ["Confirmacion", 3]
+      ].map(([label, step]) => (
+        <div className={`${Number(step) <= activeStep ? "active" : ""} ${Number(step) <= completedStep ? "complete" : ""}`} key={step}>
+          <b>{step}</b>
+          <span>{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function IdentityInstructionCard({
+  label,
+  number,
+  text,
+  title,
+  variant
+}: {
+  label: string;
+  number: string;
+  text: string;
+  title: string;
+  variant: "front" | "back";
+}) {
+  return (
+    <article className="identityInstructionCard">
+      <div>
+        <b>{number}</b>
+        <h4>{title}</h4>
+        <p>{text}</p>
+        <span><IdentityIcon /> {label}</span>
+      </div>
+      <div className={`identityExampleCard ${variant}`}>
+        <i />
+        <strong>{variant === "front" ? "INE" : "IDMEX"}</strong>
+        <span />
+        <span />
+        <span />
+      </div>
+    </article>
+  );
+}
+
+async function captureIdentityFrame(video: HTMLVideoElement) {
+  const width = video.videoWidth;
+  const height = video.videoHeight;
+
+  if (!width || !height) {
+    return "";
+  }
+
+  const canvas = document.createElement("canvas");
+  const maxWidth = 1100;
+  const scale = Math.min(1, maxWidth / width);
+  canvas.width = Math.round(width * scale);
+  canvas.height = Math.round(height * scale);
+  const context = canvas.getContext("2d");
+  context?.drawImage(video, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.76);
+}
+
+function compressIdentityImage(file: File) {
+  return new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const maxWidth = 1100;
+        const scale = Math.min(1, maxWidth / image.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(image.width * scale);
+        canvas.height = Math.round(image.height * scale);
+        canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.76));
+      };
+      image.onerror = () => resolve("");
+      image.src = typeof reader.result === "string" ? reader.result : "";
+    };
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
+
+function stopIdentityCamera(stream?: MediaStream | null) {
+  stream?.getTracks().forEach((track) => track.stop());
+}
+
+function getIdentityStatusLabel(status: IdentityVerification["status"], hasBothImages: boolean) {
+  if (status === "VERIFIED") return "Verificado";
+  if (status === "REJECTED") return "Rechazado";
+  if (status === "SUBMITTED" || hasBothImages) return "En revision";
+  return "Pendiente";
+}
+
 function ProfileLevelCard({ level }: { level: InvestorLevel }) {
   return (
     <section className={`profileLevelCard level-${level.current.key}`}>
@@ -819,6 +1248,38 @@ function TrophyIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M7 3h10v3h3v2a6 6 0 0 1-5.3 6 5 5 0 0 1-1.7 1.4V18h4v2H7v-2h4v-2.6A5 5 0 0 1 9.3 14 6 6 0 0 1 4 8V6h3Zm10 5V5H7v3a5 5 0 0 0 10 0Zm2 .1V8h-2a7 7 0 0 1-.5 2.5A4 4 0 0 0 19 8.1ZM7.5 10.5A7 7 0 0 1 7 8H5a4 4 0 0 0 2.5 2.5Z" />
+    </svg>
+  );
+}
+
+function ArrowBackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 11v2H8.8l5 5-1.4 1.4L5 12l7.4-7.4L13.8 6l-5 5Z" />
+    </svg>
+  );
+}
+
+function CameraIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8.2 5 10 3h4l1.8 2H20c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2Zm3.8 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z" />
+    </svg>
+  );
+}
+
+function LightbulbIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M11 2h2v4h-2Zm7.1 2.5 1.4 1.4-2.8 2.8-1.4-1.4ZM4.5 5.9l1.4-1.4 2.8 2.8-1.4 1.4ZM12 7a6 6 0 0 1 3.2 11.1V20H8.8v-1.9A6 6 0 0 1 12 7Zm0 2a4 4 0 0 0-2 7.5l.8.5v1h2.4v-1l.8-.5A4 4 0 0 0 12 9Zm-3 12h6v2H9Z" />
+    </svg>
+  );
+}
+
+function GalleryIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 4h16v16H4Zm2 2v9.5l3.5-3.5 3 3 2-2 3.5 3.5V6Zm3 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
     </svg>
   );
 }
