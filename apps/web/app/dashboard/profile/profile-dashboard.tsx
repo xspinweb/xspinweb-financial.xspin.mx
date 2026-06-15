@@ -384,8 +384,6 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
               icon={<DocumentIcon />}
               title="Identificacion oficial"
               subtitle={identity.frontImage && identity.backImage ? "Anverso y reverso capturados correctamente." : "INE, Pasaporte o Licencia de conducir"}
-              status={getIdentityStatusLabel(identity.status, Boolean(identity.frontImage && identity.backImage))}
-              statusTone={identity.status === "VERIFIED" || identity.status === "SUBMITTED" ? "green" : "yellow"}
               action="Capturar"
               actionIcon={<CameraIcon />}
               onAction={() => setIdentityModalOpen(true)}
@@ -817,7 +815,6 @@ function IdentityVerificationModal({
   const [statusMessage, setStatusMessage] = useState("");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (view !== "capture") {
@@ -925,18 +922,6 @@ function IdentityVerificationModal({
     await savePhoto(side, imageDataUrl);
   }
 
-  async function useGalleryFile(file?: File) {
-    if (!file) return;
-    const imageDataUrl = await compressIdentityImage(file);
-
-    if (!imageDataUrl) {
-      setCameraError("No se pudo leer la imagen seleccionada.");
-      return;
-    }
-
-    await savePhoto(side, imageDataUrl);
-  }
-
   return (
     <div className="identityOverlay" role="presentation">
       <section className="identityFlowModal" role="dialog" aria-modal="true" aria-labelledby="identity-title">
@@ -971,8 +956,7 @@ function IdentityVerificationModal({
             <button className="identityReadyButton" type="button" onClick={() => setView("capture")}>
               <CameraIcon />
               <span>
-                <strong>Listo para tomar la foto?</strong>
-                <small>Asegurate de estar en un lugar con buena iluminacion.</small>
+                <strong>Tomar foto</strong>
               </span>
             </button>
           </div>
@@ -982,15 +966,14 @@ function IdentityVerificationModal({
           <div className="identityCapture">
             <span className="identitySidePill">{side === "front" ? "1 / 2  Anverso" : "2 / 2  Reverso"}</span>
             <h3>{side === "front" ? "Captura el anverso de tu INE" : "Captura el reverso de tu INE"}</h3>
-            <p>{side === "front" ? "Asegurate de que todos los datos sean legibles, sin reflejos y que la tarjeta este dentro del marco." : "Asegurate de que el codigo de barras y el codigo QR sean legibles y que la tarjeta este dentro del marco."}</p>
 
             <div className="identityCameraStage">
-              <span className="identityAutoBadge">Auto</span>
+              <span className="identityAutoBadge"><LightningIcon /> Auto</span>
               {cameraError ? (
                 <div className="identityCameraFallback">
                   <CameraIcon />
                   <strong>{cameraError}</strong>
-                  <span>Tambien puedes cargar una foto desde galeria.</span>
+                  <span>Revisa permisos de camara e intenta de nuevo.</span>
                 </div>
               ) : (
                 <video ref={videoRef} playsInline muted />
@@ -1008,31 +991,7 @@ function IdentityVerificationModal({
             </div>
 
             <div className="identityCaptureControls">
-              <button type="button" onClick={() => undefined}>
-                <LightbulbIcon />
-                Consejos
-              </button>
               <button className="identityShutter" type="button" onClick={capturePhoto} disabled={isSaving} aria-label="Tomar foto" />
-              <button type="button" onClick={() => fileInputRef.current?.click()}>
-                <GalleryIcon />
-                Galeria
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={(event) => void useGalleryFile(event.target.files?.[0])}
-              />
-            </div>
-
-            <div className="identityProtectedCard compact">
-              <IdentityIcon />
-              <div>
-                <strong>Tus datos estan protegidos</strong>
-                <span>Utilizamos cifrado de extremo a extremo para mantener tu informacion segura.</span>
-              </div>
-              <LockIcon />
             </div>
           </div>
         ) : null}
@@ -1173,37 +1132,8 @@ async function captureIdentityFrame(video: HTMLVideoElement) {
   return canvas.toDataURL("image/jpeg", 0.76);
 }
 
-function compressIdentityImage(file: File) {
-  return new Promise<string>((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const image = new Image();
-      image.onload = () => {
-        const maxWidth = 1100;
-        const scale = Math.min(1, maxWidth / image.width);
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(image.width * scale);
-        canvas.height = Math.round(image.height * scale);
-        canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.76));
-      };
-      image.onerror = () => resolve("");
-      image.src = typeof reader.result === "string" ? reader.result : "";
-    };
-    reader.onerror = () => resolve("");
-    reader.readAsDataURL(file);
-  });
-}
-
 function stopIdentityCamera(stream?: MediaStream | null) {
   stream?.getTracks().forEach((track) => track.stop());
-}
-
-function getIdentityStatusLabel(status: IdentityVerification["status"], hasBothImages: boolean) {
-  if (status === "VERIFIED") return "Verificado";
-  if (status === "REJECTED") return "Rechazado";
-  if (status === "SUBMITTED" || hasBothImages) return "En revision";
-  return "Pendiente";
 }
 
 function ProfileLevelCard({ level }: { level: InvestorLevel }) {
@@ -1303,18 +1233,10 @@ function CameraIcon() {
   );
 }
 
-function LightbulbIcon() {
+function LightningIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M11 2h2v4h-2Zm7.1 2.5 1.4 1.4-2.8 2.8-1.4-1.4ZM4.5 5.9l1.4-1.4 2.8 2.8-1.4 1.4ZM12 7a6 6 0 0 1 3.2 11.1V20H8.8v-1.9A6 6 0 0 1 12 7Zm0 2a4 4 0 0 0-2 7.5l.8.5v1h2.4v-1l.8-.5A4 4 0 0 0 12 9Zm-3 12h6v2H9Z" />
-    </svg>
-  );
-}
-
-function GalleryIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 4h16v16H4Zm2 2v9.5l3.5-3.5 3 3 2-2 3.5 3.5V6Zm3 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+      <path d="M13 2 4 14h7l-1 8 10-13h-7Z" />
     </svg>
   );
 }
