@@ -364,6 +364,273 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
   );
 }
 
+export function PaymentSettingsDashboard({ userEmail }: { userEmail: string }) {
+  const savedMethodsCarouselRef = useRef<HTMLDivElement>(null);
+  const [selectedType, setSelectedType] = useState<PaymentType>("bank");
+  const [methods, setMethods] = useState<PaymentMethod[]>([]);
+  const [draft, setDraft] = useState<MethodDraft>(initialDraft);
+  const [error, setError] = useState("");
+  const [isLoadingMethods, setIsLoadingMethods] = useState(true);
+  const [isSavingMethod, setIsSavingMethod] = useState(false);
+  const [paymentCarouselIndex, setPaymentCarouselIndex] = useState(0);
+  const [savedCarouselIndex, setSavedCarouselIndex] = useState(0);
+
+  async function loadMethods() {
+    setIsLoadingMethods(true);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/payout-methods?email=${encodeURIComponent(userEmail)}`);
+
+      if (!response.ok) {
+        throw new Error(await getResponseErrorMessage(response));
+      }
+
+      const methodsData = (await response.json()) as PaymentMethod[];
+      setMethods(methodsData);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "No se pudieron cargar tus metodos de pago.");
+    } finally {
+      setIsLoadingMethods(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadMethods();
+  }, [userEmail]);
+
+  function updateDraft(field: keyof MethodDraft, value: string) {
+    setDraft((current) => ({ ...current, [field]: value }));
+    setError("");
+  }
+
+  function selectType(type: PaymentType) {
+    setSelectedType(type);
+    setPaymentCarouselIndex(methodOptions.findIndex((option) => option.type === type));
+    setDraft(initialDraft);
+    setError("");
+  }
+
+  async function saveMethod() {
+    const validationError = validateDraft(selectedType, draft);
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    const payload = buildMethod(selectedType, draft);
+    setIsSavingMethod(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/payout-methods", {
+        body: JSON.stringify(toApiPayoutMethod(userEmail, payload)),
+        headers: { "Content-Type": "application/json" },
+        method: "POST"
+      });
+
+      if (!response.ok) {
+        throw new Error(await getResponseErrorMessage(response));
+      }
+
+      const method = (await response.json()) as PaymentMethod;
+
+      setMethods((current) => [
+        ...(method.isPrimary ? current.map((currentMethod) => ({ ...currentMethod, isPrimary: false })) : current),
+        method
+      ]);
+      setDraft(initialDraft);
+      setPaymentCarouselIndex(methodOptions.findIndex((option) => option.type === selectedType));
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "No se pudo guardar el metodo de pago.");
+    } finally {
+      setIsSavingMethod(false);
+    }
+  }
+
+  async function setPrimary(id: string) {
+    setError("");
+
+    try {
+      const response = await fetch(`/api/payout-methods/${encodeURIComponent(id)}/primary`, {
+        body: JSON.stringify({ email: userEmail }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST"
+      });
+
+      if (!response.ok) {
+        throw new Error(await getResponseErrorMessage(response));
+      }
+
+      setMethods((current) => movePrimaryMethodToFront(current, id));
+      setSavedCarouselIndex(0);
+      requestAnimationFrame(() => {
+        savedMethodsCarouselRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+      });
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "No se pudo cambiar el metodo principal.");
+    }
+  }
+
+  async function deleteMethod(id: string) {
+    setError("");
+
+    try {
+      const response = await fetch(`/api/payout-methods/${encodeURIComponent(id)}`, {
+        body: JSON.stringify({ email: userEmail }),
+        headers: { "Content-Type": "application/json" },
+        method: "DELETE"
+      });
+
+      if (!response.ok) {
+        throw new Error(await getResponseErrorMessage(response));
+      }
+
+      setMethods((current) => {
+        const deletedMethod = current.find((method) => method.id === id);
+        const remaining = current.filter((method) => method.id !== id);
+
+        if (!deletedMethod?.isPrimary || remaining.some((method) => method.isPrimary)) {
+          return remaining;
+        }
+
+        return remaining.map((method, index) => ({ ...method, isPrimary: index === 0 }));
+      });
+      setSavedCarouselIndex((current) => Math.max(0, Math.min(current, methods.length - 2)));
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "No se pudo eliminar el metodo de pago.");
+    }
+  }
+
+  function updateSavedCarouselIndex(event: UIEvent<HTMLDivElement>) {
+    setSavedCarouselIndex(getCarouselIndex(event.currentTarget, ".savedMethodRow"));
+  }
+
+  function updatePaymentCarouselIndex(event: UIEvent<HTMLDivElement>) {
+    setPaymentCarouselIndex(getCarouselIndex(event.currentTarget, ".paymentTypeCard"));
+  }
+
+  return (
+    <div className="paymentSettingsStack">
+      <section className="walletSecurityPanel">
+        <div className="walletSecurityItem">
+          <ShieldIcon />
+          <div>
+            <strong>La seguridad de tu informacion es nuestra prioridad</strong>
+            <span>Tu informacion financiera esta cifrada y protegida. Solo tu puedes ver tus datos.</span>
+          </div>
+        </div>
+        <div className="walletSecurityItem compact">
+          <LockIcon />
+          <div>
+            <strong>Conexion segura</strong>
+            <span>Tus datos estan protegidos</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="walletPanel paymentSettingsPanel">
+        <div className="walletSectionHeader">
+          <div>
+            <h2>Metodos de pago</h2>
+            <p>Agrega y administra los metodos donde recibiras tus pagos.</p>
+          </div>
+        </div>
+
+        <div className="paymentTypeGrid" onScroll={updatePaymentCarouselIndex}>
+          {methodOptions.map((option) => (
+            <button
+              className={selectedType === option.type ? "paymentTypeCard active" : "paymentTypeCard"}
+              key={option.type}
+              type="button"
+              onClick={() => selectType(option.type)}
+            >
+              <PaymentBrandIcon type={option.type} />
+              <div>
+                <strong>{option.label}</strong>
+                {option.tag ? <span>{option.tag}</span> : null}
+                <p>{option.description}</p>
+              </div>
+              {selectedType === option.type ? <CheckBadgeIcon /> : null}
+            </button>
+          ))}
+        </div>
+        <CarouselDots activeIndex={paymentCarouselIndex} count={methodOptions.length} />
+
+        <div className="walletInfoNote">
+          <InfoIcon />
+          <span>Puedes agregar mas de un metodo de pago. Elige tu metodo principal para recibir tus ganancias.</span>
+        </div>
+
+        <div className="paymentFormGrid">
+          <BankForm active={selectedType === "bank"} draft={draft} isSaving={isSavingMethod} onChange={updateDraft} onSave={saveMethod} />
+          <PayPalForm active={selectedType === "paypal"} draft={draft} isSaving={isSavingMethod} onChange={updateDraft} onSave={saveMethod} />
+          <PaxumForm active={selectedType === "paxum"} draft={draft} isSaving={isSavingMethod} onChange={updateDraft} onSave={saveMethod} />
+          <CryptoForm active={selectedType === "crypto"} draft={draft} isSaving={isSavingMethod} onChange={updateDraft} onSave={saveMethod} />
+        </div>
+      </section>
+
+      <section className="walletPanel savedMethodsPanel">
+        <div className="walletSectionHeader">
+          <div>
+            <h2>Mis metodos guardados</h2>
+            <p>Estos son los metodos donde puedes recibir tus pagos.</p>
+          </div>
+        </div>
+
+        {isLoadingMethods ? (
+          <div className="emptyWalletState">
+            <PaymentBrandIcon type="bank" />
+            <strong>Cargando tus metodos</strong>
+            <span>Estamos consultando la informacion guardada.</span>
+          </div>
+        ) : methods.length === 0 ? (
+          <div className="emptyWalletState">
+            <PaymentBrandIcon type="bank" />
+            <strong>Aun no tienes metodos guardados</strong>
+            <span>Selecciona un metodo, llena el formulario y guardalo.</span>
+          </div>
+        ) : (
+          <>
+            <div className="savedMethodsTable" onScroll={updateSavedCarouselIndex} ref={savedMethodsCarouselRef}>
+              <div className="savedMethodsHead">
+                <span>Metodo</span>
+                <span>Informacion</span>
+                <span>Principal</span>
+                <span>Acciones</span>
+              </div>
+              {methods.map((method) => (
+                <div className="savedMethodRow" key={method.id}>
+                  <div>
+                    <PaymentBrandIcon type={method.type} />
+                    <strong>{getMethodTitle(method)}</strong>
+                  </div>
+                  <span>{getMethodInfo(method)}</span>
+                  <div className="savedMethodActions">
+                    <button
+                      className={method.isPrimary ? "walletStatus primary" : "setPrimaryAction"}
+                      type="button"
+                      onClick={() => setPrimary(method.id)}
+                    >
+                      {method.isPrimary ? "Principal" : "Marcar principal"}
+                    </button>
+                    <button className="deleteWalletAction" type="button" onClick={() => deleteMethod(method.id)} aria-label="Eliminar metodo">
+                      <TrashIcon />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <CarouselDots activeIndex={savedCarouselIndex} count={methods.length} />
+          </>
+        )}
+      </section>
+      {error ? <p className="walletError">{error}</p> : null}
+    </div>
+  );
+}
+
 function getCarouselIndex(element: HTMLElement, itemSelector: string) {
   const items = Array.from(element.querySelectorAll<HTMLElement>(itemSelector));
 

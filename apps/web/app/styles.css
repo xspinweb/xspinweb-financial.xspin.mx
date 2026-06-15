@@ -3469,6 +3469,12 @@ a {
   fill: currentColor;
 }
 
+.profilePaymentSettings,
+.paymentSettingsStack {
+  display: grid;
+  gap: 18px;
+}
+
 .walletSecurityPanel,
 .walletPanel {
   border: 1px solid var(--line);

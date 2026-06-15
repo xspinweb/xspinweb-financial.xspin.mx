@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { PaymentSettingsDashboard } from "../wallet/wallet-dashboard";
 
 type ProfileDashboardProps = {
   role: string;
@@ -9,7 +10,7 @@ type ProfileDashboardProps = {
   userName: string;
 };
 
-type ProfileTab = "personal" | "security" | "identity";
+type ProfileTab = "personal" | "security" | "identity" | "payment";
 
 type ProfileForm = {
   address: string;
@@ -116,6 +117,9 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
         <button className={activeTab === "identity" ? "active" : ""} type="button" onClick={() => setActiveTab("identity")}>
           Verificacion de identidad
         </button>
+        <button className={activeTab === "payment" ? "active" : ""} type="button" onClick={() => setActiveTab("payment")}>
+          Configuracion de pago
+        </button>
       </nav>
 
       {activeTab === "personal" && (
@@ -205,6 +209,12 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
             <IdentityIcon />
             Verificar documentos
           </button>
+        </section>
+      )}
+
+      {activeTab === "payment" && (
+        <section className="profilePaymentSettings">
+          <PaymentSettingsDashboard userEmail={form.email || userEmail} />
         </section>
       )}
     </>
