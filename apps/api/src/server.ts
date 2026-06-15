@@ -339,6 +339,11 @@ async function getPortfolio(email: string) {
       investedAt: investment.createdAt,
       nextPaymentAt: investment.paymentDueAt,
       paidWeeks: investment.payments.length,
+      payments: investment.payments.map((payment) => ({
+        amount: Number(payment.amount),
+        notes: payment.notes,
+        paidAt: payment.paidAt
+      })),
       weeks: buildInvestmentWeeks(investment),
       referrals: investment.referralsSource.map((referral: PortfolioInvestment["referralsSource"][number]) => {
         const referredInvestment = referral.referredInvestor.investments[0];

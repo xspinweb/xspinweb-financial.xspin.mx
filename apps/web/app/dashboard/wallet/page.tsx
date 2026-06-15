@@ -8,9 +8,8 @@ export default async function WalletPage() {
   return (
     <div className="dashboardContent walletPage">
       <section className="walletHero">
-        <span className="loginEyebrow">Cartera</span>
-        <h1>Cartera</h1>
-        <p>Gestiona los metodos de pago donde recibiras tus ganancias.</p>
+        <h1>Mi wallet</h1>
+        <p>Administra tus saldos y proximos pagos.</p>
       </section>
       <WalletDashboard userEmail={session?.user?.email ?? "usuario"} />
     </div>

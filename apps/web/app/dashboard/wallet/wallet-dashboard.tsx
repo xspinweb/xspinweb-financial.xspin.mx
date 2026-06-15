@@ -19,6 +19,29 @@ type PaymentMethod = {
   walletAddress?: string;
 };
 
+type PortfolioPayment = {
+  amount: number;
+  notes?: string | null;
+  paidAt: string;
+};
+
+type PortfolioWeek = {
+  paymentAt: string;
+  totalGenerated: number;
+  weekNumber: number;
+};
+
+type PortfolioInvestment = {
+  group: string;
+  paidWeeks?: number;
+  payments?: PortfolioPayment[];
+  weeks?: PortfolioWeek[];
+};
+
+type PortfolioResponse = {
+  investments: PortfolioInvestment[];
+};
+
 type MethodDraft = {
   accountHolder: string;
   bankName: string;
@@ -78,6 +101,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [draft, setDraft] = useState<MethodDraft>(initialDraft);
   const [error, setError] = useState("");
+  const [portfolio, setPortfolio] = useState<PortfolioResponse>({ investments: [] });
   const [isLoadingMethods, setIsLoadingMethods] = useState(true);
   const [isSavingMethod, setIsSavingMethod] = useState(false);
   const [paymentCarouselIndex, setPaymentCarouselIndex] = useState(0);
@@ -86,21 +110,30 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
   useEffect(() => {
     let isCurrent = true;
 
-    async function loadMethods() {
+    async function loadWalletData() {
       setIsLoadingMethods(true);
       setError("");
 
       try {
-        const response = await fetch(`/api/payout-methods?email=${encodeURIComponent(userEmail)}`);
+        const [methodsResponse, portfolioResponse] = await Promise.all([
+          fetch(`/api/payout-methods?email=${encodeURIComponent(userEmail)}`),
+          fetch(`/api/investments/portfolio?email=${encodeURIComponent(userEmail)}`)
+        ]);
 
-        if (!response.ok) {
-          throw new Error(await getResponseErrorMessage(response));
+        if (!methodsResponse.ok) {
+          throw new Error(await getResponseErrorMessage(methodsResponse));
         }
 
-        const data = (await response.json()) as PaymentMethod[];
+        if (!portfolioResponse.ok) {
+          throw new Error(await getResponseErrorMessage(portfolioResponse));
+        }
+
+        const methodsData = (await methodsResponse.json()) as PaymentMethod[];
+        const portfolioData = (await portfolioResponse.json()) as PortfolioResponse;
 
         if (isCurrent) {
-          setMethods(data);
+          setMethods(methodsData);
+          setPortfolio(portfolioData);
         }
       } catch (requestError) {
         if (isCurrent) {
@@ -113,7 +146,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
       }
     }
 
-    loadMethods();
+    loadWalletData();
 
     return () => {
       isCurrent = false;
@@ -231,99 +264,63 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
     setPaymentCarouselIndex(getCarouselIndex(event.currentTarget, ".paymentTypeCard"));
   }
 
+  const walletSummary = getWalletSummary(portfolio);
+  const scheduledPayments = getScheduledPayments(portfolio);
+
   return (
     <>
-      <section className="walletSecurityPanel">
-        <div className="walletSecurityItem">
-          <ShieldIcon />
-          <div>
-            <strong>La seguridad de tu informacion es nuestra prioridad</strong>
-            <span>Tu informacion financiera esta cifrada y protegida. Solo tu puedes ver tus datos.</span>
-          </div>
+      <section className="walletBalanceCard">
+        <div>
+          <span>Saldo disponible <InfoIcon /></span>
+          <strong>{formatMoney(walletSummary.availableBalance)} <em>MXN</em></strong>
+          <p>Ganancias disponibles para retiro</p>
         </div>
-        <div className="walletSecurityItem compact">
-          <LockIcon />
+        <button className="walletWithdrawButton" type="button">
+          <WithdrawIcon />
+          Retirar saldo
+        </button>
+      </section>
+
+      <section className="walletSchedulePanel">
+        <div className="walletScheduleHeader">
           <div>
-            <strong>Conexion segura</strong>
-            <span>Tus datos estan protegidos</span>
+            <CalendarIcon />
+            <h2>Pagos programados</h2>
           </div>
+          <button type="button">Ver calendario <ChevronIcon /></button>
+        </div>
+
+        <div className="walletScheduleList">
+          {scheduledPayments.length ? (
+            scheduledPayments.map((payment) => (
+              <article className={payment.status === "next" ? "walletScheduleRow next" : "walletScheduleRow"} key={`${payment.group}-${payment.investmentIndex}-${payment.weekNumber}`}>
+                <span className={`walletScheduleBadge ${payment.status}`}>
+                  {payment.status === "completed" ? <CheckIcon /> : payment.weekNumber}
+                </span>
+                <div>
+                  <strong>Semana {payment.weekNumber}</strong>
+                  <small>{payment.dateLabel}</small>
+                </div>
+                <b>{formatMoney(payment.amount)} MXN</b>
+                <em className={`walletScheduleStatus ${payment.status}`}>{payment.label}</em>
+                <ChevronIcon />
+              </article>
+            ))
+          ) : (
+            <div className="emptyWalletState compactWalletEmpty">
+              <CalendarIcon />
+              <strong>Sin pagos programados</strong>
+              <span>Cuando tus grupos avancen, veras aqui tus proximos pagos.</span>
+            </div>
+          )}
         </div>
       </section>
 
-      <section className="walletPanel">
+      <section className="walletPanel savedMethodsPanel walletSavedMethodsCompact">
         <div className="walletSectionHeader">
           <div>
-            <h2>Metodos de pago</h2>
-            <p>Agrega y administra los metodos donde recibiras tus pagos.</p>
-          </div>
-        </div>
-
-        <div className="paymentTypeGrid" onScroll={updatePaymentCarouselIndex}>
-          {methodOptions.map((option) => (
-            <button
-              className={selectedType === option.type ? "paymentTypeCard active" : "paymentTypeCard"}
-              key={option.type}
-              onClick={() => selectType(option.type)}
-              type="button"
-            >
-              <PaymentBrandIcon type={option.type} />
-              <div>
-                <strong>{option.label}</strong>
-                {option.tag ? <span>{option.tag}</span> : null}
-                <p>{option.description}</p>
-              </div>
-              {selectedType === option.type ? <CheckBadgeIcon /> : null}
-            </button>
-          ))}
-        </div>
-        <CarouselDots
-          activeIndex={paymentCarouselIndex}
-          count={methodOptions.length}
-        />
-
-        <p className="walletInfoNote">
-          <InfoIcon />
-          Puedes agregar mas de un metodo de pago. Elige tu metodo principal para recibir tus ganancias.
-        </p>
-
-        <div className="paymentFormGrid">
-          <BankForm
-            active={selectedType === "bank"}
-            draft={draft}
-            onChange={updateDraft}
-            onSave={saveMethod}
-            isSaving={isSavingMethod}
-          />
-          <PayPalForm
-            active={selectedType === "paypal"}
-            draft={draft}
-            onChange={updateDraft}
-            onSave={saveMethod}
-            isSaving={isSavingMethod}
-          />
-          <PaxumForm
-            active={selectedType === "paxum"}
-            draft={draft}
-            onChange={updateDraft}
-            onSave={saveMethod}
-            isSaving={isSavingMethod}
-          />
-          <CryptoForm
-            active={selectedType === "crypto"}
-            draft={draft}
-            onChange={updateDraft}
-            onSave={saveMethod}
-            isSaving={isSavingMethod}
-          />
-        </div>
-        {error ? <p className="walletError">{error}</p> : null}
-      </section>
-
-      <section className="walletPanel savedMethodsPanel">
-        <div className="walletSectionHeader">
-          <div>
-            <h2>Mis metodos guardados</h2>
-            <p>Estos son los metodos donde puedes recibir tus pagos.</p>
+            <h2>Metodos de retiro</h2>
+            <p>Metodo principal para recibir tus ganancias.</p>
           </div>
         </div>
 
@@ -374,6 +371,7 @@ export function WalletDashboard({ userEmail }: { userEmail: string }) {
           </>
         )}
       </section>
+      {error ? <p className="walletError">{error}</p> : null}
     </>
   );
 }
@@ -631,6 +629,61 @@ function getMethodTitle(method: PaymentMethod) {
   return `Criptomonedas (${method.coin?.match(/\(([^)]+)\)/)?.[1] ?? "Wallet"})`;
 }
 
+function getWalletSummary(portfolio: PortfolioResponse) {
+  const availableBalance = portfolio.investments.reduce((investmentTotal, investment) => {
+    const paymentTotal = investment.payments?.reduce((total, payment) => total + Number(payment.amount), 0) ?? 0;
+    return investmentTotal + paymentTotal;
+  }, 0);
+
+  return {
+    availableBalance
+  };
+}
+
+function getScheduledPayments(portfolio: PortfolioResponse) {
+  return portfolio.investments
+    .flatMap((investment, investmentIndex) =>
+      (investment.weeks ?? []).map((week) => {
+        const paidWeeks = investment.paidWeeks ?? 0;
+        const isCompleted = week.weekNumber <= paidWeeks;
+        const isNext = week.weekNumber === paidWeeks + 1;
+
+        return {
+          amount: Number(week.totalGenerated),
+          dateLabel: formatWalletDate(new Date(week.paymentAt)),
+          group: investment.group,
+          investmentIndex,
+          label: isCompleted ? "Completado" : isNext ? "Proximo" : "Pendiente",
+          status: isCompleted ? "completed" : isNext ? "next" : "pending",
+          weekNumber: week.weekNumber
+        };
+      })
+    )
+    .sort((current, next) => {
+      if (current.status === "next" && next.status !== "next") return -1;
+      if (current.status !== "next" && next.status === "next") return 1;
+      return current.weekNumber - next.weekNumber || current.investmentIndex - next.investmentIndex;
+    })
+    .slice(0, 4);
+}
+
+function formatMoney(amount: number) {
+  return new Intl.NumberFormat("es-MX", {
+    currency: "MXN",
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+    style: "currency"
+  }).format(amount);
+}
+
+function formatWalletDate(date: Date) {
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  }).format(date);
+}
+
 function getMethodInfo(method: PaymentMethod) {
   if (method.type === "bank") {
     return `Banco: ${method.bankName} | CLABE: ${maskValue(method.clabe ?? "")}`;
@@ -724,6 +777,38 @@ function InfoIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M11 10h2v7h-2Zm0-3h2v2h-2Zm1-5a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" />
+    </svg>
+  );
+}
+
+function WithdrawIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M11 4h2v8.2l2.8-2.8 1.4 1.4L12 16l-5.2-5.2 1.4-1.4 2.8 2.8Zm-6 13h2v2h10v-2h2v4H5Z" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 2h2v3h6V2h2v3h3a1 1 0 0 1 1 1v15H3V6a1 1 0 0 1 1-1h3Zm12 8H5v9h14ZM5 8h14V7H5Zm2 4h3v3H7Zm5 0h3v3h-3Z" />
+    </svg>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m9.3 5.3 6.7 6.7-6.7 6.7-1.4-1.4 5.3-5.3-5.3-5.3Z" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m9.2 16.2-4-4 1.4-1.4 2.6 2.6 8.2-8.2 1.4 1.4Z" />
     </svg>
   );
 }

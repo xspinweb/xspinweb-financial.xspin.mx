@@ -2786,6 +2786,243 @@ a {
   margin: 0;
 }
 
+.walletBalanceCard,
+.walletSchedulePanel {
+  border: 1px solid rgba(159, 178, 196, 0.14);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(53, 224, 161, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(10, 22, 34, 0.9), rgba(4, 11, 18, 0.95));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+}
+
+.walletBalanceCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  align-items: center;
+  gap: 22px;
+  min-height: 154px;
+  padding: 26px 34px;
+}
+
+.walletBalanceCard span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.walletBalanceCard span svg {
+  width: 16px;
+  height: 16px;
+  fill: var(--muted);
+}
+
+.walletBalanceCard strong {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  color: var(--green);
+  font-size: clamp(42px, 7vw, 56px);
+  line-height: 1.05;
+  margin-top: 10px;
+  text-shadow: 0 0 28px rgba(53, 224, 161, 0.24);
+}
+
+.walletBalanceCard strong em {
+  color: var(--green);
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.walletBalanceCard p {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 10px 0 0;
+}
+
+.walletWithdrawButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 56px;
+  border: 0;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+  color: #021116;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 950;
+  box-shadow: 0 18px 42px rgba(53, 224, 161, 0.2);
+}
+
+.walletWithdrawButton svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.walletSchedulePanel {
+  overflow: hidden;
+  padding: 0;
+}
+
+.walletScheduleHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 16px;
+}
+
+.walletScheduleHeader > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.walletScheduleHeader svg {
+  width: 22px;
+  height: 22px;
+  fill: var(--green);
+}
+
+.walletScheduleHeader h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.walletScheduleHeader button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--green);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.walletScheduleHeader button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.walletScheduleList {
+  padding: 0 16px 16px;
+}
+
+.walletScheduleRow {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto 22px;
+  align-items: center;
+  gap: 14px;
+  min-height: 68px;
+  border-top: 1px solid rgba(159, 178, 196, 0.1);
+  color: var(--ink);
+  padding: 10px 8px;
+}
+
+.walletScheduleRow.next {
+  border: 1px solid rgba(159, 178, 196, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  margin: 0 -2px;
+  padding: 10px;
+}
+
+.walletScheduleBadge {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(159, 178, 196, 0.12);
+  color: var(--muted);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.walletScheduleBadge.completed {
+  background: linear-gradient(135deg, var(--green), #12c68d);
+  color: #021116;
+}
+
+.walletScheduleBadge.next {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  color: #fff;
+}
+
+.walletScheduleBadge svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.walletScheduleRow strong {
+  display: block;
+  font-size: 14px;
+}
+
+.walletScheduleRow small {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.walletScheduleRow b {
+  color: var(--green);
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.walletScheduleStatus {
+  border-radius: 7px;
+  background: rgba(130, 82, 255, 0.16);
+  color: #b891ff;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 950;
+  padding: 7px 10px;
+}
+
+.walletScheduleStatus.completed {
+  background: rgba(53, 224, 161, 0.12);
+  color: var(--green);
+}
+
+.walletScheduleStatus.pending {
+  background: rgba(159, 178, 196, 0.1);
+  color: var(--muted);
+}
+
+.walletScheduleRow > svg:last-child {
+  width: 20px;
+  height: 20px;
+  fill: var(--muted);
+}
+
+.walletSavedMethodsCompact {
+  margin-top: 0;
+}
+
+.compactWalletEmpty {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 30px 18px;
+}
+
 .walletSecurityPanel,
 .walletPanel {
   border: 1px solid var(--line);
@@ -3562,6 +3799,68 @@ a {
 
   .dashboardContent {
     padding: 84px 16px 16px;
+  }
+
+  .walletHero h1 {
+    font-size: 30px;
+  }
+
+  .walletBalanceCard {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    min-height: auto;
+    padding: 22px 20px;
+  }
+
+  .walletBalanceCard strong {
+    display: block;
+    font-size: clamp(38px, 11vw, 48px);
+    overflow-wrap: anywhere;
+  }
+
+  .walletBalanceCard strong em {
+    display: inline;
+    font-size: 16px;
+    margin-left: 6px;
+  }
+
+  .walletWithdrawButton {
+    min-height: 52px;
+    width: 100%;
+  }
+
+  .walletScheduleHeader {
+    align-items: flex-start;
+    padding: 18px 18px 12px;
+  }
+
+  .walletScheduleHeader h2 {
+    font-size: 17px;
+  }
+
+  .walletScheduleList {
+    padding: 0 12px 12px;
+  }
+
+  .walletScheduleRow {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 10px;
+    min-height: 78px;
+    padding: 12px 8px;
+  }
+
+  .walletScheduleRow b {
+    grid-column: 2 / 4;
+    font-size: 15px;
+  }
+
+  .walletScheduleStatus {
+    grid-column: 2 / 4;
+    justify-self: start;
+  }
+
+  .walletScheduleRow > svg:last-child {
+    display: none;
   }
 
   .paymentTypeGrid,
