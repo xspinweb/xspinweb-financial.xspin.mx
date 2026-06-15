@@ -22,6 +22,24 @@ type ProfileForm = {
   phone: string;
 };
 
+type SecurityInfo = {
+  activity: Array<{
+    description: string;
+    id: string;
+    label: string;
+    occurredAt: string;
+  }>;
+  sessions: Array<{
+    browser: string;
+    device: string;
+    email: string;
+    id: string;
+    lastActiveAt: string;
+    status: string;
+  }>;
+  twoFactorEnabled: boolean;
+};
+
 export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboardProps) {
   const [activeTab, setActiveTab] = useState<ProfileTab>("personal");
   const [form, setForm] = useState<ProfileForm>({
@@ -35,6 +53,14 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
   });
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [security, setSecurity] = useState<SecurityInfo>({
+    activity: [],
+    sessions: [],
+    twoFactorEnabled: false
+  });
+  const [securityDetail, setSecurityDetail] = useState<"sessions" | "activity" | null>(null);
+  const [securityStatus, setSecurityStatus] = useState("");
+  const [isSavingSecurity, setIsSavingSecurity] = useState(false);
 
   useEffect(() => {
     let isCurrent = true;
@@ -67,6 +93,30 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
       isCurrent = false;
     };
   }, [userEmail, userName]);
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadSecurity() {
+      const response = await fetch(`/api/investor/security?email=${encodeURIComponent(userEmail)}`);
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = (await response.json()) as SecurityInfo;
+
+      if (isCurrent) {
+        setSecurity(data);
+      }
+    }
+
+    void loadSecurity();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [userEmail]);
 
   function updateField(field: keyof ProfileForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -103,6 +153,34 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
     });
     setStatus("Informacion guardada correctamente.");
     setIsSaving(false);
+  }
+
+  async function toggleTwoFactor() {
+    const nextValue = !security.twoFactorEnabled;
+    setIsSavingSecurity(true);
+    setSecurityStatus("");
+
+    const response = await fetch("/api/investor/security", {
+      body: JSON.stringify({
+        email: form.email || userEmail,
+        twoFactorEnabled: nextValue
+      }),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "PUT"
+    });
+
+    if (!response.ok) {
+      setSecurityStatus(await getResponseErrorMessage(response));
+      setIsSavingSecurity(false);
+      return;
+    }
+
+    const data = (await response.json()) as SecurityInfo;
+    setSecurity(data);
+    setSecurityStatus(nextValue ? "2FA activado correctamente." : "2FA desactivado correctamente.");
+    setIsSavingSecurity(false);
   }
 
   return (
@@ -178,16 +256,38 @@ export function ProfileDashboard({ role, userEmail, userName }: ProfileDashboard
           <ProfileSectionHeader
             icon={<ShieldIcon />}
             title="Seguridad de la cuenta"
-            subtitle="Administra tu contrasena y metodos de seguridad."
+            subtitle="Administra la proteccion de acceso y revisa la actividad de tu cuenta."
             tone="purple"
           />
 
           <div className="profileRows">
-            <ProfileRow icon={<LockIcon />} title="Contrasena" subtitle="Ultima actualizacion: 07 jun 2026" action="Cambiar" />
-            <ProfileRow icon={<ShieldIcon />} title="Autenticacion en dos pasos (2FA)" subtitle="Anade una capa extra de seguridad a tu cuenta." switchLabel="Activado" />
-            <ProfileRow icon={<DeviceIcon />} title="Sesiones activas" subtitle="Gestiona los dispositivos con sesion iniciada." action="Ver sesiones" />
-            <ProfileRow icon={<ClockIcon />} title="Actividad reciente" subtitle="Revisa los ultimos accesos a tu cuenta." action="Ver actividad" />
+            <ProfileRow
+              icon={<ShieldIcon />}
+              title="Autenticacion en dos pasos (2FA)"
+              subtitle="Anade una capa extra de seguridad a tu cuenta."
+              switchActive={security.twoFactorEnabled}
+              switchLabel={security.twoFactorEnabled ? "Activado" : "Desactivado"}
+              onSwitch={toggleTwoFactor}
+              disabled={isSavingSecurity}
+            />
+            <ProfileRow
+              icon={<DeviceIcon />}
+              title="Sesiones activas"
+              subtitle={`${security.sessions.length || 1} sesion activa detectada.`}
+              action="Ver sesiones"
+              onAction={() => setSecurityDetail(securityDetail === "sessions" ? null : "sessions")}
+            />
+            <ProfileRow
+              icon={<ClockIcon />}
+              title="Actividad reciente"
+              subtitle="Revisa los ultimos movimientos de seguridad."
+              action="Ver actividad"
+              onAction={() => setSecurityDetail(securityDetail === "activity" ? null : "activity")}
+            />
           </div>
+          {securityStatus ? <p className={securityStatus.includes("correctamente") ? "profileSaveStatus success" : "profileSaveStatus"}>{securityStatus}</p> : null}
+          {securityDetail === "sessions" ? <SecuritySessions sessions={security.sessions} /> : null}
+          {securityDetail === "activity" ? <SecurityActivity activity={security.activity} /> : null}
         </section>
       )}
 
@@ -273,18 +373,26 @@ function ProfileField({
 
 function ProfileRow({
   action,
+  disabled = false,
   icon,
+  onAction,
+  onSwitch,
   status,
   statusTone = "green",
   subtitle,
+  switchActive = false,
   switchLabel,
   title
 }: {
   action?: string;
+  disabled?: boolean;
   icon: ReactNode;
+  onAction?: () => void;
+  onSwitch?: () => void;
   status?: string;
   statusTone?: "green" | "yellow";
   subtitle: string;
+  switchActive?: boolean;
   switchLabel?: string;
   title: string;
 }) {
@@ -297,13 +405,13 @@ function ProfileRow({
       </div>
       {status ? <em className={`profileStatus ${statusTone}`}>{status}</em> : null}
       {switchLabel ? (
-        <span className="profileSwitch">
+        <button className={switchActive ? "profileSwitch active" : "profileSwitch"} type="button" onClick={onSwitch} disabled={disabled}>
           <i />
           {switchLabel}
-        </span>
+        </button>
       ) : null}
       {action ? (
-        <button type="button">
+        <button type="button" onClick={onAction}>
           {action}
           <ChevronIcon />
         </button>
@@ -312,9 +420,55 @@ function ProfileRow({
   );
 }
 
+function SecuritySessions({ sessions }: { sessions: SecurityInfo["sessions"] }) {
+  return (
+    <div className="profileDetailPanel">
+      <h3>Sesiones activas</h3>
+      {(sessions.length ? sessions : [{ browser: "Navegador actual", device: "Sesion web", email: "", id: "current", lastActiveAt: new Date().toISOString(), status: "Activa" }]).map((session) => (
+        <article className="profileDetailRow" key={session.id}>
+          <DeviceIcon />
+          <div>
+            <strong>{session.device}</strong>
+            <span>{session.browser} · {session.status}</span>
+          </div>
+          <time>{formatProfileDateTime(session.lastActiveAt)}</time>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function SecurityActivity({ activity }: { activity: SecurityInfo["activity"] }) {
+  return (
+    <div className="profileDetailPanel">
+      <h3>Actividad reciente</h3>
+      {(activity.length ? activity : []).map((event) => (
+        <article className="profileDetailRow" key={event.id}>
+          <ClockIcon />
+          <div>
+            <strong>{event.label}</strong>
+            <span>{event.description}</span>
+          </div>
+          <time>{formatProfileDateTime(event.occurredAt)}</time>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 async function getResponseErrorMessage(response: Response) {
   const data = (await response.json().catch(() => null)) as { error?: string } | null;
   return data?.error ?? "No se pudo guardar la informacion.";
+}
+
+function formatProfileDateTime(value: string) {
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "short",
+    year: "numeric"
+  }).format(new Date(value));
 }
 
 function UserIcon() {

@@ -3411,32 +3411,105 @@ a {
   fill: currentColor;
 }
 
-.profileSwitch {
+.profileRow .profileSwitch {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  border: 0;
+  background: transparent;
   color: var(--ink);
+  cursor: pointer;
   font-size: 13px;
   font-weight: 800;
+  padding: 0;
 }
 
-.profileSwitch i {
+.profileRow .profileSwitch i {
   position: relative;
   width: 38px;
   height: 22px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--green), var(--cyan));
+  background: rgba(159, 178, 196, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(159, 178, 196, 0.16);
 }
 
-.profileSwitch i::after {
+.profileRow .profileSwitch i::after {
   position: absolute;
   top: 3px;
-  right: 3px;
+  left: 3px;
   width: 16px;
   height: 16px;
   border-radius: 50%;
   background: #fff;
   content: "";
+  transition: transform 180ms ease;
+}
+
+.profileRow .profileSwitch.active i {
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+  box-shadow: 0 0 18px rgba(53, 224, 161, 0.22);
+}
+
+.profileRow .profileSwitch.active i::after {
+  transform: translateX(16px);
+}
+
+.profileRow .profileSwitch:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.profileDetailPanel {
+  border: 1px solid rgba(159, 178, 196, 0.12);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(124, 58, 237, 0.1), transparent 28%),
+    rgba(7, 15, 24, 0.6);
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 16px;
+}
+
+.profileDetailPanel h3 {
+  font-size: 16px;
+  margin: 0 0 6px;
+}
+
+.profileDetailRow {
+  align-items: center;
+  border: 1px solid rgba(159, 178, 196, 0.1);
+  border-radius: 12px;
+  background: rgba(4, 12, 21, 0.56);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  padding: 14px;
+}
+
+.profileDetailRow > svg {
+  background: rgba(124, 58, 237, 0.13);
+  border-radius: 999px;
+  fill: #b891ff;
+  height: 38px;
+  padding: 10px;
+  width: 38px;
+}
+
+.profileDetailRow strong {
+  color: var(--ink);
+  display: block;
+  font-size: 13px;
+}
+
+.profileDetailRow span,
+.profileDetailRow time {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profileDetailRow time {
+  text-align: right;
 }
 
 .profileStatus {

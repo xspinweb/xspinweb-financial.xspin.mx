@@ -74,6 +74,7 @@ model Investor {
   country               String?
   city                  String?
   address               String?
+  twoFactorEnabled      Boolean          @default(false)
   email                 String?
   status                InvestorStatus   @default(ACTIVE)
   referredByInvestorId  String?

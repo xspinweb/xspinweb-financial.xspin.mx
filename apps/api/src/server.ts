@@ -62,6 +62,11 @@ const investorProfileSchema = z.object({
   phone: z.string().optional()
 });
 
+const investorSecuritySchema = z.object({
+  email: z.string().email(),
+  twoFactorEnabled: z.boolean()
+});
+
 type PortfolioInvestment = {
   id: string;
   principalAmount: unknown;
@@ -203,6 +208,20 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     const input = investorProfileSchema.parse(await readJson(req));
     const profile = await updateInvestorProfile(input);
     sendJson(res, 200, profile);
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/investor/security") {
+    const email = z.string().email().parse(url.searchParams.get("email"));
+    const security = await getInvestorSecurity(email);
+    sendJson(res, 200, security);
+    return;
+  }
+
+  if (req.method === "PUT" && url.pathname === "/investor/security") {
+    const input = investorSecuritySchema.parse(await readJson(req));
+    const security = await updateInvestorSecurity(input);
+    sendJson(res, 200, security);
     return;
   }
 
@@ -482,6 +501,37 @@ async function updateInvestorProfile(input: z.infer<typeof investorProfileSchema
     });
 
   return formatInvestorProfile(investor);
+}
+
+async function getInvestorSecurity(email: string) {
+  const investor = await prisma.investor.findFirst({
+    where: { email }
+  });
+
+  return formatInvestorSecurity(investor, email);
+}
+
+async function updateInvestorSecurity(input: z.infer<typeof investorSecuritySchema>) {
+  const current = await prisma.investor.findFirst({
+    where: { email: input.email }
+  });
+
+  const investor = current
+    ? await prisma.investor.update({
+        data: {
+          twoFactorEnabled: input.twoFactorEnabled
+        },
+        where: { id: current.id }
+      })
+    : await prisma.investor.create({
+        data: {
+          email: input.email,
+          investorCode: await createUniqueInvestorCode(prisma),
+          twoFactorEnabled: input.twoFactorEnabled
+        }
+      });
+
+  return formatInvestorSecurity(investor, input.email);
 }
 
 async function createPayoutMethod(input: z.infer<typeof payoutMethodSchema>) {
@@ -1224,6 +1274,51 @@ function formatInvestorProfile(investor: {
     email: investor.email ?? "",
     fullName: investor.fullName ?? "",
     phone: investor.phone ?? ""
+  };
+}
+
+function formatInvestorSecurity(investor: {
+  createdAt?: Date;
+  email?: string | null;
+  twoFactorEnabled?: boolean;
+  updatedAt?: Date;
+} | null, email: string) {
+  const now = new Date();
+  const createdAt = investor?.createdAt ?? now;
+  const updatedAt = investor?.updatedAt ?? now;
+
+  return {
+    activity: [
+      {
+        description: "Acceso autorizado mediante Google OAuth.",
+        id: "login",
+        label: "Inicio de sesion",
+        occurredAt: now.toISOString()
+      },
+      {
+        description: "Ultima actualizacion registrada en tu perfil.",
+        id: "profile",
+        label: "Perfil actualizado",
+        occurredAt: updatedAt.toISOString()
+      },
+      {
+        description: "Cuenta creada en XSPIN Financial.",
+        id: "created",
+        label: "Cuenta creada",
+        occurredAt: createdAt.toISOString()
+      }
+    ],
+    sessions: [
+      {
+        browser: "Navegador actual",
+        device: "Sesion web",
+        email: investor?.email ?? email,
+        id: "current-session",
+        lastActiveAt: now.toISOString(),
+        status: "Activa"
+      }
+    ],
+    twoFactorEnabled: investor?.twoFactorEnabled ?? false
   };
 }
 
