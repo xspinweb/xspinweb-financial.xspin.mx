@@ -810,7 +810,7 @@ function getLevelStars(levelKey: LevelKey) {
 function LevelBadgeIcon({ levelKey }: { levelKey: LevelKey }) {
   return (
     <div className={`levelBadgeIcon level-${levelKey}`}>
-      <img src={`/badges/${levelKey}.png`} alt={`Insignia ${levelKey}`} />
+      <img src={`/badges/${levelKey}-v2.png`} alt={`Insignia ${levelKey}`} />
     </div>
   );
 }

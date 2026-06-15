@@ -429,7 +429,7 @@ function InvestorLevelStrip({ level }: { level: InvestorLevel }) {
   return (
     <section className={`investorLevelStrip level-${level.current.key}`}>
       <div className="investorLevelBadge">
-        <img src={`/badges/${level.current.key}.png`} alt={`Insignia ${level.current.name}`} />
+        <img src={`/badges/${level.current.key}-v2.png`} alt={`Insignia ${level.current.name}`} />
       </div>
       <div>
         <strong>{level.current.name}</strong>
