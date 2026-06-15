@@ -954,32 +954,19 @@ function IdentityVerificationModal({
 
         {view === "intro" ? (
           <div className="identityIntro">
-            <h3>Fotografia tu INE</h3>
-            <p>Para continuar, necesitamos fotos claras del anverso y reverso de tu INE.</p>
-
-            <IdentityInstructionCard
-              number="1"
-              title="Anverso"
-              text="Coloca tu INE sobre una superficie plana y toma una foto donde se vean todos los datos claramente."
-              label="Frente de tu INE"
-              variant="front"
-            />
-            <IdentityInstructionCard
-              number="2"
-              title="Reverso"
-              text="Ahora voltea tu INE y toma una foto del reverso. Asegurate de que el codigo de barras se vea completo."
-              label="Reverso de tu INE"
-              variant="back"
-            />
-
-            <div className="identityProtectedCard">
-              <ShieldCheckIcon />
+            <section className="identityIntroHero">
               <div>
-                <strong>Tus datos estan protegidos</strong>
-                <span>Utilizamos cifrado de extremo a extremo para mantener tu informacion segura.</span>
+                <span className="identityIntroEyebrow">Paso 2 de 3</span>
+                <h3>Fotografia tu INE</h3>
+                <p>Necesitamos el anverso y reverso. Colocala en una superficie plana, evita reflejos y procura que todos los bordes entren en el marco.</p>
+                <div className="identityIntroChecklist">
+                  <span><IdentityIcon /> Frente legible</span>
+                  <span><ReceiptIcon /> Reverso completo</span>
+                  <span><ShieldCheckIcon /> Datos protegidos</span>
+                </div>
               </div>
-              <LockIcon />
-            </div>
+              <IdentityFlipPreview />
+            </section>
 
             <button className="identityReadyButton" type="button" onClick={() => setView("capture")}>
               <CameraIcon />
@@ -1084,6 +1071,54 @@ function IdentityStepper({ activeStep, completedStep }: { activeStep: number; co
           <span>{label}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+function IdentityFlipPreview() {
+  return (
+    <div className="identityFlipPreview" aria-hidden="true">
+      <div className="identityFlipCard">
+        <div className="identityFlipFace identityFlipFront">
+          <div className="identityFrameCorners">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="mockIne front">
+            <header>
+              <b>INE</b>
+              <span>Instituto Nacional Electoral</span>
+            </header>
+            <i />
+            <div>
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+            <em />
+          </div>
+          <strong>1 Anverso</strong>
+        </div>
+        <div className="identityFlipFace identityFlipBack">
+          <div className="identityFrameCorners">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="mockIne back">
+            <i />
+            <i />
+            <span />
+            <span />
+            <span />
+          </div>
+          <strong>2 Reverso</strong>
+        </div>
+      </div>
     </div>
   );
 }

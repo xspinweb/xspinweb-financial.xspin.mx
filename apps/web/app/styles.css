@@ -3665,7 +3665,36 @@ a {
 .identityCapture,
 .identityDone {
   display: grid;
-  gap: 22px;
+  gap: 18px;
+}
+
+.identityIntroHero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1fr);
+  align-items: center;
+  gap: 28px;
+  border: 1px solid rgba(53, 224, 161, 0.24);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 78% 50%, rgba(53, 224, 161, 0.14), transparent 34%),
+    linear-gradient(145deg, rgba(9, 19, 31, 0.9), rgba(3, 10, 18, 0.96));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 24px 70px rgba(0, 0, 0, 0.26);
+  min-height: 360px;
+  overflow: hidden;
+  padding: 34px;
+}
+
+.identityIntroEyebrow {
+  display: inline-flex;
+  border: 1px solid rgba(53, 224, 161, 0.28);
+  border-radius: 999px;
+  background: rgba(53, 224, 161, 0.08);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  padding: 8px 12px;
+  text-transform: uppercase;
 }
 
 .identityIntro > h3,
@@ -3686,6 +3715,250 @@ a {
   line-height: 1.45;
   margin: -8px auto 8px;
   text-align: center;
+}
+
+.identityIntroHero h3 {
+  font-size: clamp(34px, 5vw, 52px);
+  line-height: 0.96;
+  margin: 18px 0 14px;
+}
+
+.identityIntroHero p {
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.identityIntroChecklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.identityIntroChecklist span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(53, 224, 161, 0.18);
+  border-radius: 999px;
+  background: rgba(53, 224, 161, 0.07);
+  color: #c7ffec;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 8px 11px;
+}
+
+.identityIntroChecklist svg {
+  width: 17px;
+  height: 17px;
+  fill: var(--green);
+}
+
+.identityFlipPreview {
+  display: grid;
+  perspective: 1200px;
+  place-items: center;
+  min-height: 300px;
+}
+
+.identityFlipCard {
+  position: relative;
+  width: min(100%, 430px);
+  aspect-ratio: 1.55 / 1;
+  transform-style: preserve-3d;
+  animation: identityFlip 5.2s ease-in-out infinite;
+}
+
+.identityFlipFace {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  backface-visibility: hidden;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(53, 224, 161, 0.14), transparent 50%),
+    rgba(5, 13, 22, 0.84);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.36), 0 0 34px rgba(53, 224, 161, 0.16);
+}
+
+.identityFlipBack {
+  transform: rotateY(180deg);
+}
+
+.identityFlipFace > strong {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  border-radius: 999px;
+  background: rgba(5, 12, 22, 0.82);
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 950;
+  padding: 8px 12px;
+}
+
+.identityFrameCorners {
+  position: absolute;
+  inset: 18px;
+  pointer-events: none;
+}
+
+.identityFrameCorners span {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  border-color: var(--green);
+}
+
+.identityFrameCorners span:nth-child(1) {
+  top: 0;
+  left: 0;
+  border-top: 3px solid;
+  border-left: 3px solid;
+  border-radius: 12px 0 0;
+}
+
+.identityFrameCorners span:nth-child(2) {
+  top: 0;
+  right: 0;
+  border-top: 3px solid;
+  border-right: 3px solid;
+  border-radius: 0 12px 0 0;
+}
+
+.identityFrameCorners span:nth-child(3) {
+  bottom: 0;
+  left: 0;
+  border-bottom: 3px solid;
+  border-left: 3px solid;
+  border-radius: 0 0 0 12px;
+}
+
+.identityFrameCorners span:nth-child(4) {
+  right: 0;
+  bottom: 0;
+  border-right: 3px solid;
+  border-bottom: 3px solid;
+  border-radius: 0 0 12px;
+}
+
+.mockIne {
+  position: relative;
+  width: 80%;
+  aspect-ratio: 1.58 / 1;
+  overflow: hidden;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f8fafc, #dfe8ef);
+  color: #0f172a;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.26);
+  padding: 18px;
+}
+
+.mockIne.front header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-transform: uppercase;
+}
+
+.mockIne.front header b {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.mockIne.front header span {
+  color: #1f2937;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.mockIne.front i {
+  position: absolute;
+  left: 20px;
+  bottom: 18px;
+  width: 72px;
+  height: 92px;
+  border-radius: 50% 50% 18px 18px;
+  background: linear-gradient(160deg, #1f2937 0 44%, #fee2e2 45% 100%);
+}
+
+.mockIne.front div {
+  display: grid;
+  gap: 8px;
+  margin: 22px 58px 0 110px;
+}
+
+.mockIne.front div span {
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.32);
+}
+
+.mockIne.front div span:nth-child(2) {
+  width: 74%;
+}
+
+.mockIne.front div span:nth-child(3) {
+  width: 88%;
+}
+
+.mockIne.front div span:nth-child(4) {
+  width: 62%;
+}
+
+.mockIne.front em {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.32), rgba(244, 114, 182, 0.32));
+}
+
+.mockIne.back {
+  display: grid;
+  align-content: center;
+  gap: 11px;
+}
+
+.mockIne.back i:first-child {
+  height: 24px;
+  background: repeating-linear-gradient(90deg, #111827 0 5px, #fff 5px 8px);
+}
+
+.mockIne.back i:nth-child(2) {
+  height: 46px;
+  background: repeating-linear-gradient(90deg, #111827 0 2px, #fff 2px 4px, #111827 4px 7px, #fff 7px 11px);
+}
+
+.mockIne.back span {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.54);
+}
+
+.mockIne.back span:nth-of-type(2) {
+  width: 86%;
+}
+
+.mockIne.back span:nth-of-type(3) {
+  width: 72%;
+}
+
+@keyframes identityFlip {
+  0%, 42% {
+    transform: rotateY(0deg);
+  }
+  50%, 92% {
+    transform: rotateY(180deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
 }
 
 .identityInstructionCard {
@@ -5685,6 +5958,65 @@ a {
     gap: 16px;
     grid-template-columns: 1fr;
     padding: 18px;
+  }
+
+  .identityIntroHero {
+    gap: 18px;
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 20px;
+  }
+
+  .identityIntroHero h3 {
+    font-size: 31px;
+  }
+
+  .identityIntroHero p {
+    font-size: 14px;
+  }
+
+  .identityIntroChecklist {
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .identityFlipPreview {
+    min-height: 210px;
+  }
+
+  .identityFlipCard {
+    width: min(100%, 330px);
+  }
+
+  .mockIne {
+    padding: 12px;
+  }
+
+  .mockIne.front header b {
+    font-size: 22px;
+  }
+
+  .mockIne.front header span {
+    font-size: 8px;
+  }
+
+  .mockIne.front i {
+    bottom: 12px;
+    height: 68px;
+    left: 14px;
+    width: 54px;
+  }
+
+  .mockIne.front div {
+    gap: 6px;
+    margin: 16px 40px 0 78px;
+  }
+
+  .mockIne.front em {
+    bottom: 12px;
+    height: 38px;
+    right: 12px;
+    width: 38px;
   }
 
   .identityInstructionCard h4 {
