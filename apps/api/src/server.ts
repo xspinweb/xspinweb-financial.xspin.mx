@@ -620,8 +620,10 @@ async function updateInvestorIdentityVerification(input: z.infer<typeof identity
   });
   const hasFront = Boolean(input.frontImage ?? current?.officialIdFront);
   const hasBack = Boolean(input.backImage ?? current?.officialIdBack);
-  const hasProofOfAddress = Boolean(input.proofOfAddress ?? current?.proofOfAddressFile);
-  const hasSelfie = Boolean(input.selfieImage ?? current?.selfieImage);
+  const hasOfficialIdInput = Boolean(input.frontImage || input.backImage);
+  const hasProofOfAddressInput = Boolean(input.proofOfAddress);
+  const hasSelfieInput = Boolean(input.selfieImage);
+  const officialIdStatus = hasFront && hasBack ? "SUBMITTED" : "PENDING";
 
   const identity = await prisma.identityVerification.upsert({
     create: {
@@ -631,13 +633,13 @@ async function updateInvestorIdentityVerification(input: z.infer<typeof identity
       proofOfAddressFile: input.proofOfAddress?.dataUrl,
       proofOfAddressFileName: input.proofOfAddress?.fileName,
       proofOfAddressMimeType: input.proofOfAddress?.mimeType,
-      proofOfAddressStatus: hasProofOfAddress ? "SUBMITTED" : "PENDING",
-      proofOfAddressSubmittedAt: hasProofOfAddress ? new Date() : null,
+      proofOfAddressStatus: hasProofOfAddressInput ? "SUBMITTED" : "PENDING",
+      proofOfAddressSubmittedAt: hasProofOfAddressInput ? new Date() : null,
       selfieImage: input.selfieImage,
-      selfieStatus: hasSelfie ? "SUBMITTED" : "PENDING",
-      selfieSubmittedAt: hasSelfie ? new Date() : null,
-      status: hasFront && hasBack ? "SUBMITTED" : "PENDING",
-      submittedAt: hasFront && hasBack ? new Date() : null
+      selfieStatus: hasSelfieInput ? "SUBMITTED" : "PENDING",
+      selfieSubmittedAt: hasSelfieInput ? new Date() : null,
+      status: hasOfficialIdInput ? officialIdStatus : "PENDING",
+      submittedAt: hasOfficialIdInput && officialIdStatus === "SUBMITTED" ? new Date() : null
     },
     update: {
       ...(input.backImage ? { officialIdBack: input.backImage } : {}),
@@ -648,12 +650,18 @@ async function updateInvestorIdentityVerification(input: z.infer<typeof identity
         proofOfAddressFileName: input.proofOfAddress.fileName,
         proofOfAddressMimeType: input.proofOfAddress.mimeType
       } : {}),
-      proofOfAddressStatus: hasProofOfAddress ? "SUBMITTED" : "PENDING",
-      proofOfAddressSubmittedAt: hasProofOfAddress ? new Date() : current?.proofOfAddressSubmittedAt ?? null,
-      selfieStatus: hasSelfie ? "SUBMITTED" : "PENDING",
-      selfieSubmittedAt: hasSelfie ? new Date() : current?.selfieSubmittedAt ?? null,
-      status: hasFront && hasBack ? "SUBMITTED" : "PENDING",
-      submittedAt: hasFront && hasBack ? new Date() : current?.submittedAt ?? null
+      ...(hasProofOfAddressInput ? {
+        proofOfAddressStatus: "SUBMITTED",
+        proofOfAddressSubmittedAt: new Date()
+      } : {}),
+      ...(hasSelfieInput ? {
+        selfieStatus: "SUBMITTED",
+        selfieSubmittedAt: new Date()
+      } : {}),
+      ...(hasOfficialIdInput ? {
+        status: officialIdStatus,
+        submittedAt: officialIdStatus === "SUBMITTED" ? new Date() : current?.submittedAt ?? null
+      } : {})
     },
     where: { investorId: investor.id }
   });
