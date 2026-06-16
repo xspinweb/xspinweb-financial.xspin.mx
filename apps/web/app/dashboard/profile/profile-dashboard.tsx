@@ -972,16 +972,16 @@ function IdentityVerificationModal({
     };
   }, [view, side]);
 
-  async function savePhoto(nextSide: "front" | "back" | "selfie", imageDataUrl: string) {
+  async function submitCapturedDocuments() {
     setIsSaving(true);
     setStatusMessage("");
 
     const response = await fetch("/api/investor/identity", {
       body: JSON.stringify({
         email,
-        ...(nextSide === "front" ? { frontImage: imageDataUrl } : {}),
-        ...(nextSide === "back" ? { backImage: imageDataUrl } : {}),
-        ...(nextSide === "selfie" ? { selfieImage: imageDataUrl } : {})
+        ...(mode === "id" && frontImage ? { frontImage } : {}),
+        ...(mode === "id" && backImage ? { backImage } : {}),
+        ...(mode === "selfie" && selfieImage ? { selfieImage } : {})
       }),
       headers: { "Content-Type": "application/json" },
       method: "POST"
@@ -999,19 +999,7 @@ function IdentityVerificationModal({
     setBackImage(data.backImage);
     setSelfieImage(data.selfieImage);
     setIsSaving(false);
-
-    if (nextSide === "selfie") {
-      setView("done");
-      return;
-    }
-
-    if (nextSide === "front") {
-      setSide("back");
-      setStatusMessage("");
-      return;
-    }
-
-    setView("done");
+    onClose();
   }
 
   async function capturePhoto() {
@@ -1027,7 +1015,21 @@ function IdentityVerificationModal({
       return;
     }
 
-    await savePhoto(side, imageDataUrl);
+    if (side === "selfie") {
+      setSelfieImage(imageDataUrl);
+      setView("done");
+      return;
+    }
+
+    if (side === "front") {
+      setFrontImage(imageDataUrl);
+      setSide("back");
+      setStatusMessage("");
+      return;
+    }
+
+    setBackImage(imageDataUrl);
+    setView("done");
   }
 
   return (
@@ -1142,7 +1144,7 @@ function IdentityVerificationModal({
           <div className="identityDone">
             <ShieldCheckIcon />
             <h3>{mode === "selfie" ? "Selfie capturada" : "Documentos capturados"}</h3>
-            <p>{mode === "selfie" ? "Tu selfie quedo enviada para revision." : "Tu identificacion quedo enviada para revision."}</p>
+            <p>{mode === "selfie" ? "Revisa tu selfie y presiona Continuar para enviarla a validacion." : "Revisa tus fotos y presiona Continuar para enviarlas a validacion."}</p>
             <div className="identityPreviewGrid">
               {mode === "selfie" ? (
                 selfieImage ? <img src={selfieImage} alt="Selfie capturada" /> : null
@@ -1153,8 +1155,8 @@ function IdentityVerificationModal({
                 </>
               )}
             </div>
-            <button className="primaryModalAction" type="button" onClick={onClose}>
-              Continuar
+            <button className="primaryModalAction" type="button" onClick={submitCapturedDocuments} disabled={isSaving}>
+              {isSaving ? "Enviando" : "Continuar"}
             </button>
           </div>
         ) : null}
