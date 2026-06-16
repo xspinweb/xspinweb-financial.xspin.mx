@@ -1144,9 +1144,14 @@ function IdentityVerificationModal({
             <h3>{mode === "selfie" ? "Selfie capturada" : "Documentos capturados"}</h3>
             <p>{mode === "selfie" ? "Tu selfie quedo enviada para revision." : "Tu identificacion quedo enviada para revision."}</p>
             <div className="identityPreviewGrid">
-              {frontImage ? <img src={frontImage} alt="Anverso capturado" /> : null}
-              {backImage ? <img src={backImage} alt="Reverso capturado" /> : null}
-              {selfieImage ? <img src={selfieImage} alt="Selfie capturada" /> : null}
+              {mode === "selfie" ? (
+                selfieImage ? <img src={selfieImage} alt="Selfie capturada" /> : null
+              ) : (
+                <>
+                  {frontImage ? <img src={frontImage} alt="Anverso capturado" /> : null}
+                  {backImage ? <img src={backImage} alt="Reverso capturado" /> : null}
+                </>
+              )}
             </div>
             <button className="primaryModalAction" type="button" onClick={onClose}>
               Continuar
