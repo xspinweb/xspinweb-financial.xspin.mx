@@ -4014,16 +4014,34 @@ a {
 
 @keyframes selfieOvalReady {
   0% {
-    opacity: 0.32;
+    opacity: 0.25;
     transform: rotate(0deg) scale(0.82);
   }
-  62% {
+  68% {
     opacity: 1;
     transform: rotate(360deg) scale(1.08);
   }
   100% {
     opacity: 1;
     transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes selfieScanArc {
+  0% {
+    opacity: 0;
+    transform: rotate(0deg);
+  }
+  16% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+    transform: rotate(360deg);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(360deg);
   }
 }
 
@@ -4253,7 +4271,9 @@ a {
 }
 
 .identityCameraStage.selfie .identityAutoBadge {
-  display: none;
+  display: inline-flex;
+  top: 18px;
+  left: 18px;
 }
 
 .identityCameraGhost {
@@ -4275,52 +4295,37 @@ a {
 
 .identitySelfieGuide {
   position: absolute;
-  inset: 0 6%;
+  inset: 0;
   z-index: 2;
   display: grid;
-  grid-template-columns: minmax(170px, 230px) minmax(260px, 330px);
-  align-items: center;
-  justify-content: center;
-  gap: clamp(18px, 5vw, 48px);
+  place-items: center;
   pointer-events: none;
 }
 
-.identitySelfieGuide > div {
-  display: grid;
-  gap: 14px;
-  border-radius: 20px;
-  background: linear-gradient(145deg, rgba(7, 21, 30, 0.78), rgba(6, 12, 21, 0.7));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 18px 46px rgba(0, 0, 0, 0.28);
-  padding: 20px;
-}
-
-.identitySelfieGuide span {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  color: #dce8f7;
-  font-size: 13px;
-  font-weight: 850;
-}
-
-.identitySelfieGuide svg {
-  width: 26px;
-  height: 26px;
-  fill: var(--green);
-}
-
 .identitySelfieGuide > i {
+  position: relative;
   display: block;
-  width: min(34vw, 310px);
+  width: min(36vw, 320px);
   aspect-ratio: 0.72 / 1;
-  border: 3px solid var(--green);
+  border: 4px solid rgba(53, 224, 161, 0.92);
   border-radius: 50% / 42%;
   animation: selfieOvalReady 1.35s ease-out 0.18s 1 both;
   box-shadow:
-    0 0 0 999px rgba(1, 7, 13, 0.18),
-    0 0 34px rgba(53, 224, 161, 0.34),
+    0 0 0 999px rgba(1, 7, 13, 0.08),
+    0 0 42px rgba(53, 224, 161, 0.42),
     inset 0 0 24px rgba(53, 224, 161, 0.12);
+}
+
+.identitySelfieGuide > i::after {
+  position: absolute;
+  inset: -8px;
+  border: 6px solid transparent;
+  border-top-color: rgba(53, 224, 161, 0.98);
+  border-right-color: rgba(53, 224, 161, 0.42);
+  border-radius: inherit;
+  filter: drop-shadow(0 0 18px rgba(53, 224, 161, 0.82));
+  animation: selfieScanArc 1.35s ease-out 0.18s 1 both;
+  content: "";
 }
 
 .identityCameraFallback {
@@ -6245,37 +6250,11 @@ a {
   }
 
   .identitySelfieGuide {
-    inset: 0;
-    grid-template-columns: minmax(112px, 0.42fr) minmax(150px, 0.58fr);
-    align-items: center;
-    gap: 8px;
-    justify-content: center;
-    padding: 18px 16px;
-  }
-
-  .identitySelfieGuide > div {
-    order: 0;
-    align-self: center;
-    gap: 10px;
-    width: 100%;
-    border-radius: 16px;
-    padding: 12px;
+    padding: 0;
   }
 
   .identitySelfieGuide > i {
-    width: min(42vw, 190px);
-  }
-
-  .identitySelfieGuide span {
-    grid-template-columns: 18px minmax(0, 1fr);
-    gap: 7px;
-    font-size: 10px;
-    line-height: 1.15;
-  }
-
-  .identitySelfieGuide svg {
-    height: 18px;
-    width: 18px;
+    width: min(48vw, 210px);
   }
 
   .identityFrameOverlay {

@@ -1074,7 +1074,6 @@ function IdentityVerificationModal({
           <div className={`identityCapture ${side === "selfie" ? "selfie" : ""}`}>
             <span className="identitySidePill">{side === "selfie" ? "3 / 3  Selfie" : side === "front" ? "1 / 2  Anverso" : "2 / 2  Reverso"}</span>
             <h3>{side === "selfie" ? "Toma tu selfie" : side === "front" ? "Captura el anverso de tu INE" : "Captura el reverso de tu INE"}</h3>
-            {side === "selfie" ? <p>Asegurate de que tu rostro este centrado dentro del ovalo y que se vea claramente. Evita luces intensas o sombras.</p> : null}
 
             <div className={`identityCameraStage ${side === "selfie" ? "selfie" : ""}`}>
               <span className="identityAutoBadge"><LightningIcon /> Auto</span>
@@ -1089,12 +1088,6 @@ function IdentityVerificationModal({
               )}
               {side === "selfie" ? (
                 <div className="identitySelfieGuide" aria-hidden="true">
-                  <div>
-                    <span><UserCheckIcon /> Rostro centrado</span>
-                    <span><LightningIcon /> Buena iluminacion</span>
-                    <span><EyeIcon /> Sin accesorios</span>
-                    <span><ShieldCheckIcon /> Expresion neutral</span>
-                  </div>
                   <i />
                 </div>
               ) : (
@@ -1430,14 +1423,6 @@ function UserCheckIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v1h11.2a6.8 6.8 0 0 1-.2-1.5c0-1.7.6-3.3 1.7-4.5A12 12 0 0 0 10 13Zm8.1 7.2-3.4-3.4 1.4-1.4 2 2 4.1-4.4 1.5 1.4Z" />
-    </svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 5c5 0 8.7 4.3 10 7-1.3 2.7-5 7-10 7S3.3 14.7 2 12c1.3-2.7 5-7 10-7Zm0 2c-3.7 0-6.5 2.8-7.7 5 1.2 2.2 4 5 7.7 5s6.5-2.8 7.7-5C18.5 9.8 15.7 7 12 7Zm0 2.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Z" />
     </svg>
   );
 }
