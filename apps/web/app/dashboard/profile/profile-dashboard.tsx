@@ -289,26 +289,32 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
     }
 
     let stopProgress: (() => void) | null = null;
+    let uploadTimeout: number | null = null;
     let success = false;
     setIsUploadingProof(true);
     setProofUploadProgress(8);
 
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const proofFile = await prepareProofOfAddressUpload(file);
       stopProgress = startUploadProgress(setProofUploadProgress);
+      const controller = new AbortController();
+      uploadTimeout = window.setTimeout(() => controller.abort(), 60_000);
       const response = await fetch("/api/investor/identity", {
         body: JSON.stringify({
           email: form.email || userEmail,
           proofOfAddress: {
-            dataUrl,
-            fileName: file.name,
-            mimeType: file.type,
-            size: file.size
+            dataUrl: proofFile.dataUrl,
+            fileName: proofFile.fileName,
+            mimeType: proofFile.mimeType,
+            size: proofFile.size
           }
         }),
         headers: { "Content-Type": "application/json" },
-        method: "POST"
+        method: "POST",
+        signal: controller.signal
       });
+      window.clearTimeout(uploadTimeout);
+      uploadTimeout = null;
 
       if (!response.ok) {
         setIdentityStatus(await getResponseErrorMessage(response));
@@ -321,10 +327,17 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
       setIdentity(data);
       setIdentityStatus("Comprobante enviado a validacion.");
       window.setTimeout(() => setProofUploadProgress(0), 900);
-    } catch {
-      setIdentityStatus("No se pudo subir el comprobante. Intenta nuevamente.");
+    } catch (error) {
+      setIdentityStatus(error instanceof DOMException && error.name === "AbortError"
+        ? "La subida tardo demasiado. Intenta con una imagen mas ligera o vuelve a intentarlo."
+        : error instanceof Error
+          ? error.message
+          : "No se pudo subir el comprobante. Intenta nuevamente.");
     } finally {
       stopProgress?.();
+      if (uploadTimeout) {
+        window.clearTimeout(uploadTimeout);
+      }
       setIsUploadingProof(false);
       if (!success) {
         setProofUploadProgress(0);
@@ -1409,6 +1422,80 @@ function fileToDataUrl(file: File) {
     reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
     reader.readAsDataURL(file);
   });
+}
+
+async function prepareProofOfAddressUpload(file: File) {
+  const isImage = file.type.startsWith("image/");
+  const originalDataUrl = await fileToDataUrl(file);
+
+  if (!isImage) {
+    ensureProofPayloadSize(originalDataUrl);
+    return {
+      dataUrl: originalDataUrl,
+      fileName: file.name,
+      mimeType: file.type,
+      size: file.size
+    };
+  }
+
+  const compressedDataUrl = await compressImageFile(file, 1400, 0.72).catch(() => originalDataUrl);
+  const dataUrl = compressedDataUrl.length < originalDataUrl.length ? compressedDataUrl : originalDataUrl;
+  ensureProofPayloadSize(dataUrl);
+
+  return {
+    dataUrl,
+    fileName: replaceFileExtension(file.name, dataUrl.startsWith("data:image/jpeg") ? "jpg" : file.name.split(".").pop() || "jpg"),
+    mimeType: dataUrl.startsWith("data:image/jpeg") ? "image/jpeg" : file.type,
+    size: estimateDataUrlBytes(dataUrl)
+  };
+}
+
+function compressImageFile(file: File, maxWidth: number, quality: number) {
+  return new Promise<string>((resolve, reject) => {
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const scale = Math.min(1, maxWidth / image.naturalWidth);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(image.naturalWidth * scale);
+      canvas.height = Math.round(image.naturalHeight * scale);
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        reject(new Error("No se pudo preparar la imagen."));
+        return;
+      }
+
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("No se pudo comprimir la imagen."));
+    };
+
+    image.src = objectUrl;
+  });
+}
+
+function ensureProofPayloadSize(dataUrl: string) {
+  if (dataUrl.length > 36_000_000) {
+    throw new Error("El comprobante es demasiado pesado para enviarse.");
+  }
+}
+
+function estimateDataUrlBytes(dataUrl: string) {
+  const base64 = dataUrl.split(",")[1] ?? "";
+  return Math.ceil((base64.length * 3) / 4);
+}
+
+function replaceFileExtension(fileName: string, extension: string) {
+  return fileName.includes(".") ? fileName.replace(/\.[^.]+$/, `.${extension}`) : `${fileName}.${extension}`;
 }
 
 function formatCurrency(amount: number) {
