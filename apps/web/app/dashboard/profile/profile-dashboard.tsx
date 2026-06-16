@@ -1035,7 +1035,7 @@ function IdentityVerificationModal({
       <section className="identityFlowModal" role="dialog" aria-modal="true" aria-labelledby="identity-title">
         <header className="identityFlowHeader">
           <button type="button" aria-label={view === "intro" || mode === "selfie" ? "Cerrar" : "Regresar"} onClick={view === "intro" || mode === "selfie" ? onClose : () => setView("intro")}>
-            <ArrowBackIcon />
+            {mode === "selfie" ? <CloseIcon /> : <ArrowBackIcon />}
           </button>
           <h2 id="identity-title">Verificacion de identidad</h2>
           <button type="button" aria-label="Cerrar" onClick={onClose}>
@@ -1071,10 +1071,10 @@ function IdentityVerificationModal({
         ) : null}
 
         {view === "capture" ? (
-          <div className="identityCapture">
+          <div className={`identityCapture ${side === "selfie" ? "selfie" : ""}`}>
             <span className="identitySidePill">{side === "selfie" ? "3 / 3  Selfie" : side === "front" ? "1 / 2  Anverso" : "2 / 2  Reverso"}</span>
             <h3>{side === "selfie" ? "Toma tu selfie" : side === "front" ? "Captura el anverso de tu INE" : "Captura el reverso de tu INE"}</h3>
-            {side === "selfie" ? <p>Asegurate de que tu rostro este centrado dentro del ovalo y que se vea claramente.</p> : null}
+            {side === "selfie" ? <p>Asegurate de que tu rostro este centrado dentro del ovalo y que se vea claramente. Evita luces intensas o sombras.</p> : null}
 
             <div className={`identityCameraStage ${side === "selfie" ? "selfie" : ""}`}>
               <span className="identityAutoBadge"><LightningIcon /> Auto</span>
@@ -1380,6 +1380,14 @@ function ArrowBackIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M20 11v2H8.8l5 5-1.4 1.4L5 12l7.4-7.4L13.8 6l-5 5Z" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4Z" />
     </svg>
   );
 }
