@@ -68,6 +68,11 @@ type TwoFactorSetup = {
 type IdentityVerification = {
   backImage: string;
   frontImage: string;
+  proofOfAddressFile: string;
+  proofOfAddressFileName: string;
+  proofOfAddressMimeType: string;
+  proofOfAddressStatus: "PENDING" | "SUBMITTED" | "VERIFIED" | "REJECTED";
+  proofOfAddressSubmittedAt: string;
   status: "PENDING" | "SUBMITTED" | "VERIFIED" | "REJECTED";
   submittedAt: string;
   updatedAt: string;
@@ -99,11 +104,19 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
   const [identity, setIdentity] = useState<IdentityVerification>({
     backImage: "",
     frontImage: "",
+    proofOfAddressFile: "",
+    proofOfAddressFileName: "",
+    proofOfAddressMimeType: "",
+    proofOfAddressStatus: "PENDING",
+    proofOfAddressSubmittedAt: "",
     status: "PENDING",
     submittedAt: "",
     updatedAt: ""
   });
   const [identityModalOpen, setIdentityModalOpen] = useState(false);
+  const [identityStatus, setIdentityStatus] = useState("");
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const proofInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
@@ -252,6 +265,50 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
     setTwoFactorModalMode(null);
   }
 
+  async function uploadProofOfAddress(file?: File) {
+    if (!file) return;
+    setIdentityStatus("");
+
+    if (file.size > 25 * 1024 * 1024) {
+      setIdentityStatus("El comprobante no puede pesar mas de 25 MB.");
+      return;
+    }
+
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setIdentityStatus("Selecciona un PDF o imagen valida.");
+      return;
+    }
+
+    setIsUploadingProof(true);
+    const dataUrl = await fileToDataUrl(file);
+    const response = await fetch("/api/investor/identity", {
+      body: JSON.stringify({
+        email: form.email || userEmail,
+        proofOfAddress: {
+          dataUrl,
+          fileName: file.name,
+          mimeType: file.type,
+          size: file.size
+        }
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST"
+    });
+
+    if (!response.ok) {
+      setIdentityStatus(await getResponseErrorMessage(response));
+      setIsUploadingProof(false);
+      return;
+    }
+
+    const data = (await response.json()) as IdentityVerification;
+    setIdentity(data);
+    setIdentityStatus("Comprobante enviado a validacion.");
+    setIsUploadingProof(false);
+  }
+
   return (
     <>
       {level ? <ProfileLevelCard level={level} /> : null}
@@ -384,12 +441,33 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
               icon={<DocumentIcon />}
               title="Identificacion oficial"
               subtitle={identity.frontImage && identity.backImage ? "Anverso y reverso capturados correctamente." : "INE, Pasaporte o Licencia de conducir"}
-              action="Capturar"
-              actionIcon={<CameraIcon />}
+              action={identity.status === "SUBMITTED" ? "Validacion" : identity.status === "VERIFIED" ? "Verificado" : "Capturar"}
+              actionIcon={identity.status === "SUBMITTED" ? undefined : <CameraIcon />}
+              actionTone={identity.status === "SUBMITTED" ? "orange" : identity.status === "VERIFIED" ? "green" : "purple"}
+              disabled={identity.status === "SUBMITTED" || identity.status === "VERIFIED"}
               onAction={() => setIdentityModalOpen(true)}
             />
-            <ProfileRow icon={<ReceiptIcon />} title="Comprobante de domicilio" subtitle="Recibo de luz, agua, gas o estado de cuenta" status="Pendiente" statusTone="yellow" />
+            <ProfileRow
+              icon={<ReceiptIcon />}
+              title="Comprobante de domicilio"
+              subtitle={identity.proofOfAddressFileName || "Recibo de luz, agua, gas o estado de cuenta"}
+              action={identity.proofOfAddressStatus === "SUBMITTED" ? "Validacion" : identity.proofOfAddressStatus === "VERIFIED" ? "Verificado" : isUploadingProof ? "Subiendo" : "Pendiente"}
+              actionTone={identity.proofOfAddressStatus === "SUBMITTED" ? "orange" : identity.proofOfAddressStatus === "VERIFIED" ? "green" : "yellow"}
+              disabled={isUploadingProof || identity.proofOfAddressStatus === "SUBMITTED" || identity.proofOfAddressStatus === "VERIFIED"}
+              onAction={() => proofInputRef.current?.click()}
+            />
           </div>
+          <input
+            ref={proofInputRef}
+            className="identityHiddenFileInput"
+            type="file"
+            accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
+            onChange={(event) => {
+              void uploadProofOfAddress(event.target.files?.[0]);
+              event.currentTarget.value = "";
+            }}
+          />
+          {identityStatus ? <p className={identityStatus.includes("validacion") ? "profileSaveStatus success" : "profileSaveStatus"}>{identityStatus}</p> : null}
           {identityModalOpen ? (
             <IdentityVerificationModal
               email={form.email || userEmail}
@@ -463,6 +541,7 @@ function ProfileField({
 function ProfileRow({
   action,
   actionIcon,
+  actionTone = "purple",
   disabled = false,
   icon,
   onAction,
@@ -476,6 +555,7 @@ function ProfileRow({
 }: {
   action?: string;
   actionIcon?: ReactNode;
+  actionTone?: "green" | "orange" | "purple" | "yellow";
   disabled?: boolean;
   icon: ReactNode;
   onAction?: () => void;
@@ -502,7 +582,7 @@ function ProfileRow({
         </button>
       ) : null}
       {action ? (
-        <button type="button" onClick={onAction} disabled={disabled}>
+        <button className={`profileActionButton ${actionTone}`} type="button" onClick={onAction} disabled={disabled}>
           {actionIcon}
           {action}
           {actionIcon ? null : <ChevronIcon />}
@@ -1208,6 +1288,15 @@ function ProfileLevelCard({ level }: { level: InvestorLevel }) {
 async function getResponseErrorMessage(response: Response) {
   const data = (await response.json().catch(() => null)) as { error?: string } | null;
   return data?.error ?? "No se pudo guardar la informacion.";
+}
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+    reader.readAsDataURL(file);
+  });
 }
 
 function formatCurrency(amount: number) {

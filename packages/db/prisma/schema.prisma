@@ -73,38 +73,38 @@ model User {
 }
 
 model Investor {
-  id                    String           @id @default(cuid())
-  investorCode          String           @unique
-  fullName              String?
-  phone                 String?
-  birthDate             DateTime?
-  country               String?
-  city                  String?
-  address               String?
-  twoFactorEnabled      Boolean          @default(false)
-  twoFactorSecret       String?
-  twoFactorVerifiedAt   DateTime?
-  email                 String?
-  status                InvestorStatus   @default(ACTIVE)
-  referredByInvestorId  String?
-  referredByInvestor    Investor?        @relation("InvestorReferrals", fields: [referredByInvestorId], references: [id])
-  referredInvestors     Investor[]       @relation("InvestorReferrals")
-  investments           Investment[]
-  referralsGiven        Referral[]       @relation("Referrer")
-  referralsReceived     Referral[]       @relation("Referred")
-  payments              Payment[]
-  payoutMethods         PayoutMethod[]
-  reinvestments         Reinvestment[]
-  identityVerification  IdentityVerification?
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  id                   String                @id @default(cuid())
+  investorCode         String                @unique
+  fullName             String?
+  phone                String?
+  birthDate            DateTime?
+  country              String?
+  city                 String?
+  address              String?
+  twoFactorEnabled     Boolean               @default(false)
+  twoFactorSecret      String?
+  twoFactorVerifiedAt  DateTime?
+  email                String?
+  status               InvestorStatus        @default(ACTIVE)
+  referredByInvestorId String?
+  referredByInvestor   Investor?             @relation("InvestorReferrals", fields: [referredByInvestorId], references: [id])
+  referredInvestors    Investor[]            @relation("InvestorReferrals")
+  investments          Investment[]
+  referralsGiven       Referral[]            @relation("Referrer")
+  referralsReceived    Referral[]            @relation("Referred")
+  payments             Payment[]
+  payoutMethods        PayoutMethod[]
+  reinvestments        Reinvestment[]
+  identityVerification IdentityVerification?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 }
 
 model InvestmentGroup {
   id          String       @id @default(cuid())
-  groupNumber Int         @unique
-  status      GroupStatus @default(OPEN)
-  openedAt    DateTime    @default(now())
+  groupNumber Int          @unique
+  status      GroupStatus  @default(OPEN)
+  openedAt    DateTime     @default(now())
   closedAt    DateTime?
   investments Investment[]
 }
@@ -134,29 +134,29 @@ model Investment {
 }
 
 model Referral {
-  id                      String         @id @default(cuid())
-  referrerInvestorId      String
-  referrerInvestor        Investor       @relation("Referrer", fields: [referrerInvestorId], references: [id])
-  referredInvestorId      String
-  referredInvestor        Investor       @relation("Referred", fields: [referredInvestorId], references: [id])
-  sourceInvestmentId      String?
-  sourceInvestment        Investment?    @relation("ReferralSourceInvestment", fields: [sourceInvestmentId], references: [id])
-  bonusAmount             Decimal        @db.Decimal(14, 2)
-  status                  ReferralStatus @default(PENDING)
-  createdAt               DateTime       @default(now())
-  paidAt                  DateTime?
+  id                 String         @id @default(cuid())
+  referrerInvestorId String
+  referrerInvestor   Investor       @relation("Referrer", fields: [referrerInvestorId], references: [id])
+  referredInvestorId String
+  referredInvestor   Investor       @relation("Referred", fields: [referredInvestorId], references: [id])
+  sourceInvestmentId String?
+  sourceInvestment   Investment?    @relation("ReferralSourceInvestment", fields: [sourceInvestmentId], references: [id])
+  bonusAmount        Decimal        @db.Decimal(14, 2)
+  status             ReferralStatus @default(PENDING)
+  createdAt          DateTime       @default(now())
+  paidAt             DateTime?
 }
 
 model Payment {
-  id           String       @id @default(cuid())
+  id           String      @id @default(cuid())
   investorId   String
-  investor     Investor     @relation(fields: [investorId], references: [id])
+  investor     Investor    @relation(fields: [investorId], references: [id])
   investmentId String?
-  investment   Investment?  @relation(fields: [investmentId], references: [id])
+  investment   Investment? @relation(fields: [investmentId], references: [id])
   groupId      String?
-  amount       Decimal      @db.Decimal(14, 2)
+  amount       Decimal     @db.Decimal(14, 2)
   paymentType  PaymentType
-  paidAt       DateTime     @default(now())
+  paidAt       DateTime    @default(now())
   notes        String?
 }
 
@@ -180,15 +180,20 @@ model PayoutMethod {
 }
 
 model IdentityVerification {
-  id              String                     @id @default(cuid())
-  investorId      String                     @unique
-  investor        Investor                   @relation(fields: [investorId], references: [id], onDelete: Cascade)
-  officialIdFront String?
-  officialIdBack  String?
-  status          IdentityVerificationStatus @default(PENDING)
-  submittedAt     DateTime?
-  createdAt       DateTime                   @default(now())
-  updatedAt       DateTime                   @updatedAt
+  id                        String                     @id @default(cuid())
+  investorId                String                     @unique
+  investor                  Investor                   @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  officialIdFront           String?
+  officialIdBack            String?
+  status                    IdentityVerificationStatus @default(PENDING)
+  proofOfAddressFile        String?
+  proofOfAddressFileName    String?
+  proofOfAddressMimeType    String?
+  proofOfAddressStatus      IdentityVerificationStatus @default(PENDING)
+  proofOfAddressSubmittedAt DateTime?
+  submittedAt               DateTime?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
 }
 
 model Reinvestment {

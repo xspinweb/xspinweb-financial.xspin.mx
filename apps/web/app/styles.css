@@ -3405,6 +3405,29 @@ a {
   color: #b891ff;
 }
 
+.profileRow button.profileActionButton.green {
+  border-color: rgba(53, 224, 161, 0.36);
+  background: rgba(53, 224, 161, 0.1);
+  color: var(--green);
+}
+
+.profileRow button.profileActionButton.orange {
+  border-color: rgba(251, 146, 60, 0.4);
+  background: rgba(251, 146, 60, 0.12);
+  color: #fb923c;
+}
+
+.profileRow button.profileActionButton.yellow {
+  border-color: rgba(255, 204, 77, 0.36);
+  background: rgba(255, 204, 77, 0.1);
+  color: #ffcc4d;
+}
+
+.profileRow button.profileActionButton:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
 .profileRow button svg {
   width: 16px;
   height: 16px;
@@ -3553,6 +3576,10 @@ a {
     radial-gradient(circle at 50% 0%, rgba(53, 224, 161, 0.1), transparent 34%),
     rgba(1, 6, 12, 0.88);
   padding: 18px;
+}
+
+.identityHiddenFileInput {
+  display: none;
 }
 
 .identityFlowModal {
