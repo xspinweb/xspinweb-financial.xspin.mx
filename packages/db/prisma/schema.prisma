@@ -191,6 +191,9 @@ model IdentityVerification {
   proofOfAddressMimeType    String?
   proofOfAddressStatus      IdentityVerificationStatus @default(PENDING)
   proofOfAddressSubmittedAt DateTime?
+  selfieImage               String?
+  selfieStatus              IdentityVerificationStatus @default(PENDING)
+  selfieSubmittedAt         DateTime?
   submittedAt               DateTime?
   createdAt                 DateTime                   @default(now())
   updatedAt                 DateTime                   @updatedAt

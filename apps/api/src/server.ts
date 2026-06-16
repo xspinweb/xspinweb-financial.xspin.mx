@@ -90,8 +90,9 @@ const identityVerificationSchema = z.object({
   backImage: identityImageSchema.optional(),
   email: z.string().email(),
   frontImage: identityImageSchema.optional(),
-  proofOfAddress: proofOfAddressSchema.optional()
-}).refine((input) => input.frontImage || input.backImage || input.proofOfAddress, {
+  proofOfAddress: proofOfAddressSchema.optional(),
+  selfieImage: identityImageSchema.optional()
+}).refine((input) => input.frontImage || input.backImage || input.proofOfAddress || input.selfieImage, {
   message: "Agrega al menos un documento de verificacion."
 });
 
@@ -620,6 +621,7 @@ async function updateInvestorIdentityVerification(input: z.infer<typeof identity
   const hasFront = Boolean(input.frontImage ?? current?.officialIdFront);
   const hasBack = Boolean(input.backImage ?? current?.officialIdBack);
   const hasProofOfAddress = Boolean(input.proofOfAddress ?? current?.proofOfAddressFile);
+  const hasSelfie = Boolean(input.selfieImage ?? current?.selfieImage);
 
   const identity = await prisma.identityVerification.upsert({
     create: {
@@ -631,12 +633,16 @@ async function updateInvestorIdentityVerification(input: z.infer<typeof identity
       proofOfAddressMimeType: input.proofOfAddress?.mimeType,
       proofOfAddressStatus: hasProofOfAddress ? "SUBMITTED" : "PENDING",
       proofOfAddressSubmittedAt: hasProofOfAddress ? new Date() : null,
+      selfieImage: input.selfieImage,
+      selfieStatus: hasSelfie ? "SUBMITTED" : "PENDING",
+      selfieSubmittedAt: hasSelfie ? new Date() : null,
       status: hasFront && hasBack ? "SUBMITTED" : "PENDING",
       submittedAt: hasFront && hasBack ? new Date() : null
     },
     update: {
       ...(input.backImage ? { officialIdBack: input.backImage } : {}),
       ...(input.frontImage ? { officialIdFront: input.frontImage } : {}),
+      ...(input.selfieImage ? { selfieImage: input.selfieImage } : {}),
       ...(input.proofOfAddress ? {
         proofOfAddressFile: input.proofOfAddress.dataUrl,
         proofOfAddressFileName: input.proofOfAddress.fileName,
@@ -644,6 +650,8 @@ async function updateInvestorIdentityVerification(input: z.infer<typeof identity
       } : {}),
       proofOfAddressStatus: hasProofOfAddress ? "SUBMITTED" : "PENDING",
       proofOfAddressSubmittedAt: hasProofOfAddress ? new Date() : current?.proofOfAddressSubmittedAt ?? null,
+      selfieStatus: hasSelfie ? "SUBMITTED" : "PENDING",
+      selfieSubmittedAt: hasSelfie ? new Date() : current?.selfieSubmittedAt ?? null,
       status: hasFront && hasBack ? "SUBMITTED" : "PENDING",
       submittedAt: hasFront && hasBack ? new Date() : current?.submittedAt ?? null
     },
@@ -1618,6 +1626,9 @@ function formatIdentityVerification(identity: {
   proofOfAddressMimeType?: string | null;
   proofOfAddressStatus?: string;
   proofOfAddressSubmittedAt?: Date | null;
+  selfieImage?: string | null;
+  selfieStatus?: string;
+  selfieSubmittedAt?: Date | null;
   status?: string;
   submittedAt?: Date | null;
   updatedAt?: Date;
@@ -1630,6 +1641,9 @@ function formatIdentityVerification(identity: {
     proofOfAddressMimeType: identity?.proofOfAddressMimeType ?? "",
     proofOfAddressStatus: identity?.proofOfAddressStatus ?? "PENDING",
     proofOfAddressSubmittedAt: identity?.proofOfAddressSubmittedAt?.toISOString() ?? "",
+    selfieImage: identity?.selfieImage ?? "",
+    selfieStatus: identity?.selfieStatus ?? "PENDING",
+    selfieSubmittedAt: identity?.selfieSubmittedAt?.toISOString() ?? "",
     status: identity?.status ?? "PENDING",
     submittedAt: identity?.submittedAt?.toISOString() ?? "",
     updatedAt: identity?.updatedAt?.toISOString() ?? ""

@@ -73,6 +73,9 @@ type IdentityVerification = {
   proofOfAddressMimeType: string;
   proofOfAddressStatus: "PENDING" | "SUBMITTED" | "VERIFIED" | "REJECTED";
   proofOfAddressSubmittedAt: string;
+  selfieImage: string;
+  selfieStatus: "PENDING" | "SUBMITTED" | "VERIFIED" | "REJECTED";
+  selfieSubmittedAt: string;
   status: "PENDING" | "SUBMITTED" | "VERIFIED" | "REJECTED";
   submittedAt: string;
   updatedAt: string;
@@ -109,11 +112,14 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
     proofOfAddressMimeType: "",
     proofOfAddressStatus: "PENDING",
     proofOfAddressSubmittedAt: "",
+    selfieImage: "",
+    selfieStatus: "PENDING",
+    selfieSubmittedAt: "",
     status: "PENDING",
     submittedAt: "",
     updatedAt: ""
   });
-  const [identityModalOpen, setIdentityModalOpen] = useState(false);
+  const [identityModalMode, setIdentityModalMode] = useState<"id" | "selfie" | null>(null);
   const [identityStatus, setIdentityStatus] = useState("");
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const proofInputRef = useRef<HTMLInputElement | null>(null);
@@ -445,7 +451,17 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
               actionIcon={identity.status === "SUBMITTED" ? undefined : <CameraIcon />}
               actionTone={identity.status === "SUBMITTED" ? "orange" : identity.status === "VERIFIED" ? "green" : "purple"}
               disabled={identity.status === "SUBMITTED" || identity.status === "VERIFIED"}
-              onAction={() => setIdentityModalOpen(true)}
+              onAction={() => setIdentityModalMode("id")}
+            />
+            <ProfileRow
+              icon={<UserCheckIcon />}
+              title="Selfie"
+              subtitle={identity.selfieImage ? "Selfie capturada correctamente." : "Foto frontal para validar que eres tu."}
+              action={identity.selfieStatus === "SUBMITTED" ? "Validacion" : identity.selfieStatus === "VERIFIED" ? "Verificado" : "Capturar"}
+              actionIcon={identity.selfieStatus === "SUBMITTED" ? undefined : <CameraIcon />}
+              actionTone={identity.selfieStatus === "SUBMITTED" ? "orange" : identity.selfieStatus === "VERIFIED" ? "green" : "purple"}
+              disabled={identity.selfieStatus === "SUBMITTED" || identity.selfieStatus === "VERIFIED"}
+              onAction={() => setIdentityModalMode("selfie")}
             />
             <ProfileRow
               icon={<ReceiptIcon />}
@@ -468,11 +484,12 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
             }}
           />
           {identityStatus ? <p className={identityStatus.includes("validacion") ? "profileSaveStatus success" : "profileSaveStatus"}>{identityStatus}</p> : null}
-          {identityModalOpen ? (
+          {identityModalMode ? (
             <IdentityVerificationModal
               email={form.email || userEmail}
               identity={identity}
-              onClose={() => setIdentityModalOpen(false)}
+              mode={identityModalMode}
+              onClose={() => setIdentityModalMode(null)}
               onSaved={setIdentity}
             />
           ) : null}
@@ -878,18 +895,21 @@ function TwoFactorModal({
 function IdentityVerificationModal({
   email,
   identity,
+  mode,
   onClose,
   onSaved
 }: {
   email: string;
   identity: IdentityVerification;
+  mode: "id" | "selfie";
   onClose: () => void;
   onSaved: (identity: IdentityVerification) => void;
 }) {
-  const [view, setView] = useState<"intro" | "capture" | "done">("intro");
-  const [side, setSide] = useState<"front" | "back">(identity.frontImage && !identity.backImage ? "back" : "front");
+  const [view, setView] = useState<"intro" | "capture" | "done">(mode === "selfie" ? "capture" : "intro");
+  const [side, setSide] = useState<"front" | "back" | "selfie">(mode === "selfie" ? "selfie" : identity.frontImage && !identity.backImage ? "back" : "front");
   const [frontImage, setFrontImage] = useState(identity.frontImage);
   const [backImage, setBackImage] = useState(identity.backImage);
+  const [selfieImage, setSelfieImage] = useState(identity.selfieImage);
   const [cameraError, setCameraError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
@@ -919,7 +939,7 @@ function IdentityVerificationModal({
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: false,
           video: {
-            facingMode: { ideal: "environment" },
+            facingMode: { ideal: side === "selfie" ? "user" : "environment" },
             height: { ideal: 900 },
             width: { ideal: 1400 }
           }
@@ -952,14 +972,16 @@ function IdentityVerificationModal({
     };
   }, [view, side]);
 
-  async function savePhoto(nextSide: "front" | "back", imageDataUrl: string) {
+  async function savePhoto(nextSide: "front" | "back" | "selfie", imageDataUrl: string) {
     setIsSaving(true);
     setStatusMessage("");
 
     const response = await fetch("/api/investor/identity", {
       body: JSON.stringify({
         email,
-        ...(nextSide === "front" ? { frontImage: imageDataUrl } : { backImage: imageDataUrl })
+        ...(nextSide === "front" ? { frontImage: imageDataUrl } : {}),
+        ...(nextSide === "back" ? { backImage: imageDataUrl } : {}),
+        ...(nextSide === "selfie" ? { selfieImage: imageDataUrl } : {})
       }),
       headers: { "Content-Type": "application/json" },
       method: "POST"
@@ -975,7 +997,13 @@ function IdentityVerificationModal({
     onSaved(data);
     setFrontImage(data.frontImage);
     setBackImage(data.backImage);
+    setSelfieImage(data.selfieImage);
     setIsSaving(false);
+
+    if (nextSide === "selfie") {
+      setView("done");
+      return;
+    }
 
     if (nextSide === "front") {
       setSide("back");
@@ -1006,7 +1034,7 @@ function IdentityVerificationModal({
     <div className="identityOverlay" role="presentation">
       <section className="identityFlowModal" role="dialog" aria-modal="true" aria-labelledby="identity-title">
         <header className="identityFlowHeader">
-          <button type="button" aria-label={view === "intro" ? "Cerrar" : "Regresar"} onClick={view === "intro" ? onClose : () => setView("intro")}>
+          <button type="button" aria-label={view === "intro" || mode === "selfie" ? "Cerrar" : "Regresar"} onClick={view === "intro" || mode === "selfie" ? onClose : () => setView("intro")}>
             <ArrowBackIcon />
           </button>
           <h2 id="identity-title">Verificacion de identidad</h2>
@@ -1015,7 +1043,7 @@ function IdentityVerificationModal({
           </button>
         </header>
 
-        <IdentityStepper activeStep={view === "done" ? 3 : 2} completedStep={view === "done" ? 2 : 1} />
+        <IdentityStepper activeStep={view === "done" ? 3 : 2} completedStep={view === "done" ? 2 : 1} middleLabel={mode === "selfie" ? "Selfie" : "INE"} />
 
         {view === "intro" ? (
           <div className="identityIntro">
@@ -1044,10 +1072,11 @@ function IdentityVerificationModal({
 
         {view === "capture" ? (
           <div className="identityCapture">
-            <span className="identitySidePill">{side === "front" ? "1 / 2  Anverso" : "2 / 2  Reverso"}</span>
-            <h3>{side === "front" ? "Captura el anverso de tu INE" : "Captura el reverso de tu INE"}</h3>
+            <span className="identitySidePill">{side === "selfie" ? "3 / 3  Selfie" : side === "front" ? "1 / 2  Anverso" : "2 / 2  Reverso"}</span>
+            <h3>{side === "selfie" ? "Toma tu selfie" : side === "front" ? "Captura el anverso de tu INE" : "Captura el reverso de tu INE"}</h3>
+            {side === "selfie" ? <p>Asegurate de que tu rostro este centrado dentro del ovalo y que se vea claramente.</p> : null}
 
-            <div className="identityCameraStage">
+            <div className={`identityCameraStage ${side === "selfie" ? "selfie" : ""}`}>
               <span className="identityAutoBadge"><LightningIcon /> Auto</span>
               {cameraError ? (
                 <div className="identityCameraFallback">
@@ -1058,9 +1087,20 @@ function IdentityVerificationModal({
               ) : (
                 <video ref={videoRef} playsInline muted />
               )}
-              <div className="identityCameraGhost" key={side} aria-hidden="true">
-                <div className={`mockIne ${side === "front" ? "front" : "back"}`}>
-                  {side === "front" ? (
+              {side === "selfie" ? (
+                <div className="identitySelfieGuide" aria-hidden="true">
+                  <div>
+                    <span><UserCheckIcon /> Rostro centrado</span>
+                    <span><LightningIcon /> Buena iluminacion</span>
+                    <span><EyeIcon /> Sin accesorios</span>
+                    <span><ShieldCheckIcon /> Expresion neutral</span>
+                  </div>
+                  <i />
+                </div>
+              ) : (
+                <div className="identityCameraGhost" key={side} aria-hidden="true">
+                  <div className={`mockIne ${side === "front" ? "front" : "back"}`}>
+                    {side === "front" ? (
                     <>
                       <header>
                         <b>INE</b>
@@ -1075,7 +1115,7 @@ function IdentityVerificationModal({
                       </div>
                       <em />
                     </>
-                  ) : (
+                    ) : (
                     <>
                       <i />
                       <i />
@@ -1083,19 +1123,20 @@ function IdentityVerificationModal({
                       <span />
                       <span />
                     </>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="identityFrameOverlay" aria-hidden="true">
+              )}
+              <div className={`identityFrameOverlay ${side === "selfie" ? "selfie" : ""}`} aria-hidden="true">
                 <span />
                 <span />
                 <span />
                 <span />
               </div>
-              <div className="identityCaptureHint">
+              {side === "selfie" ? null : <div className="identityCaptureHint">
                 <ShieldCheckIcon />
                 <span>{side === "front" ? "Coloca tu INE sobre una superficie plana. Asegurate de que se vean todos los bordes." : "Voltea tu INE y coloca el reverso sobre una superficie plana. Asegurate de que se vean todos los bordes."}</span>
-              </div>
+              </div>}
             </div>
 
             <div className="identityCaptureControls">
@@ -1107,11 +1148,12 @@ function IdentityVerificationModal({
         {view === "done" ? (
           <div className="identityDone">
             <ShieldCheckIcon />
-            <h3>Documentos capturados</h3>
-            <p>Tu identificacion quedo enviada para revision.</p>
+            <h3>{mode === "selfie" ? "Selfie capturada" : "Documentos capturados"}</h3>
+            <p>{mode === "selfie" ? "Tu selfie quedo enviada para revision." : "Tu identificacion quedo enviada para revision."}</p>
             <div className="identityPreviewGrid">
               {frontImage ? <img src={frontImage} alt="Anverso capturado" /> : null}
               {backImage ? <img src={backImage} alt="Reverso capturado" /> : null}
+              {selfieImage ? <img src={selfieImage} alt="Selfie capturada" /> : null}
             </div>
             <button className="primaryModalAction" type="button" onClick={onClose}>
               Continuar
@@ -1125,12 +1167,12 @@ function IdentityVerificationModal({
   );
 }
 
-function IdentityStepper({ activeStep, completedStep }: { activeStep: number; completedStep: number }) {
+function IdentityStepper({ activeStep, completedStep, middleLabel = "INE" }: { activeStep: number; completedStep: number; middleLabel?: string }) {
   return (
     <div className="identityStepper" aria-label="Progreso de verificacion">
       {[
         ["Informacion", 1],
-        ["INE", 2],
+        [middleLabel, 2],
         ["Confirmacion", 3]
       ].map(([label, step]) => (
         <div className={`${Number(step) <= activeStep ? "active" : ""} ${Number(step) <= completedStep ? "complete" : ""}`} key={step}>
@@ -1372,6 +1414,22 @@ function UserIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z" />
+    </svg>
+  );
+}
+
+function UserCheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v1h11.2a6.8 6.8 0 0 1-.2-1.5c0-1.7.6-3.3 1.7-4.5A12 12 0 0 0 10 13Zm8.1 7.2-3.4-3.4 1.4-1.4 2 2 4.1-4.4 1.5 1.4Z" />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 5c5 0 8.7 4.3 10 7-1.3 2.7-5 7-10 7S3.3 14.7 2 12c1.3-2.7 5-7 10-7Zm0 2c-3.7 0-6.5 2.8-7.7 5 1.2 2.2 4 5 7.7 5s6.5-2.8 7.7-5C18.5 9.8 15.7 7 12 7Zm0 2.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Z" />
     </svg>
   );
 }
