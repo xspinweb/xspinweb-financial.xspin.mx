@@ -122,6 +122,7 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
   const [identityModalMode, setIdentityModalMode] = useState<"id" | "selfie" | null>(null);
   const [identityStatus, setIdentityStatus] = useState("");
   const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [proofUploadProgress, setProofUploadProgress] = useState(0);
   const proofInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -287,32 +288,48 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
       return;
     }
 
+    let stopProgress: (() => void) | null = null;
+    let success = false;
     setIsUploadingProof(true);
-    const dataUrl = await fileToDataUrl(file);
-    const response = await fetch("/api/investor/identity", {
-      body: JSON.stringify({
-        email: form.email || userEmail,
-        proofOfAddress: {
-          dataUrl,
-          fileName: file.name,
-          mimeType: file.type,
-          size: file.size
-        }
-      }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST"
-    });
+    setProofUploadProgress(8);
 
-    if (!response.ok) {
-      setIdentityStatus(await getResponseErrorMessage(response));
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      stopProgress = startUploadProgress(setProofUploadProgress);
+      const response = await fetch("/api/investor/identity", {
+        body: JSON.stringify({
+          email: form.email || userEmail,
+          proofOfAddress: {
+            dataUrl,
+            fileName: file.name,
+            mimeType: file.type,
+            size: file.size
+          }
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST"
+      });
+
+      if (!response.ok) {
+        setIdentityStatus(await getResponseErrorMessage(response));
+        return;
+      }
+
+      const data = (await response.json()) as IdentityVerification;
+      success = true;
+      setProofUploadProgress(100);
+      setIdentity(data);
+      setIdentityStatus("Comprobante enviado a validacion.");
+      window.setTimeout(() => setProofUploadProgress(0), 900);
+    } catch {
+      setIdentityStatus("No se pudo subir el comprobante. Intenta nuevamente.");
+    } finally {
+      stopProgress?.();
       setIsUploadingProof(false);
-      return;
+      if (!success) {
+        setProofUploadProgress(0);
+      }
     }
-
-    const data = (await response.json()) as IdentityVerification;
-    setIdentity(data);
-    setIdentityStatus("Comprobante enviado a validacion.");
-    setIsUploadingProof(false);
   }
 
   return (
@@ -484,6 +501,9 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
             }}
           />
           {identityStatus ? <p className={identityStatus.includes("validacion") ? "profileSaveStatus success" : "profileSaveStatus"}>{identityStatus}</p> : null}
+          {isUploadingProof || proofUploadProgress > 0 ? (
+            <UploadProgress progress={proofUploadProgress} label={isUploadingProof ? "Subiendo comprobante" : "Comprobante enviado"} />
+          ) : null}
           {identityModalMode ? (
             <IdentityVerificationModal
               email={form.email || userEmail}
@@ -913,6 +933,7 @@ function IdentityVerificationModal({
   const [cameraError, setCameraError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -973,33 +994,47 @@ function IdentityVerificationModal({
   }, [view, side]);
 
   async function submitCapturedDocuments() {
+    let stopProgress: (() => void) | null = null;
+    let success = false;
     setIsSaving(true);
     setStatusMessage("");
+    setUploadProgress(8);
 
-    const response = await fetch("/api/investor/identity", {
-      body: JSON.stringify({
-        email,
-        ...(mode === "id" && frontImage ? { frontImage } : {}),
-        ...(mode === "id" && backImage ? { backImage } : {}),
-        ...(mode === "selfie" && selfieImage ? { selfieImage } : {})
-      }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST"
-    });
+    try {
+      stopProgress = startUploadProgress(setUploadProgress);
+      const response = await fetch("/api/investor/identity", {
+        body: JSON.stringify({
+          email,
+          ...(mode === "id" && frontImage ? { frontImage } : {}),
+          ...(mode === "id" && backImage ? { backImage } : {}),
+          ...(mode === "selfie" && selfieImage ? { selfieImage } : {})
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST"
+      });
 
-    if (!response.ok) {
-      setStatusMessage(await getResponseErrorMessage(response));
+      if (!response.ok) {
+        setStatusMessage(await getResponseErrorMessage(response));
+        return;
+      }
+
+      const data = (await response.json()) as IdentityVerification;
+      success = true;
+      setUploadProgress(100);
+      onSaved(data);
+      setFrontImage(data.frontImage);
+      setBackImage(data.backImage);
+      setSelfieImage(data.selfieImage);
+      window.setTimeout(onClose, 250);
+    } catch {
+      setStatusMessage("No se pudo enviar la informacion. Intenta nuevamente.");
+    } finally {
+      stopProgress?.();
       setIsSaving(false);
-      return;
+      if (!success) {
+        setUploadProgress(0);
+      }
     }
-
-    const data = (await response.json()) as IdentityVerification;
-    onSaved(data);
-    setFrontImage(data.frontImage);
-    setBackImage(data.backImage);
-    setSelfieImage(data.selfieImage);
-    setIsSaving(false);
-    onClose();
   }
 
   async function capturePhoto() {
@@ -1155,9 +1190,16 @@ function IdentityVerificationModal({
                 </>
               )}
             </div>
-            <button className="primaryModalAction" type="button" onClick={submitCapturedDocuments} disabled={isSaving}>
-              {isSaving ? "Enviando" : "Continuar"}
+            <button
+              className={`primaryModalAction ${isSaving ? "uploading" : ""}`}
+              style={isSaving ? ({ "--upload-progress": `${uploadProgress}%` } as CSSProperties) : undefined}
+              type="button"
+              onClick={submitCapturedDocuments}
+              disabled={isSaving}
+            >
+              <span>{isSaving ? `Enviando ${Math.round(uploadProgress)}%` : "Continuar"}</span>
             </button>
+            {isSaving ? <UploadProgress progress={uploadProgress} label="Subiendo validacion" compact /> : null}
           </div>
         ) : null}
 
@@ -1273,13 +1315,41 @@ async function captureIdentityFrame(video: HTMLVideoElement) {
   }
 
   const canvas = document.createElement("canvas");
-  const maxWidth = 1100;
+  const maxWidth = 900;
   const scale = Math.min(1, maxWidth / width);
   canvas.width = Math.round(width * scale);
   canvas.height = Math.round(height * scale);
   const context = canvas.getContext("2d");
   context?.drawImage(video, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/jpeg", 0.76);
+  return canvas.toDataURL("image/jpeg", 0.68);
+}
+
+function UploadProgress({ compact = false, label, progress }: { compact?: boolean; label: string; progress: number }) {
+  const normalizedProgress = Math.max(0, Math.min(100, progress));
+
+  return (
+    <div className={`uploadProgress ${compact ? "compact" : ""}`}>
+      <div className="uploadProgressMeta">
+        <span>{label}</span>
+        <strong>{Math.round(normalizedProgress)}%</strong>
+      </div>
+      <div className="uploadProgressTrack" style={{ "--upload-progress": `${normalizedProgress}%` } as CSSProperties}>
+        <span />
+      </div>
+    </div>
+  );
+}
+
+function startUploadProgress(setProgress: (progress: number) => void) {
+  let progress = 12;
+  setProgress(progress);
+
+  const interval = window.setInterval(() => {
+    progress = Math.min(progress + (progress < 55 ? 9 : progress < 82 ? 4 : 1), 94);
+    setProgress(progress);
+  }, 240);
+
+  return () => window.clearInterval(interval);
 }
 
 function stopIdentityCamera(stream?: MediaStream | null) {

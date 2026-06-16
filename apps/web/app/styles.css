@@ -1870,6 +1870,28 @@ a {
   color: #031017;
 }
 
+.primaryModalAction.uploading {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.primaryModalAction.uploading::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--upload-progress, 0%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.38), rgba(53, 224, 161, 0.24));
+  box-shadow: 0 0 24px rgba(53, 224, 161, 0.32);
+  transition: width 220ms ease;
+  z-index: -1;
+}
+
+.primaryModalAction.uploading span {
+  position: relative;
+  z-index: 1;
+}
+
 .primaryModalAction:disabled {
   cursor: not-allowed;
   opacity: 0.5;
@@ -3348,6 +3370,47 @@ a {
   background: rgba(53, 224, 161, 0.08);
   border-color: rgba(53, 224, 161, 0.24);
   color: var(--green);
+}
+
+.uploadProgress {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.uploadProgress.compact {
+  margin-top: 10px;
+}
+
+.uploadProgressMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.uploadProgressMeta strong {
+  color: var(--green);
+}
+
+.uploadProgressTrack {
+  height: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(53, 224, 161, 0.18);
+  border-radius: 999px;
+  background: rgba(159, 178, 196, 0.14);
+}
+
+.uploadProgressTrack span {
+  display: block;
+  width: var(--upload-progress, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+  box-shadow: 0 0 20px rgba(53, 224, 161, 0.46);
+  transition: width 220ms ease;
 }
 
 .profileRows {
