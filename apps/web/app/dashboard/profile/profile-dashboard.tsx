@@ -121,6 +121,7 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
   });
   const [identityModalMode, setIdentityModalMode] = useState<"id" | "selfie" | null>(null);
   const [identityStatus, setIdentityStatus] = useState("");
+  const [isIdentityLoading, setIsIdentityLoading] = useState(true);
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const [proofUploadProgress, setProofUploadProgress] = useState(0);
   const proofInputRef = useRef<HTMLInputElement | null>(null);
@@ -183,18 +184,29 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
 
   useEffect(() => {
     let isCurrent = true;
+    setIsIdentityLoading(true);
 
     async function loadIdentity() {
-      const response = await fetch(`/api/investor/identity?email=${encodeURIComponent(userEmail)}`);
+      try {
+        const response = await fetch(`/api/investor/identity?email=${encodeURIComponent(userEmail)}`);
 
-      if (!response.ok) {
-        return;
-      }
+        if (!response.ok) {
+          if (isCurrent) {
+            setIsIdentityLoading(false);
+          }
+          return;
+        }
 
-      const data = (await response.json()) as IdentityVerification;
+        const data = (await response.json()) as IdentityVerification;
 
-      if (isCurrent) {
-        setIdentity(data);
+        if (isCurrent) {
+          setIdentity(data);
+          setIsIdentityLoading(false);
+        }
+      } catch {
+        if (isCurrent) {
+          setIsIdentityLoading(false);
+        }
       }
     }
 
@@ -476,30 +488,30 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
             <ProfileRow
               icon={<DocumentIcon />}
               title="Identificacion oficial"
-              subtitle={identity.frontImage && identity.backImage ? "Anverso y reverso capturados correctamente." : "INE, Pasaporte o Licencia de conducir"}
-              action={identity.status === "SUBMITTED" ? "Validacion" : identity.status === "VERIFIED" ? "Verificado" : "Capturar"}
-              actionIcon={identity.status === "SUBMITTED" ? undefined : <CameraIcon />}
-              actionTone={identity.status === "SUBMITTED" ? "orange" : identity.status === "VERIFIED" ? "green" : "purple"}
-              disabled={identity.status === "SUBMITTED" || identity.status === "VERIFIED"}
+              subtitle={isIdentityLoading ? "Consultando estado de verificacion." : identity.frontImage && identity.backImage ? "Anverso y reverso capturados correctamente." : "INE, Pasaporte o Licencia de conducir"}
+              action={isIdentityLoading ? "Cargando" : identity.status === "SUBMITTED" ? "Validacion" : identity.status === "VERIFIED" ? "Verificado" : "Capturar"}
+              actionIcon={isIdentityLoading || identity.status === "SUBMITTED" ? undefined : <CameraIcon />}
+              actionTone={isIdentityLoading ? "purple" : identity.status === "SUBMITTED" ? "orange" : identity.status === "VERIFIED" ? "green" : "purple"}
+              disabled={isIdentityLoading || identity.status === "SUBMITTED" || identity.status === "VERIFIED"}
               onAction={() => setIdentityModalMode("id")}
             />
             <ProfileRow
               icon={<UserCheckIcon />}
               title="Selfie"
-              subtitle={identity.selfieImage ? "Selfie capturada correctamente." : "Foto frontal para validar que eres tu."}
-              action={identity.selfieStatus === "SUBMITTED" ? "Validacion" : identity.selfieStatus === "VERIFIED" ? "Verificado" : "Capturar"}
-              actionIcon={identity.selfieStatus === "SUBMITTED" ? undefined : <CameraIcon />}
-              actionTone={identity.selfieStatus === "SUBMITTED" ? "orange" : identity.selfieStatus === "VERIFIED" ? "green" : "purple"}
-              disabled={identity.selfieStatus === "SUBMITTED" || identity.selfieStatus === "VERIFIED"}
+              subtitle={isIdentityLoading ? "Consultando estado de selfie." : identity.selfieImage ? "Selfie capturada correctamente." : "Foto frontal para validar que eres tu."}
+              action={isIdentityLoading ? "Cargando" : identity.selfieStatus === "SUBMITTED" ? "Validacion" : identity.selfieStatus === "VERIFIED" ? "Verificado" : "Capturar"}
+              actionIcon={isIdentityLoading || identity.selfieStatus === "SUBMITTED" ? undefined : <CameraIcon />}
+              actionTone={isIdentityLoading ? "purple" : identity.selfieStatus === "SUBMITTED" ? "orange" : identity.selfieStatus === "VERIFIED" ? "green" : "purple"}
+              disabled={isIdentityLoading || identity.selfieStatus === "SUBMITTED" || identity.selfieStatus === "VERIFIED"}
               onAction={() => setIdentityModalMode("selfie")}
             />
             <ProfileRow
               icon={<ReceiptIcon />}
               title="Comprobante de domicilio"
-              subtitle={identity.proofOfAddressFileName || "Recibo de luz, agua, gas o estado de cuenta"}
-              action={identity.proofOfAddressStatus === "SUBMITTED" ? "Validacion" : identity.proofOfAddressStatus === "VERIFIED" ? "Verificado" : isUploadingProof ? "Subiendo" : "Pendiente"}
-              actionTone={identity.proofOfAddressStatus === "SUBMITTED" ? "orange" : identity.proofOfAddressStatus === "VERIFIED" ? "green" : "yellow"}
-              disabled={isUploadingProof || identity.proofOfAddressStatus === "SUBMITTED" || identity.proofOfAddressStatus === "VERIFIED"}
+              subtitle={isIdentityLoading ? "Consultando comprobante." : identity.proofOfAddressFileName || "Recibo de luz, agua, gas o estado de cuenta"}
+              action={isIdentityLoading ? "Cargando" : identity.proofOfAddressStatus === "SUBMITTED" ? "Validacion" : identity.proofOfAddressStatus === "VERIFIED" ? "Verificado" : isUploadingProof ? "Subiendo" : "Pendiente"}
+              actionTone={isIdentityLoading ? "purple" : identity.proofOfAddressStatus === "SUBMITTED" ? "orange" : identity.proofOfAddressStatus === "VERIFIED" ? "green" : "yellow"}
+              disabled={isIdentityLoading || isUploadingProof || identity.proofOfAddressStatus === "SUBMITTED" || identity.proofOfAddressStatus === "VERIFIED"}
               onAction={() => proofInputRef.current?.click()}
             />
           </div>
