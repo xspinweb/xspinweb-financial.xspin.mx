@@ -30,18 +30,23 @@ type Investment = {
   weeks?: InvestmentWeek[];
 };
 
-type PortfolioResponse = {
-  investments: Investment[];
+type PortfolioPayment = {
+  amount: number;
+  notes?: string | null;
+  paidAt: string;
 };
 
-type HistoryFilter = "all" | "payments" | "yield" | "bonus" | "referrals";
+type PortfolioResponse = {
+  investments: Investment[];
+  walletPayments?: PortfolioPayment[];
+};
 
 const totalCycleWeeks = 8;
 
 export function HistoryDashboard({ userEmail }: { userEmail: string; userName: string }) {
   const [investments, setInvestments] = useState<Investment[]>([]);
+  const [walletPayments, setWalletPayments] = useState<PortfolioPayment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<HistoryFilter>("all");
 
   useEffect(() => {
     let isCurrent = true;
@@ -65,6 +70,7 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
 
       if (isCurrent) {
         setInvestments(portfolio.investments.map(normalizeInvestment));
+        setWalletPayments(portfolio.walletPayments ?? []);
         setIsLoading(false);
       }
     }
@@ -79,17 +85,12 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
   const weeks = useMemo(() => buildHistoryWeeks(investments), [investments]);
   const completedWeeks = weeks.filter((week) => week.state === "collected");
   const rendimientoTotal = roundMoney(completedWeeks.reduce((total, week) => total + week.weeklyYield, 0));
-  const bonosTotal = roundMoney(completedWeeks.reduce((total, week) => total + week.weeklyBonus, 0));
-  const referidosTotal = roundMoney(completedWeeks.reduce((total, week) => total + week.baseAmount, 0));
   const collectedTotal = roundMoney(completedWeeks.reduce((total, week) => total + week.totalGenerated, 0));
-  const averageWeekly = completedWeeks.length ? roundMoney(collectedTotal / completedWeeks.length) : 0;
-  const filteredWeeks = weeks.filter((week) => {
-    if (filter === "payments") return week.state === "collected";
-    if (filter === "yield") return week.weeklyYield > 0;
-    if (filter === "bonus") return week.weeklyBonus > 0;
-    if (filter === "referrals") return week.weeklyQualifiedReferrals > 0;
-    return true;
-  });
+  const withdrawnTotal = roundMoney(
+    walletPayments.filter((payment) => payment.amount < 0).reduce((total, payment) => total + Math.abs(Number(payment.amount)), 0)
+  );
+  const availableBalance = roundMoney(Math.max(collectedTotal - withdrawnTotal, 0));
+  const historyRows = useMemo(() => buildHistoryRows(completedWeeks, walletPayments), [completedWeeks, walletPayments]);
 
   return (
     <section className="historyDashboard">
@@ -107,22 +108,17 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
               <span>Rendimiento total</span>
               <strong>{formatCurrency(rendimientoTotal)}</strong>
             </div>
-            <div>
-              <span>Promedio semanal</span>
-              <strong className="purple">{formatCurrency(averageWeekly)}</strong>
-            </div>
           </div>
           <HistoryLineChart weeks={weeks} />
         </article>
 
         <article className="historyDistributionCard">
-          <h2>Distribucion de ingresos</h2>
+          <h2>Distribucion de rendimiento</h2>
           <div className="historyDistributionContent">
-            <DistributionDonut bonus={bonosTotal} principal={referidosTotal} total={collectedTotal} yieldAmount={rendimientoTotal} />
+            <DistributionDonut available={availableBalance} total={collectedTotal} withdrawn={withdrawnTotal} />
             <div className="historyDistributionLegend">
-              <DistributionLegend color="green" label="Rendimiento" total={collectedTotal} value={rendimientoTotal} />
-              <DistributionLegend color="purple" label="Bonos" total={collectedTotal} value={bonosTotal} />
-              <DistributionLegend color="yellow" label="Referidos" total={collectedTotal} value={referidosTotal} />
+              <DistributionLegend color="green" label="Disponible" total={collectedTotal} value={availableBalance} />
+              <DistributionLegend color="purple" label="Retirado" total={collectedTotal} value={withdrawnTotal} />
             </div>
           </div>
         </article>
@@ -130,18 +126,8 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
 
       <section className="historyTablePanel" id="history-table">
         <div className="historyToolbar">
-          <div className="historyTabs" role="tablist" aria-label="Filtros de historial">
-            {[
-              ["all", "Todos"],
-              ["payments", "Pagos recibidos"],
-              ["yield", "Rendimientos"],
-              ["bonus", "Bonos"],
-              ["referrals", "Referidos"]
-            ].map(([key, label]) => (
-              <button className={filter === key ? "active" : ""} key={key} type="button" onClick={() => setFilter(key as HistoryFilter)}>
-                {label}
-              </button>
-            ))}
+          <div className="historyTabs" role="tablist" aria-label="Filtro de historial">
+            <button className="active" type="button">Rendimiento</button>
           </div>
           <button className="historyDownloadButton" type="button">
             <DownloadIcon />
@@ -172,23 +158,23 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
                 <tr>
                   <td colSpan={12}>Cargando historial...</td>
                 </tr>
-              ) : filteredWeeks.length ? (
-                filteredWeeks.map((week) => (
-                  <tr key={`${week.investmentId}-${week.weekNumber}`}>
+              ) : historyRows.length ? (
+                historyRows.map((row) => (
+                  <tr key={row.id}>
                     <td>
-                      <span className={`historyWeekIcon ${week.state}`}><HistoryStateIcon state={week.state} /></span>
-                      <strong>{week.weekNumber} de {totalCycleWeeks}</strong>
+                      <span className={`historyWeekIcon ${row.state}`}><HistoryStateIcon state={row.state} /></span>
+                      <strong>{row.weekLabel}</strong>
                     </td>
-                    <td><strong>{week.group}</strong></td>
-                    <td>{week.startLabel}</td>
-                    <td>{week.paymentLabel}</td>
-                    <td><span className={`historyStatus ${week.state}`}>{week.statusLabel}</span></td>
-                    <td><span className="historyType"><HistoryTypeIcon state={week.state} /> {getHistoryTypeLabel(week)}</span></td>
-                    <td>{week.state === "collected" ? "Pago semanal" : week.state === "current" ? "Rendimiento semanal" : "Proximo pago"}</td>
-                    <td>{week.baseAmount > 0 ? formatCurrency(week.baseAmount) : "-"}</td>
-                    <td>{week.weeklyYield > 0 ? formatCurrency(week.weeklyYield) : "-"}</td>
-                    <td>{week.weeklyBonus > 0 ? formatCurrency(week.weeklyBonus) : "-"}</td>
-                    <td><strong className={week.state === "current" ? "purple" : ""}>{week.totalGenerated > 0 ? formatCurrency(week.totalGenerated) : "-"}</strong></td>
+                    <td><strong>{row.group}</strong></td>
+                    <td>{row.startLabel}</td>
+                    <td>{row.paymentLabel}</td>
+                    <td><span className={`historyStatus ${row.state}`}>{row.statusLabel}</span></td>
+                    <td><span className="historyType"><HistoryTypeIcon state={row.state} /> {row.typeLabel}</span></td>
+                    <td>{row.concept}</td>
+                    <td>{row.amount > 0 ? formatCurrency(row.amount) : "-"}</td>
+                    <td>{row.yieldAmount > 0 ? formatCurrency(row.yieldAmount) : "-"}</td>
+                    <td>{row.bonusAmount > 0 ? formatCurrency(row.bonusAmount) : "-"}</td>
+                    <td><strong className={row.state === "current" ? "purple" : ""}>{row.totalAmount > 0 ? formatCurrency(row.totalAmount) : "-"}</strong></td>
                     <td><button className="historyViewButton" type="button" aria-label="Ver detalle"><EyeIcon /></button></td>
                   </tr>
                 ))
@@ -268,16 +254,18 @@ function HistoryLineChart({ weeks }: { weeks: HistoryWeek[] }) {
   );
 }
 
-function DistributionDonut({ bonus, principal, total, yieldAmount }: { bonus: number; principal: number; total: number; yieldAmount: number }) {
-  const safeTotal = Math.max(total, 1);
-  const yieldDeg = (yieldAmount / safeTotal) * 360;
-  const bonusDeg = (bonus / safeTotal) * 360;
+function DistributionDonut({ available, total, withdrawn }: { available: number; total: number; withdrawn: number }) {
+  const safeTotal = Math.max(total, 0);
+  const availableDeg = safeTotal > 0 ? (Math.max(available, 0) / safeTotal) * 360 : 0;
+  const withdrawnDeg = safeTotal > 0 ? (withdrawn / safeTotal) * 360 : 0;
 
   return (
     <div
       className="historyDonut"
       style={{
-        background: `conic-gradient(var(--green) 0deg ${yieldDeg}deg, #a855f7 ${yieldDeg}deg ${yieldDeg + bonusDeg}deg, #facc15 ${yieldDeg + bonusDeg}deg 360deg)`
+        background: safeTotal > 0
+          ? `conic-gradient(var(--green) 0deg ${availableDeg}deg, #a855f7 ${availableDeg}deg ${availableDeg + withdrawnDeg}deg, rgba(250, 204, 21, 0.85) ${availableDeg + withdrawnDeg}deg 360deg)`
+          : "conic-gradient(rgba(159, 178, 196, 0.24) 0deg 360deg)"
       }}
     >
       <div>
@@ -307,6 +295,23 @@ type HistoryWeek = InvestmentWeek & {
   investmentId: string;
   state: "collected" | "current" | "pending";
   statusLabel: string;
+};
+
+type HistoryRow = {
+  amount: number;
+  bonusAmount: number;
+  concept: string;
+  group: string;
+  id: string;
+  paymentLabel: string;
+  startLabel: string;
+  state: HistoryWeek["state"];
+  statusLabel: string;
+  sortAt: string;
+  totalAmount: number;
+  typeLabel: string;
+  weekLabel: string;
+  yieldAmount: number;
 };
 
 function buildHistoryWeeks(investments: Investment[]) {
@@ -364,6 +369,46 @@ function buildEmptyWeek(weekNumber: number, startDate: Date, investmentId: strin
   };
 }
 
+function buildHistoryRows(weeks: HistoryWeek[], walletPayments: PortfolioPayment[]): HistoryRow[] {
+  const weekRows = weeks.map((week) => ({
+    amount: week.baseAmount,
+    bonusAmount: week.weeklyBonus,
+    concept: "Rendimiento semanal",
+    group: week.group,
+    id: `${week.investmentId}-${week.weekNumber}`,
+    paymentLabel: week.paymentLabel ?? formatDateLabel(week.paymentAt),
+    sortAt: week.paymentAt,
+    startLabel: week.startLabel ?? formatDateLabel(week.startAt),
+    state: "collected" as const,
+    statusLabel: "Cobrado",
+    totalAmount: week.totalGenerated,
+    typeLabel: "Rendimiento",
+    weekLabel: `${week.weekNumber} de ${totalCycleWeeks}`,
+    yieldAmount: week.weeklyYield
+  }));
+
+  const withdrawalRows = walletPayments
+    .filter((payment) => payment.amount < 0)
+    .map((payment, index) => ({
+      amount: Math.abs(Number(payment.amount)),
+      bonusAmount: 0,
+      concept: payment.notes ?? "Retiro de wallet",
+      group: "Wallet",
+      id: `wallet-${payment.paidAt}-${index}`,
+      paymentLabel: formatDateLabel(payment.paidAt),
+      sortAt: payment.paidAt,
+      startLabel: "-",
+      state: "current" as const,
+      statusLabel: "Retirado",
+      totalAmount: Math.abs(Number(payment.amount)),
+      typeLabel: "Retiro",
+      weekLabel: "Wallet",
+      yieldAmount: 0
+    }));
+
+  return [...weekRows, ...withdrawalRows].sort((current, next) => getDateTime(current.sortAt) - getDateTime(next.sortAt));
+}
+
 function normalizeInvestment(investment: Investment) {
   return {
     ...investment,
@@ -376,16 +421,15 @@ function normalizeInvestment(investment: Investment) {
   };
 }
 
-function getHistoryTypeLabel(week: HistoryWeek) {
-  if (week.state === "collected") return "Pago recibido";
-  if (week.weeklyYield > 0 || week.weeklyBonus > 0) return "Rendimiento";
-  return "Proximo pago";
-}
-
 function getDateFromIso(value?: string) {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getDateTime(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
 }
 
 function addDays(date: Date, days: number) {
