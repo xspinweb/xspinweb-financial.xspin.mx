@@ -312,7 +312,7 @@ type HistoryWeek = InvestmentWeek & {
 function buildHistoryWeeks(investments: Investment[]) {
   return investments.flatMap((investment, investmentIndex) => {
     const visibleWeeks = investment.weeks ?? [];
-    const startDate = getDateFromIso(investment.investedAtIso) ?? null;
+    const startDate = getDateFromIso(investment.investedAtIso ?? investment.investedAt) ?? getDateFromIso(visibleWeeks[0]?.startAt);
     const group = investment.group || `Grupo ${investmentIndex + 1}`;
 
     if (!startDate) {
@@ -367,6 +367,7 @@ function buildEmptyWeek(weekNumber: number, startDate: Date, investmentId: strin
 function normalizeInvestment(investment: Investment) {
   return {
     ...investment,
+    investedAtIso: investment.investedAtIso ?? investment.investedAt,
     weeks: investment.weeks?.map((week) => ({
       ...week,
       paymentLabel: week.paymentLabel ?? formatDateLabel(week.paymentAt),
