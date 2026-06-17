@@ -18,6 +18,12 @@ type InvestmentWeek = {
   weekNumber: number;
 };
 
+type PortfolioPayment = {
+  amount: number;
+  notes?: string | null;
+  paidAt: string;
+};
+
 type Investment = {
   amount: number;
   group: string;
@@ -26,14 +32,9 @@ type Investment = {
   investedAtIso?: string;
   name: string;
   nextPaymentAt: string;
+  payments?: PortfolioPayment[];
   referrals: Array<{ invested: boolean; name: string }>;
   weeks?: InvestmentWeek[];
-};
-
-type PortfolioPayment = {
-  amount: number;
-  notes?: string | null;
-  paidAt: string;
 };
 
 type PortfolioResponse = {
@@ -85,11 +86,9 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
   const weeks = useMemo(() => buildHistoryWeeks(investments), [investments]);
   const completedWeeks = weeks.filter((week) => week.state === "collected");
   const rendimientoTotal = roundMoney(completedWeeks.reduce((total, week) => total + week.weeklyYield, 0));
-  const collectedTotal = roundMoney(completedWeeks.reduce((total, week) => total + week.totalGenerated, 0));
-  const withdrawnTotal = roundMoney(
-    walletPayments.filter((payment) => payment.amount < 0).reduce((total, payment) => total + Math.abs(Number(payment.amount)), 0)
-  );
-  const availableBalance = roundMoney(Math.max(collectedTotal - withdrawnTotal, 0));
+  const bonosTotal = roundMoney(completedWeeks.reduce((total, week) => total + week.weeklyBonus, 0));
+  const inversionTotal = roundMoney(completedWeeks.reduce((total, week) => total + week.baseAmount, 0));
+  const distributionTotal = roundMoney(rendimientoTotal + bonosTotal + inversionTotal);
   const historyRows = useMemo(() => buildHistoryRows(completedWeeks, walletPayments), [completedWeeks, walletPayments]);
 
   return (
@@ -115,10 +114,11 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
         <article className="historyDistributionCard">
           <h2>Distribucion de rendimiento</h2>
           <div className="historyDistributionContent">
-            <DistributionDonut available={availableBalance} total={collectedTotal} withdrawn={withdrawnTotal} />
+            <DistributionDonut bonus={bonosTotal} investment={inversionTotal} total={distributionTotal} yieldAmount={rendimientoTotal} />
             <div className="historyDistributionLegend">
-              <DistributionLegend color="green" label="Disponible" total={collectedTotal} value={availableBalance} />
-              <DistributionLegend color="purple" label="Retirado" total={collectedTotal} value={withdrawnTotal} />
+              <DistributionLegend color="green" label="Rendimiento" total={distributionTotal} value={rendimientoTotal} />
+              <DistributionLegend color="purple" label="Bonos" total={distributionTotal} value={bonosTotal} />
+              <DistributionLegend color="yellow" label="Inversion" total={distributionTotal} value={inversionTotal} />
             </div>
           </div>
         </article>
@@ -141,22 +141,21 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
               <tr>
                 <th>Semana</th>
                 <th>Grupo</th>
-                <th>Fecha inicio</th>
-                <th>Fecha pago</th>
-                <th>Estado</th>
-                <th>Tipo</th>
-                <th>Concepto</th>
-                <th>Monto</th>
+                <th>Fecha inversion</th>
+                <th>Monto inversion</th>
+                <th>Balance Wallet</th>
+                <th>Operacion</th>
+                <th>Fecha solicitud retiro</th>
+                <th>Monto retiro</th>
                 <th>Rendimiento</th>
                 <th>Bonos</th>
                 <th>Total</th>
-                <th />
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={12}>Cargando historial...</td>
+                  <td colSpan={11}>Cargando historial...</td>
                 </tr>
               ) : historyRows.length ? (
                 historyRows.map((row) => (
@@ -166,21 +165,20 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
                       <strong>{row.weekLabel}</strong>
                     </td>
                     <td><strong>{row.group}</strong></td>
-                    <td>{row.startLabel}</td>
-                    <td>{row.paymentLabel}</td>
-                    <td><span className={`historyStatus ${row.state}`}>{row.statusLabel}</span></td>
-                    <td><span className="historyType"><HistoryTypeIcon state={row.state} /> {row.typeLabel}</span></td>
-                    <td>{row.concept}</td>
-                    <td>{row.amount > 0 ? formatCurrency(row.amount) : "-"}</td>
+                    <td>{row.investmentDateLabel}</td>
+                    <td>{formatCurrency(row.investmentAmount)}</td>
+                    <td><strong>{formatCurrency(row.walletBalance)}</strong></td>
+                    <td><span className="historyType"><HistoryTypeIcon state={row.state} /> {row.operation}</span></td>
+                    <td>{row.withdrawalDateLabel}</td>
+                    <td>{row.withdrawalAmount > 0 ? formatCurrency(row.withdrawalAmount) : "-"}</td>
                     <td>{row.yieldAmount > 0 ? formatCurrency(row.yieldAmount) : "-"}</td>
                     <td>{row.bonusAmount > 0 ? formatCurrency(row.bonusAmount) : "-"}</td>
-                    <td><strong className={row.state === "current" ? "purple" : ""}>{row.totalAmount > 0 ? formatCurrency(row.totalAmount) : "-"}</strong></td>
-                    <td><button className="historyViewButton" type="button" aria-label="Ver detalle"><EyeIcon /></button></td>
+                    <td><strong>{formatCurrency(row.totalAmount)}</strong></td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={12}>Sin movimientos para este filtro.</td>
+                  <td colSpan={11}>Todavia no hay semanas cobradas.</td>
                 </tr>
               )}
             </tbody>
@@ -254,17 +252,18 @@ function HistoryLineChart({ weeks }: { weeks: HistoryWeek[] }) {
   );
 }
 
-function DistributionDonut({ available, total, withdrawn }: { available: number; total: number; withdrawn: number }) {
+function DistributionDonut({ bonus, investment, total, yieldAmount }: { bonus: number; investment: number; total: number; yieldAmount: number }) {
   const safeTotal = Math.max(total, 0);
-  const availableDeg = safeTotal > 0 ? (Math.max(available, 0) / safeTotal) * 360 : 0;
-  const withdrawnDeg = safeTotal > 0 ? (withdrawn / safeTotal) * 360 : 0;
+  const yieldDeg = safeTotal > 0 ? (yieldAmount / safeTotal) * 360 : 0;
+  const bonusDeg = safeTotal > 0 ? (bonus / safeTotal) * 360 : 0;
+  const investmentDeg = safeTotal > 0 ? (investment / safeTotal) * 360 : 0;
 
   return (
     <div
       className="historyDonut"
       style={{
         background: safeTotal > 0
-          ? `conic-gradient(var(--green) 0deg ${availableDeg}deg, #a855f7 ${availableDeg}deg ${availableDeg + withdrawnDeg}deg, rgba(250, 204, 21, 0.85) ${availableDeg + withdrawnDeg}deg 360deg)`
+          ? `conic-gradient(var(--green) 0deg ${yieldDeg}deg, #a855f7 ${yieldDeg}deg ${yieldDeg + bonusDeg}deg, #facc15 ${yieldDeg + bonusDeg}deg ${Math.min(yieldDeg + bonusDeg + investmentDeg, 360)}deg)`
           : "conic-gradient(rgba(159, 178, 196, 0.24) 0deg 360deg)"
       }}
     >
@@ -292,25 +291,28 @@ function DistributionLegend({ color, label, total, value }: { color: "green" | "
 
 type HistoryWeek = InvestmentWeek & {
   group: string;
+  investedAt: string;
+  investmentAmount: number;
   investmentId: string;
   state: "collected" | "current" | "pending";
   statusLabel: string;
+  walletCredit: number;
 };
 
 type HistoryRow = {
-  amount: number;
   bonusAmount: number;
-  concept: string;
   group: string;
   id: string;
-  paymentLabel: string;
-  startLabel: string;
+  investmentAmount: number;
+  investmentDateLabel: string;
+  operation: string;
   state: HistoryWeek["state"];
-  statusLabel: string;
   sortAt: string;
   totalAmount: number;
-  typeLabel: string;
+  walletBalance: number;
   weekLabel: string;
+  withdrawalAmount: number;
+  withdrawalDateLabel: string;
   yieldAmount: number;
 };
 
@@ -333,20 +335,37 @@ function buildHistoryWeeks(investments: Investment[]) {
         return {
           ...week,
           group,
+          investedAt: investment.investedAtIso ?? investment.investedAt,
+          investmentAmount: investment.amount,
           investmentId: investment.id,
           paymentLabel: week.paymentLabel ?? formatDateLabel(week.paymentAt),
           startLabel: week.startLabel ?? formatDateLabel(week.startAt),
           state,
-          statusLabel: state === "collected" ? "Cobrado" : state === "current" ? "En curso" : "Pendiente"
+          statusLabel: state === "collected" ? "Cobrado" : state === "current" ? "En curso" : "Pendiente",
+          walletCredit: getPaidWeekAmount(investment.payments ?? [], weekNumber)
         };
       }
 
-      return buildEmptyWeek(weekNumber, startDate, investment.id, group);
+      return buildEmptyWeek(
+        weekNumber,
+        startDate,
+        investment.id,
+        group,
+        investment.amount,
+        investment.investedAtIso ?? investment.investedAt
+      );
     });
   });
 }
 
-function buildEmptyWeek(weekNumber: number, startDate: Date, investmentId: string, group: string) {
+function buildEmptyWeek(
+  weekNumber: number,
+  startDate: Date,
+  investmentId: string,
+  group: string,
+  investmentAmount: number,
+  investedAt: string
+) {
   const startAt = addDays(startDate, (weekNumber - 1) * 7);
   const paymentAt = addDays(startDate, weekNumber * 7);
 
@@ -354,6 +373,8 @@ function buildEmptyWeek(weekNumber: number, startDate: Date, investmentId: strin
     baseAmount: 0,
     canCollect: false,
     group,
+    investedAt,
+    investmentAmount,
     investmentId,
     paymentAt: paymentAt.toISOString(),
     paymentLabel: formatDateLabel(paymentAt),
@@ -365,48 +386,61 @@ function buildEmptyWeek(weekNumber: number, startDate: Date, investmentId: strin
     weeklyBonus: 0,
     weeklyQualifiedReferrals: 0,
     weeklyYield: 0,
-    weekNumber
+    weekNumber,
+    walletCredit: 0
   };
 }
 
 function buildHistoryRows(weeks: HistoryWeek[], walletPayments: PortfolioPayment[]): HistoryRow[] {
-  const weekRows = weeks.map((week) => ({
-    amount: week.baseAmount,
-    bonusAmount: week.weeklyBonus,
-    concept: "Rendimiento semanal",
-    group: week.group,
-    id: `${week.investmentId}-${week.weekNumber}`,
-    paymentLabel: week.paymentLabel ?? formatDateLabel(week.paymentAt),
-    sortAt: week.paymentAt,
-    startLabel: week.startLabel ?? formatDateLabel(week.startAt),
-    state: "collected" as const,
-    statusLabel: "Cobrado",
-    totalAmount: week.totalGenerated,
-    typeLabel: "Rendimiento",
-    weekLabel: `${week.weekNumber} de ${totalCycleWeeks}`,
-    yieldAmount: week.weeklyYield
-  }));
-
-  const withdrawalRows = walletPayments
+  const sortedWeeks = [...weeks].sort((current, next) => getDateTime(current.paymentAt) - getDateTime(next.paymentAt));
+  const withdrawals = walletPayments
     .filter((payment) => payment.amount < 0)
-    .map((payment, index) => ({
-      amount: Math.abs(Number(payment.amount)),
-      bonusAmount: 0,
-      concept: payment.notes ?? "Retiro de wallet",
-      group: "Wallet",
-      id: `wallet-${payment.paidAt}-${index}`,
-      paymentLabel: formatDateLabel(payment.paidAt),
-      sortAt: payment.paidAt,
-      startLabel: "-",
-      state: "current" as const,
-      statusLabel: "Retirado",
-      totalAmount: Math.abs(Number(payment.amount)),
-      typeLabel: "Retiro",
-      weekLabel: "Wallet",
-      yieldAmount: 0
-    }));
+    .sort((current, next) => getDateTime(current.paidAt) - getDateTime(next.paidAt));
+  const withdrawalsByWeek = new Map<string, PortfolioPayment[]>();
 
-  return [...weekRows, ...withdrawalRows].sort((current, next) => getDateTime(current.sortAt) - getDateTime(next.sortAt));
+  withdrawals.forEach((withdrawal) => {
+    const withdrawalTime = getDateTime(withdrawal.paidAt);
+    const targetWeek = [...sortedWeeks]
+      .reverse()
+      .find((week) => getDateTime(week.paymentAt) <= withdrawalTime);
+
+    if (!targetWeek) {
+      return;
+    }
+
+    const key = `${targetWeek.investmentId}-${targetWeek.weekNumber}`;
+    withdrawalsByWeek.set(key, [...(withdrawalsByWeek.get(key) ?? []), withdrawal]);
+  });
+
+  let walletBalance = 0;
+
+  return sortedWeeks.map((week) => {
+    const key = `${week.investmentId}-${week.weekNumber}`;
+    const linkedWithdrawals = withdrawalsByWeek.get(key) ?? [];
+    const withdrawalAmount = roundMoney(
+      linkedWithdrawals.reduce((total, payment) => total + Math.abs(Number(payment.amount)), 0)
+    );
+    walletBalance = roundMoney(Math.max(walletBalance + week.walletCredit - withdrawalAmount, 0));
+
+    return {
+      bonusAmount: week.weeklyBonus,
+      group: week.group,
+      id: key,
+      investmentAmount: week.investmentAmount,
+      investmentDateLabel: formatDateLabel(week.investedAt),
+      operation: withdrawalAmount > 0 ? "Cobro y retiro" : "Cobro semanal",
+      sortAt: week.paymentAt,
+      state: "collected" as const,
+      totalAmount: week.totalGenerated,
+      walletBalance,
+      weekLabel: `${week.weekNumber} de ${totalCycleWeeks}`,
+      withdrawalAmount,
+      withdrawalDateLabel: linkedWithdrawals.length
+        ? formatDateLabel(linkedWithdrawals[linkedWithdrawals.length - 1].paidAt)
+        : "-",
+      yieldAmount: week.weeklyYield
+    };
+  });
 }
 
 function normalizeInvestment(investment: Investment) {
@@ -419,6 +453,14 @@ function normalizeInvestment(investment: Investment) {
       startLabel: week.startLabel ?? formatDateLabel(week.startAt)
     }))
   };
+}
+
+function getPaidWeekAmount(payments: PortfolioPayment[], weekNumber: number) {
+  const payment = payments.find((currentPayment) =>
+    currentPayment.notes?.toLowerCase().startsWith(`semana ${weekNumber}:`)
+  );
+
+  return Number(payment?.amount ?? 0);
 }
 
 function getDateFromIso(value?: string) {
@@ -504,14 +546,6 @@ function DownloadIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M11 3h2v9.2l3.3-3.3 1.4 1.4L12 16l-5.7-5.7 1.4-1.4 3.3 3.3ZM5 18h14v2H5Z" />
-    </svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 5c5 0 8.6 4.3 9.7 6.3l.4.7-.4.7C20.6 14.7 17 19 12 19s-8.6-4.3-9.7-6.3L1.9 12l.4-.7C3.4 9.3 7 5 12 5Zm0 2C8.4 7 5.6 9.8 4.4 12 5.6 14.2 8.4 17 12 17s6.4-2.8 7.6-5C18.4 9.8 15.6 7 12 7Zm0 1.8a3.2 3.2 0 1 1 0 6.4 3.2 3.2 0 0 1 0-6.4Zm0 2a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z" />
     </svg>
   );
 }
