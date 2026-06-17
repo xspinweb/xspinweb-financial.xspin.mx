@@ -117,11 +117,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
 
     const sortedInvestments = portfolio.investments
       .map(normalizeInvestment)
-      .sort((current, next) => getTime(current.investedAtIso) - getTime(next.investedAtIso))
-      .map((investment, index) => ({
-        ...investment,
-        group: `Grupo ${index + 1}`
-      }));
+      .sort((current, next) => getTime(current.investedAtIso) - getTime(next.investedAtIso));
 
     setInvestorCode(portfolio.investor?.code ?? "");
     setInvestorLevel(portfolio.investor?.level ?? null);

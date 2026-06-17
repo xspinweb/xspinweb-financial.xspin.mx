@@ -115,7 +115,7 @@ investmentsRouter.post("/", async (req, res, next) => {
     const rules = config.defaultBusinessRules;
 
     const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const group = await getOrCreateOpenGroup(tx, rules.groupSize);
+      const group = await createInvestmentGroup(tx);
       const investor = await getOrCreateInvestor(tx, {
         email: input.email,
         fullName: input.fullName
@@ -218,29 +218,7 @@ async function getOrCreateInvestor(tx: Prisma.TransactionClient, input: { email:
   });
 }
 
-async function getOrCreateOpenGroup(tx: Prisma.TransactionClient, groupSize: number) {
-  const current = await tx.investmentGroup.findFirst({
-    where: { status: "OPEN" },
-    orderBy: { groupNumber: "desc" }
-  });
-
-  if (current) {
-    const investorsInGroup = await tx.investment.findMany({
-      where: { groupId: current.id },
-      select: { investorId: true },
-      distinct: ["investorId"]
-    });
-
-    if (investorsInGroup.length < groupSize) {
-      return current;
-    }
-
-    await tx.investmentGroup.update({
-      where: { id: current.id },
-      data: { status: "CLOSED", closedAt: new Date() }
-    });
-  }
-
+async function createInvestmentGroup(tx: Prisma.TransactionClient) {
   const latest = await tx.investmentGroup.findFirst({
     orderBy: { groupNumber: "desc" }
   });
