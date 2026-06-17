@@ -234,17 +234,6 @@
   color: #facc15;
 }
 
-.historyDetailLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--green);
-  font-size: 14px;
-  font-weight: 950;
-  text-decoration: none;
-}
-
-.historyDetailLink svg,
 .historyDownloadButton svg,
 .historyViewButton svg,
 .historyType svg,

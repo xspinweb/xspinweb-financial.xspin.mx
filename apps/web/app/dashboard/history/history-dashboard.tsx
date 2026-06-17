@@ -125,7 +125,6 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
               <DistributionLegend color="yellow" label="Referidos" total={collectedTotal} value={referidosTotal} />
             </div>
           </div>
-          <a className="historyDetailLink" href="#history-table">Ver mas detalles <ArrowIcon /></a>
         </article>
       </section>
 
@@ -155,6 +154,7 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
             <thead>
               <tr>
                 <th>Semana</th>
+                <th>Grupo</th>
                 <th>Fecha inicio</th>
                 <th>Fecha pago</th>
                 <th>Estado</th>
@@ -170,7 +170,7 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={11}>Cargando historial...</td>
+                  <td colSpan={12}>Cargando historial...</td>
                 </tr>
               ) : filteredWeeks.length ? (
                 filteredWeeks.map((week) => (
@@ -179,6 +179,7 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
                       <span className={`historyWeekIcon ${week.state}`}><HistoryStateIcon state={week.state} /></span>
                       <strong>{week.weekNumber} de {totalCycleWeeks}</strong>
                     </td>
+                    <td><strong>{week.group}</strong></td>
                     <td>{week.startLabel}</td>
                     <td>{week.paymentLabel}</td>
                     <td><span className={`historyStatus ${week.state}`}>{week.statusLabel}</span></td>
@@ -193,7 +194,7 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
                 ))
               ) : (
                 <tr>
-                  <td colSpan={11}>Sin movimientos para este filtro.</td>
+                  <td colSpan={12}>Sin movimientos para este filtro.</td>
                 </tr>
               )}
             </tbody>
@@ -258,7 +259,7 @@ function HistoryLineChart({ weeks }: { weeks: HistoryWeek[] }) {
       ) : null}
       <g className="historyChartAxis">
         {weeks.map((week, index) => (
-          <text key={week.weekNumber} transform={`translate(${points[index]?.x ?? 0} ${height - 26}) rotate(-45)`} textAnchor="end">
+          <text key={`${week.investmentId}-${week.weekNumber}`} transform={`translate(${points[index]?.x ?? 0} ${height - 26}) rotate(-45)`} textAnchor="end">
             Semana {week.weekNumber}
           </text>
         ))}
@@ -302,48 +303,52 @@ function DistributionLegend({ color, label, total, value }: { color: "green" | "
 }
 
 type HistoryWeek = InvestmentWeek & {
+  group: string;
   investmentId: string;
   state: "collected" | "current" | "pending";
   statusLabel: string;
 };
 
 function buildHistoryWeeks(investments: Investment[]) {
-  const selected = investments[0];
+  return investments.flatMap((investment, investmentIndex) => {
+    const visibleWeeks = investment.weeks ?? [];
+    const startDate = getDateFromIso(investment.investedAtIso) ?? null;
+    const group = investment.group || `Grupo ${investmentIndex + 1}`;
 
-  if (!selected) {
-    return Array.from({ length: totalCycleWeeks }, (_, index) => buildEmptyWeek(index + 1, new Date()));
-  }
-
-  const visibleWeeks = selected.weeks ?? [];
-  const startDate = getDateFromIso(selected.investedAtIso) ?? new Date();
-
-  return Array.from({ length: totalCycleWeeks }, (_, index) => {
-    const weekNumber = index + 1;
-    const week = visibleWeeks.find((item) => item.weekNumber === weekNumber);
-
-    if (week) {
-      const state: HistoryWeek["state"] = week.statusLabel === "Cobrada" ? "collected" : week.statusLabel === "En curso" ? "current" : "pending";
-      return {
-        ...week,
-        investmentId: selected.id,
-        paymentLabel: week.paymentLabel ?? formatDateLabel(week.paymentAt),
-        startLabel: week.startLabel ?? formatDateLabel(week.startAt),
-        state,
-        statusLabel: state === "collected" ? "Cobrado" : state === "current" ? "En curso" : "Pendiente"
-      };
+    if (!startDate) {
+      return [];
     }
 
-    return buildEmptyWeek(weekNumber, startDate, selected.id);
+    return Array.from({ length: totalCycleWeeks }, (_, index) => {
+      const weekNumber = index + 1;
+      const week = visibleWeeks.find((item) => item.weekNumber === weekNumber);
+
+      if (week) {
+        const state: HistoryWeek["state"] = week.statusLabel === "Cobrada" ? "collected" : week.statusLabel === "En curso" ? "current" : "pending";
+        return {
+          ...week,
+          group,
+          investmentId: investment.id,
+          paymentLabel: week.paymentLabel ?? formatDateLabel(week.paymentAt),
+          startLabel: week.startLabel ?? formatDateLabel(week.startAt),
+          state,
+          statusLabel: state === "collected" ? "Cobrado" : state === "current" ? "En curso" : "Pendiente"
+        };
+      }
+
+      return buildEmptyWeek(weekNumber, startDate, investment.id, group);
+    });
   });
 }
 
-function buildEmptyWeek(weekNumber: number, startDate: Date, investmentId = "empty") {
+function buildEmptyWeek(weekNumber: number, startDate: Date, investmentId: string, group: string) {
   const startAt = addDays(startDate, (weekNumber - 1) * 7);
   const paymentAt = addDays(startDate, weekNumber * 7);
 
   return {
     baseAmount: 0,
     canCollect: false,
+    group,
     investmentId,
     paymentAt: paymentAt.toISOString(),
     paymentLabel: formatDateLabel(paymentAt),
@@ -440,14 +445,6 @@ function HistoryTypeIcon({ state }: { state: HistoryWeek["state"] }) {
   if (state === "current") return <TrendIcon />;
   if (state === "pending") return <CalendarIcon />;
   return <DownloadIcon />;
-}
-
-function ArrowIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="m13.2 5.4 5.6 5.6H4v2h14.8l-5.6 5.6 1.4 1.4L22.6 12l-8-8z" />
-    </svg>
-  );
 }
 
 function CalendarIcon() {
