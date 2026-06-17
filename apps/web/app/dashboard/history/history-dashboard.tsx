@@ -32,6 +32,7 @@ type Investment = {
   investedAtIso?: string;
   name: string;
   nextPaymentAt: string;
+  paidWeeks?: number;
   payments?: PortfolioPayment[];
   referrals: Array<{ invested: boolean; name: string }>;
   weeks?: InvestmentWeek[];
@@ -444,13 +445,16 @@ function buildHistoryRows(weeks: HistoryWeek[], walletPayments: PortfolioPayment
 }
 
 function normalizeInvestment(investment: Investment) {
+  const paidWeeks = investment.paidWeeks ?? 0;
+
   return {
     ...investment,
     investedAtIso: investment.investedAtIso ?? investment.investedAt,
     weeks: investment.weeks?.map((week) => ({
       ...week,
       paymentLabel: week.paymentLabel ?? formatDateLabel(week.paymentAt),
-      startLabel: week.startLabel ?? formatDateLabel(week.startAt)
+      startLabel: week.startLabel ?? formatDateLabel(week.startAt),
+      statusLabel: week.weekNumber <= paidWeeks ? "Cobrada" : "Pendiente"
     }))
   };
 }
