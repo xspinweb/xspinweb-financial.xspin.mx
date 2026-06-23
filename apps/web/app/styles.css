@@ -7946,13 +7946,15 @@ a {
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   display: grid;
-  gap: 16px;
-  grid-template-columns: 118px minmax(0, 1fr);
-  min-height: 142px;
-  padding: 16px 20px;
+  gap: 18px;
+  grid-template-columns: 100px minmax(0, 1fr);
+  min-height: 132px;
+  padding: 18px 22px;
 }
 
-.investorLevelStrip > div:nth-child(2) {
+.investorLevelCopy {
+  display: grid;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -7961,21 +7963,29 @@ a {
   border-radius: 14px;
   display: flex;
   filter: drop-shadow(0 0 18px var(--level-glow));
-  height: 118px;
+  height: 100px;
   justify-content: center;
   overflow: visible;
-  width: 118px;
+  width: 100px;
 }
 
 .investorLevelBadge img {
   display: block;
-  height: 112%;
+  height: 104%;
   object-fit: contain;
   object-position: center;
   width: 100%;
 }
 
-.investorLevelStrip > div:nth-child(2) strong {
+.investorLevelCopy span {
+  color: rgba(183, 205, 226, 0.82);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.investorLevelCopy strong {
   color: var(--level-color);
   display: block;
   font-size: clamp(28px, 5vw, 52px);

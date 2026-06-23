@@ -149,7 +149,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   const currentCycleLabel = primaryInvestment?.name ? `${primaryInvestment.name} ${currentWeekNumber} de ${projectionWeeks}` : "-";
   const kpiCards = [
     { accent: "green", icon: "wallet", label: "Invertido", helper: "Total invertido", value: formatCurrency(totalInvested) },
-    { accent: "green", icon: "chart", label: "Ganado", helper: "Ganancia acumulada", value: formatCurrency(totalGains) },
+    { accent: "green", icon: "chart", label: "Proyectado", helper: "Ganancia acumulada", value: formatCurrency(totalGains) },
     { accent: "purple", icon: "users", label: "Referidos", helper: "Vinculados", value: String(totalReferrals) },
     { accent: "yellow", icon: "calendar", label: "Proximo pago", helper: getDaysUntilLabel(currentPrimaryWeek?.paymentAt), value: formatCurrency(nextPaymentAmount) }
   ];
@@ -427,7 +427,8 @@ function InvestorLevelStrip({ level }: { level: InvestorLevel }) {
       <div className="investorLevelBadge">
         <img src={`/badges/${level.current.key}-v2.png`} alt={`Insignia ${level.current.name}`} />
       </div>
-      <div>
+      <div className="investorLevelCopy">
+        <span>NIVEL</span>
         <strong>{level.current.name}</strong>
       </div>
     </section>
