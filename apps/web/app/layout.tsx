@@ -19,8 +19,12 @@ export const metadata: Metadata = {
     title: "Xspin Pay"
   },
   icons: {
-    icon: "/logos/xspin-mark.svg",
-    apple: "/logos/xspin-mark.svg"
+    icon: [
+      { url: "/logos/xspin-icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/logos/xspin-icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/logos/xspin-mark.svg", type: "image/svg+xml" }
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }]
   }
 };
 

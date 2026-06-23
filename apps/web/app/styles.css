@@ -6972,7 +6972,7 @@ a {
     min-height: 48px;
     padding: 0;
     right: 16px;
-    top: 14px;
+    top: calc(env(safe-area-inset-top) + 14px);
   }
 
   .appHeader img:first-child {
@@ -7059,13 +7059,13 @@ a {
 
   .dashboardContent {
     gap: 12px;
-    padding: 126px 18px calc(110px + env(safe-area-inset-bottom));
+    padding: calc(126px + env(safe-area-inset-top)) 18px calc(110px + env(safe-area-inset-bottom));
   }
 
   .appHeader {
     left: 18px;
     right: 18px;
-    top: 34px;
+    top: calc(env(safe-area-inset-top) + 18px);
   }
 
   .appHeader img:first-child {

@@ -10,6 +10,18 @@
   "theme_color": "#050b12",
   "icons": [
     {
+      "src": "/logos/xspin-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logos/xspin-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/logos/xspin-mark.svg",
       "sizes": "any",
       "type": "image/svg+xml",
