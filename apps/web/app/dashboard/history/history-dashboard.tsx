@@ -160,7 +160,7 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
                     <td>
                       <strong>{row.weekLabel}</strong>
                     </td>
-                    <td><strong>{row.group}</strong></td>
+                    <td><strong>{formatGroupLabel(row.group)}</strong></td>
                     <td>{row.investmentDateLabel}</td>
                     <td>{formatCurrency(row.investmentAmount)}</td>
                     <td><strong>{formatCurrency(row.walletBalance)}</strong></td>
@@ -525,6 +525,12 @@ function HistoryTypeIcon({ state }: { state: HistoryWeek["state"] }) {
   if (state === "current") return <TrendIcon />;
   if (state === "pending") return <CalendarIcon />;
   return <DownloadIcon />;
+}
+
+function formatGroupLabel(group: string) {
+  const groupNumber = group.match(/\d+/)?.[0];
+
+  return groupNumber ? `G-${groupNumber}` : group;
 }
 
 function CalendarIcon() {
