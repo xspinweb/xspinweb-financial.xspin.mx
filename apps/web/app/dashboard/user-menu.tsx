@@ -43,6 +43,7 @@ export function UserMenu({ avatar, userName }: UserMenuProps) {
       <button
         aria-expanded={isOpen}
         aria-haspopup="menu"
+        aria-label="Menu de usuario"
         className="userMenuTrigger"
         onClick={() => setIsOpen((current) => !current)}
         type="button"
@@ -52,7 +53,6 @@ export function UserMenu({ avatar, userName }: UserMenuProps) {
         ) : (
           <span className="userFallback">{userName.charAt(0)}</span>
         )}
-        <strong>{userName}</strong>
         <svg className={isOpen ? "menuChevron open" : "menuChevron"} viewBox="0 0 24 24" aria-hidden="true">
           <path d="m7.4 8.6 4.6 4.6 4.6-4.6L18 10l-6 6-6-6z" />
         </svg>
@@ -60,9 +60,6 @@ export function UserMenu({ avatar, userName }: UserMenuProps) {
 
       {isOpen ? (
         <div className="userDropdown" role="menu">
-          <a href="/dashboard/profile" role="menuitem">
-            Configuracion
-          </a>
           <button type="button" role="menuitem" onClick={() => signOut({ callbackUrl: "/" })}>
             Cerrar sesion
           </button>

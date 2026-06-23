@@ -314,6 +314,14 @@
   text-align: left;
 }
 
+.historyTable th:nth-child(2),
+.historyTable .historyGroupCell {
+  width: 84px;
+  min-width: 84px;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .historyTable td {
   background: rgba(8, 18, 28, 0.72);
   border-bottom: 1px solid rgba(159, 178, 196, 0.08);
@@ -393,6 +401,13 @@
 
 .historyTable strong {
   color: var(--green);
+}
+
+.historyTable .historyGroupCell strong {
+  display: inline-flex;
+  min-width: 44px;
+  justify-content: center;
+  line-height: 1;
 }
 
 .historyTable strong.purple {
@@ -1283,10 +1298,56 @@ a {
   padding: 0;
 }
 
-.appHeader > img {
+.appHeaderLogo {
   display: block;
   height: auto;
-  width: 126px;
+  width: clamp(122px, 13vw, 154px);
+  filter: drop-shadow(0 0 14px rgba(53, 224, 161, 0.18));
+}
+
+.appHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notificationButton {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(159, 178, 196, 0.12);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.notificationButton svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.notificationButton span {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid rgba(5, 11, 18, 0.9);
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 12px rgba(53, 224, 161, 0.9);
+}
+
+.notificationButton:hover {
+  border-color: rgba(53, 224, 161, 0.3);
+  background: rgba(53, 224, 161, 0.12);
+  color: var(--green);
+  transform: translateY(-1px);
 }
 
 .appHeader span {
@@ -1326,7 +1387,7 @@ a {
 .userMenuTrigger {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   border: 0;
   background: transparent;
   color: var(--ink);
@@ -1343,12 +1404,12 @@ a {
 }
 
 .menuChevron {
-  width: 24px;
-  height: 24px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.06);
   fill: var(--muted);
-  padding: 4px;
+  padding: 8px;
   transition: background 180ms ease, fill 180ms ease, transform 180ms ease;
 }
 
@@ -1367,7 +1428,7 @@ a {
   top: calc(100% + 12px);
   right: 0;
   z-index: 40;
-  min-width: 190px;
+  min-width: 150px;
   display: grid;
   gap: 4px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1378,7 +1439,6 @@ a {
   padding: 8px;
 }
 
-.userDropdown a,
 .userDropdown button {
   width: 100%;
   min-height: 42px;
@@ -1397,7 +1457,6 @@ a {
   text-decoration: none;
 }
 
-.userDropdown a:hover,
 .userDropdown button:hover {
   background: rgba(53, 224, 161, 0.12);
   color: var(--green);
@@ -1446,18 +1505,6 @@ a {
   transition: background 180ms ease, color 180ms ease, transform 180ms ease;
 }
 
-.bottomNav a::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 6px;
-  width: 26px;
-  height: 3px;
-  border-radius: 999px;
-  background: transparent;
-  transform: translateX(-50%);
-}
-
 .bottomNav svg {
   width: 25px;
   height: 25px;
@@ -1467,10 +1514,6 @@ a {
 .bottomNav a.active {
   background: rgba(53, 224, 161, 0.11);
   color: var(--green);
-}
-
-.bottomNav a.active::after {
-  background: linear-gradient(90deg, var(--green), var(--cyan));
 }
 
 .bottomNav a:hover {
@@ -6975,9 +7018,9 @@ a {
     top: calc(env(safe-area-inset-top) + 14px);
   }
 
-  .appHeader img:first-child {
+  .appHeaderLogo {
     display: block;
-    width: 104px;
+    width: 132px;
     height: auto;
   }
 
@@ -7068,8 +7111,8 @@ a {
     top: calc(env(safe-area-inset-top) + 18px);
   }
 
-  .appHeader img:first-child {
-    width: 132px;
+  .appHeaderLogo {
+    width: 150px;
   }
 
   .userAvatar,

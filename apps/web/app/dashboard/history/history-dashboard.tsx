@@ -160,7 +160,7 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
                     <td>
                       <strong>{row.weekLabel}</strong>
                     </td>
-                    <td><strong>{formatGroupLabel(row.group)}</strong></td>
+                    <td className="historyGroupCell"><strong>{formatGroupLabel(row.group)}</strong></td>
                     <td>{row.investmentDateLabel}</td>
                     <td>{formatCurrency(row.investmentAmount)}</td>
                     <td><strong>{formatCurrency(row.walletBalance)}</strong></td>
