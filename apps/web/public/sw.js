@@ -1,4 +1,4 @@
-const CACHE_NAME = "xspin-pay-v1";
+const CACHE_NAME = "xspin-pay-v2";
 const STATIC_ASSETS = [
   "/logos/xspin-logo.svg",
   "/logos/xspin-mark.svg",

@@ -1,20 +1,43 @@
-<svg width="96" height="72" viewBox="0 0 96 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="xg" x1="11" y1="10" x2="75" y2="64" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#CB35FF"/>
-      <stop offset="0.48" stop-color="#7E1DFF"/>
-      <stop offset="1" stop-color="#A84DFF"/>
+    <linearGradient id="xspinMarkFill" x1="14" y1="24" x2="114" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2EF0C1"/>
+      <stop offset="0.46" stop-color="#087986"/>
+      <stop offset="0.7" stop-color="#416CFF"/>
+      <stop offset="1" stop-color="#E244FF"/>
     </linearGradient>
-    <filter id="glow" x="0" y="0" width="96" height="72" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="2.4" result="blur"/>
-      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.58 0 0 0 0 0.14 0 0 0 0 1 0 0 0 0.7 0"/>
+    <linearGradient id="xspinMarkStroke" x1="15" y1="26" x2="114" y2="103" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#57FFD6"/>
+      <stop offset="0.56" stop-color="#1FE9F1"/>
+      <stop offset="1" stop-color="#FF5CF2"/>
+    </linearGradient>
+    <radialGradient id="xspinCore" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(62 65) rotate(28) scale(43 29)">
+      <stop stop-color="#32FFE1"/>
+      <stop offset="0.55" stop-color="#673BFF"/>
+      <stop offset="1" stop-color="#FF55E8"/>
+    </radialGradient>
+    <filter id="xspinGlow" x="0" y="0" width="128" height="128" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3.5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.07 0 0 0 0 0.92 0 0 0 0 0.86 0 0 0 0.75 0"/>
       <feBlend in="SourceGraphic"/>
     </filter>
+    <filter id="innerShadow" x="5" y="6" width="118" height="116" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#00030A" flood-opacity="0.7"/>
+    </filter>
   </defs>
-  <g filter="url(#glow)">
-    <path d="M9 13C8 10 10 7 14 7H33C37 7 40 9 42 12L51 25L60 12C62 9 65 7 69 7H82C87 7 89 13 86 17L66 36L87 55C90 59 87 65 82 65H63C59 65 56 63 54 60L43 45L32 60C30 63 27 65 23 65H12C7 65 5 59 8 55L29 36L9 17C8 16 8 14 9 13Z" fill="url(#xg)"/>
-    <path d="M27 34C35 20 55 16 70 25C58 21 44 23 35 31C27 38 29 46 38 50C26 48 20 42 27 34Z" fill="#050711"/>
-    <path d="M35 39C42 31 57 28 68 33C59 32 48 35 42 41C36 47 39 52 47 53C37 54 31 48 35 39Z" fill="#050711"/>
-    <path d="M25 24C34 15 51 12 66 18C48 15 31 22 23 34C18 31 20 27 25 24Z" fill="#050711"/>
+  <g filter="url(#xspinGlow)">
+    <path d="M19.5 20C17.1 15.4 20.4 10 25.6 10H44.4C50 10 55.1 13 57.9 17.8L65.2 30.5L74.3 17.2C77.1 12.7 82 10 87.3 10H102.5C108.4 10 111.6 16.9 107.8 21.4L83.2 51.2L108.7 106.1C111.1 111.3 107.3 117.2 101.6 117.2H86.4C81.1 117.2 76.1 114.5 73.2 110L63.6 94.7L53.1 110.7C50.2 114.8 45.6 117.2 40.6 117.2H24.3C18.4 117.2 15.1 110.3 18.9 105.8L45.9 73L19.5 20Z" fill="url(#xspinMarkFill)" filter="url(#innerShadow)"/>
+    <path d="M25.6 13H44.4C49 13 53 15.4 55.3 19.3L65 36.2L76.8 18.8C79 15.2 83 13 87.3 13H102.5C105.8 13 107.6 16.9 105.5 19.4L79.7 50.6L106 107.4C107.3 110.3 105.2 114.2 101.6 114.2H86.4C82.1 114.2 78 112 75.8 108.4L63.8 89.4L50.6 109C48.3 112.3 44.6 114.2 40.6 114.2H24.3C20.9 114.2 19 110.3 21.2 107.7L49.5 73.3L22.2 18.8C20.9 16.2 22.8 13 25.6 13Z" stroke="url(#xspinMarkStroke)" stroke-width="3.2"/>
+    <path d="M20.5 106.5L52.3 67.8L37.9 39.5C36.5 36.8 38.4 33.6 41.4 33.6H54.6C59.5 33.6 64.1 36.2 66.6 40.5L73.7 52.7L49.5 78.3L27 112.5H24.2C19.3 112.5 17.3 110 20.5 106.5Z" fill="url(#xspinMarkFill)" opacity="0.9"/>
+    <path d="M107 21L75.8 58.8L89.8 88.4C91.2 91.4 89.1 94.8 85.8 94.8H75.3C70.6 94.8 66.2 92.4 63.6 88.5L55.7 76.6L80.8 49.9L101.4 13.6C107.2 12.8 110.1 17.4 107 21Z" fill="url(#xspinMarkFill)" opacity="0.9"/>
+    <path d="M31.8 45.7C44.8 28.8 73.7 27.2 96.5 41.8C75.3 34.6 53.7 38.6 41.7 51.2C31.5 61.9 38.1 73.2 55.2 76.4C33.5 76.1 22 59.8 31.8 45.7Z" fill="#061019"/>
+    <path d="M41.2 54.9C53.2 41.6 76.1 39.1 94.6 50.3C76.4 45.7 58.9 49.6 49.8 60.5C42.8 68.9 49.9 76 62.9 75.8C45.7 79.2 32.1 65 41.2 54.9Z" fill="#061019"/>
+    <path d="M51.6 62.9C61.6 54.8 79.3 53.5 93.2 62C78.5 59.4 66.1 62.7 60 70.5C54.8 77.1 61.8 81.8 72.8 78.9C60.2 84.3 44.8 74 51.6 62.9Z" fill="#061019"/>
+    <path d="M58.4 64.6C65.3 55.7 81.5 53.6 94.1 62.3C81.6 58.9 69.9 62.3 64.2 69.4C58.5 76.5 63.9 82.2 74.6 79.5C61.4 85.9 50.4 75 58.4 64.6Z" fill="url(#xspinCore)" opacity="0.9"/>
+    <path d="M31.9 45.2C45 29.4 73.7 26.8 96.2 41.4C74.1 33.8 51.6 38.3 40.2 53.5" stroke="#49FFE1" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+    <path d="M41.7 55.3C54 42 76.4 39.7 94.3 50.2C76.9 46.2 59.1 50.5 49.7 61.2" stroke="#5CEEFF" stroke-width="2.6" stroke-linecap="round" opacity="0.82"/>
+    <path d="M52 63.6C62 55.7 79.2 54.6 92.6 62.3C79.2 60.2 66.9 63.5 60.5 70.7" stroke="#FB5CFF" stroke-width="2.4" stroke-linecap="round" opacity="0.9"/>
+    <path d="M22.3 19.1C34.8 16.1 49.9 18.4 61 31.4" stroke="#8CFFE9" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+    <path d="M84.1 18.2C94 16.8 101.2 17 105.4 19" stroke="#FF75F3" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
   </g>
 </svg>
