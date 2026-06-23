@@ -130,10 +130,6 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
           <div className="historyTabs" role="tablist" aria-label="Filtro de historial">
             <button className="active" type="button">Rendimiento</button>
           </div>
-          <button className="historyDownloadButton" type="button">
-            <DownloadIcon />
-            Descargar reporte
-          </button>
         </div>
 
         <div className="historyTableWrap">
@@ -162,7 +158,6 @@ export function HistoryDashboard({ userEmail }: { userEmail: string; userName: s
                 historyRows.map((row) => (
                   <tr key={row.id}>
                     <td>
-                      <span className={`historyWeekIcon ${row.state}`}><HistoryStateIcon state={row.state} /></span>
                       <strong>{row.weekLabel}</strong>
                     </td>
                     <td><strong>{row.group}</strong></td>
@@ -524,12 +519,6 @@ function getSmoothPath(points: Array<{ x: number; y: number }>) {
     const controlX = (previous.x + point.x) / 2;
     return `${path} C ${controlX} ${previous.y}, ${controlX} ${point.y}, ${point.x} ${point.y}`;
   }, "");
-}
-
-function HistoryStateIcon({ state }: { state: HistoryWeek["state"] }) {
-  if (state === "current") return <TrendIcon />;
-  if (state === "pending") return <CalendarIcon />;
-  return <DownloadIcon />;
 }
 
 function HistoryTypeIcon({ state }: { state: HistoryWeek["state"] }) {
