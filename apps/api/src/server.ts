@@ -160,6 +160,78 @@ type ReinvestReferral = {
   };
 };
 
+type InvestorLevelKey = "explorer" | "starter" | "builder" | "elite" | "legend";
+
+type InvestorLevelRule = {
+  activeReferrals: number;
+  bonusRate: number;
+  completedCycles: number;
+  investmentLimit: number;
+  key: InvestorLevelKey;
+  minInvested: number;
+  name: string;
+  requirement: string;
+  yieldRate: number;
+};
+
+const investorLevelRules: InvestorLevelRule[] = [
+  {
+    activeReferrals: 0,
+    bonusRate: 0,
+    completedCycles: 0,
+    investmentLimit: 0,
+    key: "explorer",
+    minInvested: 0,
+    name: "Explorer",
+    requirement: "Registrado, sin inversion",
+    yieldRate: 0
+  },
+  {
+    activeReferrals: 0,
+    bonusRate: 0.05,
+    completedCycles: 0,
+    investmentLimit: 2000,
+    key: "starter",
+    minInvested: 0,
+    name: "Starter",
+    requirement: "Primera inversion realizada",
+    yieldRate: 0.13
+  },
+  {
+    activeReferrals: 5,
+    bonusRate: 0.053,
+    completedCycles: 3,
+    investmentLimit: 5000,
+    key: "builder",
+    minInvested: 2000,
+    name: "Builder",
+    requirement: "3 ciclos, $2,000 invertidos y 5 referidos activos",
+    yieldRate: 0.16
+  },
+  {
+    activeReferrals: 25,
+    bonusRate: 0.06,
+    completedCycles: 10,
+    investmentLimit: 20000,
+    key: "elite",
+    minInvested: 15000,
+    name: "Elite",
+    requirement: "10 ciclos, $15,000 invertidos y 25 referidos activos",
+    yieldRate: 0.175
+  },
+  {
+    activeReferrals: 50,
+    bonusRate: 0.062,
+    completedCycles: 20,
+    investmentLimit: 100000,
+    key: "legend",
+    minInvested: 100000,
+    name: "Legend",
+    requirement: "20 ciclos, $100,000 invertidos y 50 referidos activos",
+    yieldRate: 0.182
+  }
+];
+
 type StripeCheckoutSession = {
   id: string;
   metadata?: Record<string, string | undefined>;
@@ -454,13 +526,15 @@ async function getPortfolio(email: string) {
   }
 
   const investments = investor.investments as PortfolioInvestment[];
+  const investorLevel = buildInvestorLevel(investments);
+  const levelRule = getLevelRule(investorLevel.current.key);
 
   return {
     investor: {
       id: investor.id,
       code: investor.investorCode,
       email: investor.email,
-      level: buildInvestorLevel(investments),
+      level: investorLevel,
       name: investor.fullName
     },
     walletPayments: investor.payments.map((payment) => ({
@@ -482,7 +556,7 @@ async function getPortfolio(email: string) {
         notes: payment.notes,
         paidAt: payment.paidAt
       })),
-      weeks: buildInvestmentWeeks(investment),
+      weeks: buildInvestmentWeeks(investment, levelRule),
       referrals: investment.referralsSource.map((referral: PortfolioInvestment["referralsSource"][number]) => {
         const referredInvestment = referral.referredInvestor.investments[0];
 
@@ -586,7 +660,16 @@ async function getInvestorLevel(email: string) {
             select: { id: true }
           },
           referralsSource: {
-            select: { id: true }
+            select: {
+              referredInvestor: {
+                select: {
+                  investments: {
+                    select: { id: true },
+                    take: 1
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -597,7 +680,7 @@ async function getInvestorLevel(email: string) {
   return buildInvestorLevel((investor?.investments ?? []) as Array<{
     principalAmount: unknown;
     payments: unknown[];
-    referralsSource: unknown[];
+    referralsSource: Array<{ referredInvestor?: { investments?: unknown[] } }>;
     status: string;
   }>);
 }
@@ -956,12 +1039,14 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
       const sourceAcceptsReferrals = sourceInvestment ? sourceInvestment.payments.length === 0 : false;
 
       if (referrer && sourceInvestment && sourceAcceptsReferrals && referrer.id !== investor.id) {
+        const referrerLevelRule = await getInvestorLevelRule(tx, referrer.id);
+
         await tx.referral.create({
           data: {
             referrerInvestorId: referrer.id,
             referredInvestorId: investor.id,
             sourceInvestmentId: sourceInvestment.id,
-            bonusAmount: calculated.referralBonusAmount
+            bonusAmount: roundMoney(input.amount * referrerLevelRule.bonusRate)
           }
         });
       }
@@ -1156,7 +1241,8 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
       throw new Error("La fecha de pago de esta semana aun no ha llegado.");
     }
 
-    const week = buildInvestmentWeeks(investment)[weekNumber - 1];
+    const levelRule = await getInvestorLevelRule(tx, investment.investorId);
+    const week = buildInvestmentWeeks(investment, levelRule)[weekNumber - 1];
 
     if (!week || week.baseAmount <= 0) {
       throw new Error("Esta semana no tiene capital base para reinversion.");
@@ -1254,7 +1340,8 @@ async function collectFinalInvestment(investmentId: string, input: z.infer<typeo
       throw new Error("El cobro final requiere al menos 2 referidos vinculados.");
     }
 
-    const week = buildInvestmentWeeks(investment)[weekNumber - 1];
+    const levelRule = await getInvestorLevelRule(tx, investment.investorId);
+    const week = buildInvestmentWeeks(investment, levelRule)[weekNumber - 1];
 
     if (!week || week.baseAmount <= 0) {
       throw new Error("Esta semana no tiene capital base para cobro final.");
@@ -1293,14 +1380,24 @@ async function collectFinalInvestment(investmentId: string, input: z.infer<typeo
   });
 }
 
-function getTotalGenerated(input: { principalAmount: number; referrals: Array<{ bonusAmount: number; referredAmount: number }> }) {
-  const referralBonus = roundMoney(input.referrals.reduce((total, referral) => total + referral.bonusAmount, 0));
-  const referralYield = roundMoney(input.referrals.reduce((total, referral) => total + referral.referredAmount * config.defaultBusinessRules.referralYieldRate, 0));
+function getTotalGenerated(input: { principalAmount: number; referrals: Array<{ referredAmount: number }>; levelRule?: InvestorLevelRule }) {
+  const levelRule = input.levelRule ?? investorLevelRules[1];
+  const earningBase = getLevelEarningBase(input.principalAmount, levelRule);
+  const referralBonus = roundMoney(input.referrals.reduce((total, referral) => total + referral.referredAmount * levelRule.bonusRate, 0));
+  const referralYield = roundMoney(input.referrals.reduce((total, referral) => total + Math.min(referral.referredAmount, earningBase) * levelRule.yieldRate, 0));
 
   return roundMoney(input.principalAmount + referralBonus + referralYield);
 }
 
-function buildInvestmentWeeks(investment: WeeklyInvestmentInput) {
+function getLevelEarningBase(baseAmount: number, levelRule: InvestorLevelRule) {
+  if (levelRule.investmentLimit <= 0) {
+    return 0;
+  }
+
+  return roundMoney(Math.min(baseAmount, levelRule.investmentLimit));
+}
+
+function buildInvestmentWeeks(investment: WeeklyInvestmentInput, levelRule: InvestorLevelRule = investorLevelRules[0]) {
   const paidWeeks = investment.payments.length;
   const visibleWeeks = Math.min(config.defaultBusinessRules.totalCycleWeeks, Math.max(1, paidWeeks + 1));
 
@@ -1323,8 +1420,11 @@ function buildInvestmentWeeks(investment: WeeklyInvestmentInput) {
     });
     const linkedReferrals = investment.referralsSource.length;
     const weeklyQualifiedReferrals = weeklyReferralAmounts.filter((amount) => amount > 0).length;
-    const weeklyBonus = roundMoney(weeklyReferralAmounts.reduce((total, amount) => total + amount * config.defaultBusinessRules.referralBonusRate, 0));
-    const weeklyYield = roundMoney(weeklyReferralAmounts.reduce((total, amount) => total + amount * config.defaultBusinessRules.referralYieldRate, 0));
+    const earningBase = getLevelEarningBase(baseAmount, levelRule);
+    const weeklyBonus = roundMoney(weeklyReferralAmounts.reduce((total, amount) => total + amount * levelRule.bonusRate, 0));
+    const weeklyYield = roundMoney(
+      weeklyReferralAmounts.reduce((total, amount) => total + Math.min(amount, earningBase) * levelRule.yieldRate, 0)
+    );
     const totalGenerated = roundMoney(baseAmount + weeklyBonus + weeklyYield);
 
     return {
@@ -1344,6 +1444,34 @@ function buildInvestmentWeeks(investment: WeeklyInvestmentInput) {
 function getReinvestedAmount(notes?: string | null) {
   const match = notes?.match(/reinvertido\s+([0-9]+(?:\.[0-9]+)?)/i);
   return match ? Number(match[1]) : 0;
+}
+
+async function getInvestorLevelRule(tx: Prisma.TransactionClient, investorId: string) {
+  const investments = await tx.investment.findMany({
+    select: {
+      payments: {
+        select: { id: true }
+      },
+      principalAmount: true,
+      referralsSource: {
+        select: {
+          referredInvestor: {
+            select: {
+              investments: {
+                select: { id: true },
+                take: 1
+              }
+            }
+          }
+        }
+      },
+      status: true
+    },
+    where: { investorId }
+  });
+  const level = buildInvestorLevel(investments);
+
+  return getLevelRule(level.current.key);
 }
 
 async function getOrCreateInvestor(tx: Prisma.TransactionClient, input: { email: string; fullName?: string }) {
@@ -1392,7 +1520,7 @@ async function createUniqueInvestorCode(tx: Prisma.TransactionClient) {
 function buildInvestorLevel(investments: Array<{
   principalAmount: unknown;
   payments?: unknown[];
-  referralsSource?: unknown[];
+  referralsSource?: Array<{ referredInvestor?: { investments?: unknown[] } }>;
   status?: string;
 }>) {
   const investmentCount = investments.length;
@@ -1400,20 +1528,26 @@ function buildInvestorLevel(investments: Array<{
     investment.status === "PAID" || (investment.payments?.length ?? 0) >= config.defaultBusinessRules.totalCycleWeeks
   ).length;
   const totalInvested = roundMoney(investments.reduce((total, investment) => total + Number(investment.principalAmount ?? 0), 0));
-  const totalReferrals = investments.reduce((total, investment) => total + (investment.referralsSource?.length ?? 0), 0);
-  const levels = [
-    { key: "explorer", name: "Explorer", requirement: "Registrado, sin inversion" },
-    { key: "starter", name: "Starter", requirement: "Primera inversion realizada" },
-    { key: "builder", name: "Builder", requirement: "Completa su primer ciclo de 8 semanas" },
-    { key: "elite", name: "Elite", requirement: "Completa 3 ciclos o alcanza volumen de inversion" },
-    { key: "legend", name: "Legend", requirement: "Historial destacado y actividad constante" }
-  ];
+  const totalReferrals = investments.reduce(
+    (total, investment) =>
+      total + (investment.referralsSource ?? []).filter((referral) => (referral.referredInvestor?.investments?.length ?? 0) > 0).length,
+    0
+  );
   let index = 0;
 
-  if (investmentCount >= 1) index = 1;
-  if (completedCycles >= 1) index = 2;
-  if (completedCycles >= 3 || totalInvested >= 10000) index = 3;
-  if (completedCycles >= 8 || totalInvested >= 50000 || totalReferrals >= 25) index = 4;
+  for (let candidateIndex = 1; candidateIndex < investorLevelRules.length; candidateIndex += 1) {
+    const candidate = investorLevelRules[candidateIndex];
+    const meetsFirstInvestment = candidate.key === "starter" ? investmentCount >= 1 : true;
+    const meetsRequirements =
+      meetsFirstInvestment &&
+      completedCycles >= candidate.completedCycles &&
+      totalInvested >= candidate.minInvested &&
+      totalReferrals >= candidate.activeReferrals;
+
+    if (meetsRequirements) {
+      index = candidateIndex;
+    }
+  }
 
   const nextProgress = getLevelProgress(index, {
     completedCycles,
@@ -1424,8 +1558,8 @@ function buildInvestorLevel(investments: Array<{
 
   return {
     completedCycles,
-    current: levels[index],
-    next: levels[index + 1] ?? null,
+    current: formatLevelRule(investorLevelRules[index]),
+    next: investorLevelRules[index + 1] ? formatLevelRule(investorLevelRules[index + 1]) : null,
     progressToNext: nextProgress,
     totalInvested,
     totalReferrals
@@ -1438,15 +1572,30 @@ function getLevelProgress(index: number, stats: {
   totalInvested: number;
   totalReferrals: number;
 }) {
-  if (index >= 4) return 100;
+  if (index >= investorLevelRules.length - 1) return 100;
   if (index === 0) return stats.investmentCount > 0 ? 100 : 0;
-  if (index === 1) return clampPercent((stats.completedCycles / 1) * 100);
-  if (index === 2) return clampPercent(Math.max((stats.completedCycles / 3) * 100, (stats.totalInvested / 10000) * 100));
-  return clampPercent(Math.max((stats.completedCycles / 8) * 100, (stats.totalInvested / 50000) * 100, (stats.totalReferrals / 25) * 100));
+  const next = investorLevelRules[index + 1];
+  const cycleProgress = next.completedCycles > 0 ? stats.completedCycles / next.completedCycles : 1;
+  const investedProgress = next.minInvested > 0 ? stats.totalInvested / next.minInvested : 1;
+  const referralProgress = next.activeReferrals > 0 ? stats.totalReferrals / next.activeReferrals : 1;
+
+  return clampPercent(Math.min(cycleProgress, investedProgress, referralProgress) * 100);
 }
 
 function clampPercent(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function getLevelRule(levelKey: string) {
+  return investorLevelRules.find((level) => level.key === levelKey) ?? investorLevelRules[0];
+}
+
+function formatLevelRule(levelRule: InvestorLevelRule) {
+  return {
+    key: levelRule.key,
+    name: levelRule.name,
+    requirement: levelRule.requirement
+  };
 }
 
 function generateBase32Secret() {

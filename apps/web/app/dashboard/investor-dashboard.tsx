@@ -35,6 +35,11 @@ type ProjectionWeek = {
   weekNumber: number;
 };
 
+type ProjectionReferralState = {
+  count: number;
+  movement: number;
+};
+
 type Investment = {
   id: string;
   name: string;
@@ -81,8 +86,13 @@ type LevelKey = "explorer" | "starter" | "builder" | "elite" | "legend";
 
 const projectionWeeks = 8;
 const projectionReinvestRate = 0.82;
-const projectionReferralBonusRate = 0.05;
-const projectionReferralYieldRate = 0.27;
+const projectionLevelRules = {
+  explorer: { bonusRate: 0, investmentLimit: 0, yieldRate: 0 },
+  starter: { bonusRate: 0.05, investmentLimit: 2000, yieldRate: 0.13 },
+  builder: { bonusRate: 0.053, investmentLimit: 5000, yieldRate: 0.16 },
+  elite: { bonusRate: 0.06, investmentLimit: 20000, yieldRate: 0.175 },
+  legend: { bonusRate: 0.062, investmentLimit: 100000, yieldRate: 0.182 }
+} satisfies Record<LevelKey, { bonusRate: number; investmentLimit: number; yieldRate: number }>;
 
 export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProps) {
   const [investments, setInvestments] = useState<Investment[]>([]);
@@ -130,7 +140,8 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
 
   const primaryInvestment = investments.find((investment) => investment.id === selectedInvestmentId) ?? investments[0];
   const currentPrimaryWeek = getCurrentInvestmentWeek(primaryInvestment);
-  const projectedWeeks = buildPortfolioProjection(investments);
+  const projectionRule = projectionLevelRules[investorLevel?.current.key ?? "explorer"];
+  const projectedWeeks = buildPortfolioProjection(investments, projectionRule);
   const totalInvested = roundMoney(investments.reduce((total, investment) => total + investment.amount, 0));
   const projectedBalance = projectedWeeks.at(-1)?.totalGenerated ?? totalInvested;
   const totalGains = roundMoney(Math.max(projectedBalance - totalInvested, 0));
@@ -143,7 +154,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   const firstName = getFirstName(userName);
   const currentWeekNumber = currentPrimaryWeek?.weekNumber ?? 1;
   const cycleProgress = Math.round((currentWeekNumber / projectionWeeks) * 100);
-  const cycleProjection = buildTwelveWeekProjection(primaryInvestment);
+  const cycleProjection = buildTwelveWeekProjection(primaryInvestment, projectionRule);
   const nextPaymentLabel = currentPrimaryWeek?.paymentLabel ?? primaryInvestment?.nextPaymentAt ?? "-";
   const nextPaymentAmount = currentPrimaryWeek?.totalGenerated ?? 0;
   const currentCycleLabel = primaryInvestment?.name ? `${primaryInvestment.name} ${currentWeekNumber} de ${projectionWeeks}` : "-";
@@ -435,7 +446,10 @@ function InvestorLevelStrip({ level }: { level: InvestorLevel }) {
   );
 }
 
-function buildTwelveWeekProjection(investment?: Investment): ProjectionWeek[] {
+function buildTwelveWeekProjection(
+  investment: Investment | undefined,
+  projectionRule: { bonusRate: number; investmentLimit: number; yieldRate: number }
+): ProjectionWeek[] {
   if (!investment) {
     return [];
   }
@@ -444,7 +458,7 @@ function buildTwelveWeekProjection(investment?: Investment): ProjectionWeek[] {
   const weeksByNumber = new Map(visibleWeeks.map((week) => [week.weekNumber, week]));
   const initialBase = investment.amount || visibleWeeks[0]?.baseAmount || 0;
   let baseAmount = roundMoney(initialBase);
-  let referralMovement = getInitialReferralMovement(investment, visibleWeeks, initialBase);
+  let referralState = getInitialReferralState(investment, visibleWeeks, initialBase, projectionRule);
 
   return Array.from({ length: projectionWeeks }, (_, index) => {
     const weekNumber = index + 1;
@@ -452,12 +466,15 @@ function buildTwelveWeekProjection(investment?: Investment): ProjectionWeek[] {
 
     if (actualWeek) {
       if (actualWeek.weeklyBonus > 0) {
-        referralMovement = roundMoney(actualWeek.weeklyBonus / projectionReferralBonusRate);
+        referralState = {
+          count: Math.max(1, actualWeek.weeklyQualifiedReferrals),
+          movement: projectionRule.bonusRate > 0 ? roundMoney(actualWeek.weeklyBonus / projectionRule.bonusRate) : 0
+        };
       }
 
       if (weekNumber < projectionWeeks) {
         baseAmount = roundMoney(actualWeek.totalGenerated * projectionReinvestRate);
-        referralMovement = projectNextReferralMovement(referralMovement);
+        referralState = projectNextReferralState(referralState, projectionRule);
       }
 
       return {
@@ -466,11 +483,11 @@ function buildTwelveWeekProjection(investment?: Investment): ProjectionWeek[] {
       };
     }
 
-    const totalGenerated = calculateProjectedWeekTotal(baseAmount, referralMovement);
+    const totalGenerated = calculateProjectedWeekTotal(baseAmount, referralState, projectionRule);
 
     if (weekNumber < projectionWeeks) {
       baseAmount = roundMoney(totalGenerated * projectionReinvestRate);
-      referralMovement = projectNextReferralMovement(referralMovement);
+      referralState = projectNextReferralState(referralState, projectionRule);
     }
 
     return {
@@ -480,12 +497,15 @@ function buildTwelveWeekProjection(investment?: Investment): ProjectionWeek[] {
   });
 }
 
-function buildPortfolioProjection(investments: Investment[]): ProjectionWeek[] {
+function buildPortfolioProjection(
+  investments: Investment[],
+  projectionRule: { bonusRate: number; investmentLimit: number; yieldRate: number }
+): ProjectionWeek[] {
   if (investments.length === 0) {
     return [];
   }
 
-  const projections = investments.map(buildTwelveWeekProjection);
+  const projections = investments.map((investment) => buildTwelveWeekProjection(investment, projectionRule));
 
   return Array.from({ length: projectionWeeks }, (_, index) => ({
     totalGenerated: roundMoney(
@@ -564,32 +584,61 @@ function BankIcon() {
   );
 }
 
-function getInitialReferralMovement(investment: Investment, visibleWeeks: InvestmentWeek[], initialBase: number) {
+function getInitialReferralState(
+  investment: Investment,
+  visibleWeeks: InvestmentWeek[],
+  initialBase: number,
+  projectionRule: { bonusRate: number; investmentLimit: number; yieldRate: number }
+): ProjectionReferralState {
   const weekWithBonus = visibleWeeks.find((week) => week.weeklyBonus > 0);
 
   if (weekWithBonus) {
-    return roundMoney(weekWithBonus.weeklyBonus / projectionReferralBonusRate);
+    return {
+      count: Math.max(1, weekWithBonus.weeklyQualifiedReferrals),
+      movement: projectionRule.bonusRate > 0 ? roundMoney(weekWithBonus.weeklyBonus / projectionRule.bonusRate) : 0
+    };
   }
 
-  const confirmedReferralAmount = investment.referrals
-    .filter((referral) => referral.invested)
-    .reduce((total, referral) => total + (referral.amount ?? initialBase), 0);
+  const confirmedReferrals = investment.referrals.filter((referral) => referral.invested);
+  const confirmedReferralAmount = confirmedReferrals.reduce((total, referral) => total + (referral.amount ?? initialBase), 0);
 
-  return roundMoney(confirmedReferralAmount > 0 ? confirmedReferralAmount : initialBase * 2);
+  return {
+    count: Math.max(1, confirmedReferrals.length || 2),
+    movement: roundMoney(confirmedReferralAmount > 0 ? confirmedReferralAmount : initialBase * 2)
+  };
 }
 
-function calculateProjectedWeekTotal(baseAmount: number, referralMovement: number) {
-  const weeklyBonus = roundMoney(referralMovement * projectionReferralBonusRate);
-  const weeklyYield = roundMoney(referralMovement * projectionReferralYieldRate);
+function calculateProjectedWeekTotal(
+  baseAmount: number,
+  referralState: ProjectionReferralState,
+  projectionRule: { bonusRate: number; investmentLimit: number; yieldRate: number }
+) {
+  const earningBase = projectionRule.investmentLimit > 0 ? Math.min(baseAmount, projectionRule.investmentLimit) : 0;
+  const referralAmount = referralState.count > 0 ? referralState.movement / referralState.count : 0;
+  const weeklyBonus = roundMoney(referralState.movement * projectionRule.bonusRate);
+  const weeklyYield = roundMoney(
+    referralState.count > 0
+      ? Array.from({ length: referralState.count }, () => Math.min(referralAmount, earningBase)).reduce(
+          (total, amount) => total + amount * projectionRule.yieldRate,
+          0
+        )
+      : 0
+  );
 
   return roundMoney(baseAmount + weeklyBonus + weeklyYield);
 }
 
-function projectNextReferralMovement(referralMovement: number) {
-  const referralBasePerInvestor = roundMoney(referralMovement / 2);
-  const referredInvestorTotal = calculateProjectedWeekTotal(referralBasePerInvestor, referralMovement);
+function projectNextReferralState(
+  referralState: ProjectionReferralState,
+  projectionRule: { bonusRate: number; investmentLimit: number; yieldRate: number }
+) {
+  const referralBasePerInvestor = roundMoney(referralState.movement / Math.max(1, referralState.count));
+  const referredInvestorTotal = calculateProjectedWeekTotal(referralBasePerInvestor, referralState, projectionRule);
 
-  return roundMoney(referredInvestorTotal * projectionReinvestRate * 2);
+  return {
+    count: referralState.count,
+    movement: roundMoney(referredInvestorTotal * projectionReinvestRate * referralState.count)
+  };
 }
 
 function InviteReferralModal({

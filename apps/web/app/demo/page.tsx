@@ -3,7 +3,8 @@ const referralCount = 2;
 const reinvestPercent = 82;
 const cycleDays = 7;
 const referralBonusRate = 0.05;
-const referralYieldRate = 0.27;
+const referralYieldRate = 0.13;
+const investmentLimit = 2000;
 const totalCycleWeeks = 8;
 
 type DemoWeek = {
@@ -131,7 +132,7 @@ export default function DemoPage() {
 
                 {week.yieldWasCapped ? (
                   <p className="demoNote">
-                    El rendimiento bruto era {formatCurrency(week.rawYield)} y se limito al 75% del monto base.
+                    El rendimiento bruto era {formatCurrency(week.rawYield)} y se topo al capital base permitido por nivel.
                   </p>
                 ) : null}
               </details>
@@ -153,9 +154,10 @@ function buildDemoWeeks() {
     const weekNumber = index + 1;
     const weeklyReferralAmount = roundMoney(referralWeeklyAmount * referralCount);
     const bonusAmount = roundMoney(weeklyReferralAmount * referralBonusRate);
+    const earningBase = Math.min(baseAmount, investmentLimit);
     const rawYield = roundMoney(weeklyReferralAmount * referralYieldRate);
-    const yieldWasCapped = rawYield > baseAmount;
-    const yieldAmount = yieldWasCapped ? roundMoney(baseAmount * 0.75) : rawYield;
+    const yieldAmount = roundMoney(referralCount * Math.min(referralWeeklyAmount, earningBase) * referralYieldRate);
+    const yieldWasCapped = yieldAmount < rawYield;
     const totalGenerated = roundMoney(baseAmount + bonusAmount + yieldAmount);
     const reinvestedAmount = weekNumber < totalCycleWeeks ? roundMoney(totalGenerated * (reinvestPercent / 100)) : 0;
     const withdrawalAmount = roundMoney(totalGenerated - reinvestedAmount);
