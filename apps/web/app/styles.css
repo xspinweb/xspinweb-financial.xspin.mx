@@ -8567,3 +8567,13 @@ a {
     display: none;
   }
 }
+
+@media (display-mode: standalone) and (max-width: 720px) {
+  .appHeader {
+    top: calc(env(safe-area-inset-top) + 28px);
+  }
+
+  .dashboardContent {
+    padding-top: calc(146px + env(safe-area-inset-top));
+  }
+}
