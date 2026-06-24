@@ -655,11 +655,8 @@ function InviteReferralModal({
   const referralCode = investorCode ? `${investorCode}-${investmentId}` : "PENDIENTE";
   const referralLink = `https://pay.xspin.mx/register?ref=${encodeURIComponent(referralCode)}`;
   const shareTitle = "XSPIN";
-  const shareIntro = "🚀 Te invito a formar parte de XSPIN.\n\nComienza tu ciclo de inversión, construye tu comunidad y haz crecer tu capital cada semana.\n\n🔗 Regístrate aquí:";
-  const shareMessage = `${shareIntro}\n${referralLink}`;
   const encodedUrl = encodeURIComponent(referralLink);
-  const encodedText = encodeURIComponent(shareIntro);
-  const encodedMessage = encodeURIComponent(shareMessage);
+  const encodedMessage = encodeURIComponent(referralLink);
 
   useEffect(() => {
     if (!isOpen) {
@@ -696,7 +693,7 @@ function InviteReferralModal({
   async function shareNative() {
     if (navigator.share) {
       try {
-        await navigator.share({ text: shareMessage, title: shareTitle, url: referralLink });
+        await navigator.share({ title: shareTitle, url: referralLink });
         return;
       } catch {
         return;
@@ -741,7 +738,7 @@ function InviteReferralModal({
               <button
                 className="shareActionButton tone-telegram"
                 type="button"
-                onClick={() => openShareUrl(`https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`)}
+                onClick={() => openShareUrl(`https://t.me/share/url?url=${encodedUrl}`)}
               >
                 <span className="shareActionIcon">
                   <TelegramShareIcon />
