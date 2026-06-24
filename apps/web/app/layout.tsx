@@ -9,14 +9,36 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://pay.xspin.mx"),
   applicationName: "Xspin Pay",
-  title: "Pay Financial",
-  description: "Administracion de inversionistas, ciclos y pagos",
+  title: "XSpin Pay",
+  description: "Comienza tu ciclo de inversion, construye tu comunidad y haz crecer tu capital semana a semana.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Xspin Pay"
+  },
+  openGraph: {
+    title: "XSpin Pay",
+    description: "Comienza tu ciclo de inversion, construye tu comunidad y haz crecer tu capital semana a semana.",
+    images: [
+      {
+        url: "/logos/xspin-official.png",
+        width: 1024,
+        height: 1024,
+        alt: "XSpin"
+      }
+    ],
+    siteName: "XSpin Pay",
+    type: "website",
+    url: "https://pay.xspin.mx"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "XSpin Pay",
+    description: "Comienza tu ciclo de inversion, construye tu comunidad y haz crecer tu capital semana a semana.",
+    images: ["/logos/xspin-official.png"]
   },
   icons: {
     icon: [

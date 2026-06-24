@@ -651,12 +651,12 @@ function InviteReferralModal({
   investorCode: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [copiedValue, setCopiedValue] = useState<"link" | "code" | null>(null);
+  const [copiedValue, setCopiedValue] = useState<"link" | null>(null);
   const referralCode = investorCode ? `${investorCode}-${investmentId}` : "PENDIENTE";
   const referralLink = `https://pay.xspin.mx/register?ref=${encodeURIComponent(referralCode)}`;
-  const shareTitle = "Invitacion XSpin";
-  const shareIntro = `Te invito a unirte a XSpin. Usa mi codigo ${referralCode} y comienza tu ciclo desde aqui:`;
-  const shareMessage = `${shareIntro} ${referralLink}`;
+  const shareTitle = "XSpin";
+  const shareIntro = "🚀 Te invito a formar parte de XSpin.\n\nComienza tu ciclo de inversión, construye tu comunidad y haz crecer tu capital semana a semana.\n\n🔗 Regístrate aquí:";
+  const shareMessage = `${shareIntro}\n${referralLink}`;
   const encodedUrl = encodeURIComponent(referralLink);
   const encodedText = encodeURIComponent(shareIntro);
   const encodedMessage = encodeURIComponent(shareMessage);
@@ -681,7 +681,7 @@ function InviteReferralModal({
     setCopiedValue(null);
   }
 
-  async function copyValue(value: string, type: "link" | "code") {
+  async function copyValue(value: string, type: "link") {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(value);
     }
@@ -731,12 +731,6 @@ function InviteReferralModal({
                   <LinkShareIcon />
                 </span>
                 <strong>{copiedValue === "link" ? "Copiado" : "Copiar enlace"}</strong>
-              </button>
-              <button className="shareActionButton tone-code" type="button" onClick={() => copyValue(referralCode, "code")}>
-                <span className="shareActionIcon">
-                  <CodeShareIcon />
-                </span>
-                <strong>{copiedValue === "code" ? "Copiado" : "Copiar codigo"}</strong>
               </button>
               <button className="shareActionButton tone-whatsapp" type="button" onClick={() => openShareUrl(`https://wa.me/?text=${encodedMessage}`)}>
                 <span className="shareActionIcon">
@@ -1436,14 +1430,6 @@ function LinkShareIcon() {
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M9.2 14.8a1 1 0 0 1 0-1.4l4.2-4.2a1 1 0 1 1 1.4 1.4l-4.2 4.2a1 1 0 0 1-1.4 0Z" />
       <path d="M8.1 18.6a4.7 4.7 0 0 1-3.3-8l2.4-2.4a4.7 4.7 0 0 1 6.6 0 1 1 0 0 1-1.4 1.4 2.7 2.7 0 0 0-3.8 0l-2.4 2.4a2.7 2.7 0 0 0 3.8 3.8 1 1 0 1 1 1.4 1.4 4.6 4.6 0 0 1-3.3 1.4Zm5.7-2.8a4.7 4.7 0 0 1-3.3-1.4 1 1 0 1 1 1.4-1.4 2.7 2.7 0 0 0 3.8 0l2.4-2.4a2.7 2.7 0 0 0-3.8-3.8 1 1 0 0 1-1.4-1.4 4.7 4.7 0 0 1 6.6 6.6l-2.4 2.4a4.7 4.7 0 0 1-3.3 1.4Z" />
-    </svg>
-  );
-}
-
-function CodeShareIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 4h6v6H4V4Zm2 2v2h2V6H6Zm8-2h6v6h-6V4Zm2 2v2h2V6h-2ZM4 14h6v6H4v-6Zm2 2v2h2v-2H6Zm8-1h2v2h-2v-2Zm2 2h2v-2h2v4h-2v1h-4v-2h2v-1Z" />
     </svg>
   );
 }

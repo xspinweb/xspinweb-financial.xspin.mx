@@ -2699,23 +2699,23 @@ a {
   color: var(--text);
   cursor: pointer;
   display: flex;
-  font-size: 28px;
+  font-size: 19px;
   font-weight: 700;
-  height: 58px;
+  height: 40px;
   justify-content: center;
   line-height: 1;
   position: absolute;
   right: clamp(18px, 5vw, 42px);
-  top: 44px;
-  width: 58px;
+  top: 38px;
+  width: 40px;
 }
 
 .shareSheetLabel {
   color: var(--muted);
-  font-size: clamp(20px, 4.4vw, 26px);
+  font-size: clamp(15px, 3.2vw, 18px);
   font-weight: 800;
-  margin: 0 0 20px;
-  padding-right: 70px;
+  margin: 0 0 16px;
+  padding-right: 50px;
 }
 
 .shareActionGrid {
@@ -2788,7 +2788,6 @@ a {
   color: #368bff;
 }
 
-.tone-code,
 .tone-email {
   color: var(--green);
 }
@@ -2840,10 +2839,10 @@ a {
   }
 
   .shareSheetClose {
-    height: 48px;
+    height: 36px;
     right: 18px;
-    top: 40px;
-    width: 48px;
+    top: 36px;
+    width: 36px;
   }
 
   .shareActionGrid {
