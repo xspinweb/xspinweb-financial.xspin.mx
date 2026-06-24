@@ -886,6 +886,58 @@ function compactSimilarNotifications(notifications: DbNotification[]): CompactNo
   return compacted;
 }
 
+type NotificationTemplateType = keyof typeof notificationTemplates;
+
+type NotificationVariables = Partial<Record<"amount" | "count" | "cycles" | "date" | "level" | "limit" | "name" | "progress", string | number>>;
+
+type NotificationEvent = {
+  actionUrl?: string;
+  investorId: string;
+  type: NotificationTemplateType;
+  variables?: NotificationVariables;
+};
+
+function renderNotificationMessage(type: NotificationTemplateType, variables: NotificationVariables = {}) {
+  return notificationTemplates[type].message.replace(/\{(\w+)\}/g, (match, key: keyof NotificationVariables) => {
+    const value = variables[key];
+    return value === undefined ? match : String(value);
+  });
+}
+
+function formatNotificationAmount(amount: number) {
+  return `$${roundMoney(amount).toLocaleString("es-MX", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })} MXN`;
+}
+
+async function dispatchNotificationEvents(events: NotificationEvent[]) {
+  if (!events.length) {
+    return;
+  }
+
+  await Promise.all(events.map(async (event) => {
+    const template = notificationTemplates[event.type];
+
+    try {
+      await prisma.notification.create({
+        data: {
+          actionUrl: event.actionUrl,
+          category: template.category,
+          icon: template.icon,
+          investorId: event.investorId,
+          message: renderNotificationMessage(event.type, event.variables),
+          priority: template.priority,
+          title: template.title,
+          type: event.type
+        }
+      });
+    } catch (error) {
+      console.error("No se pudo crear la notificacion", error);
+    }
+  }));
+}
+
 async function getPortfolio(email: string) {
   const investor = await prisma.investor.findFirst({
     where: { email },
@@ -1215,6 +1267,11 @@ async function verifyTwoFactorSetup(input: z.infer<typeof twoFactorVerifySchema>
         }
       });
 
+  await dispatchNotificationEvents([{
+    investorId: investor.id,
+    type: "two_factor_enabled"
+  }]);
+
   return formatInvestorSecurity(investor, input.email);
 }
 
@@ -1356,7 +1413,7 @@ async function deletePayoutMethod(methodId: string, email: string) {
 }
 
 async function requestWalletWithdrawal(input: z.infer<typeof walletWithdrawSchema>) {
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const investor = await tx.investor.findFirst({
       include: {
         payments: {
@@ -1403,15 +1460,26 @@ async function requestWalletWithdrawal(input: z.infer<typeof walletWithdrawSchem
 
     return {
       amount: availableBalance,
+      notificationEvents: [{
+        investorId: investor.id,
+        type: "withdrawal_requested" as const
+      }],
       payment
     };
   });
+
+  await dispatchNotificationEvents(result.notificationEvents);
+
+  return {
+    amount: result.amount,
+    payment: result.payment
+  };
 }
 
 async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
   const rules = config.defaultBusinessRules;
 
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const group = await createInvestmentGroup(tx);
     const investor = await getOrCreateInvestor(tx, {
       email: input.email,
@@ -1438,6 +1506,21 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
         group: true
       }
     });
+    const notificationEvents: NotificationEvent[] = [{
+      investorId: investor.id,
+      type: "investment_created",
+      variables: {
+        amount: formatNotificationAmount(Number(investment.principalAmount))
+      }
+    }];
+
+    if (!latestInvestment) {
+      notificationEvents.push({
+        investorId: investor.id,
+        type: "level_up",
+        variables: { level: "Starter" }
+      });
+    }
 
     const referralTarget = parseReferralTarget(input.referredByCode, input.sourceInvestmentId);
 
@@ -1463,20 +1546,46 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
 
       if (referrer && sourceInvestment && sourceAcceptsReferrals && referrer.id !== investor.id) {
         const referrerLevelRule = await getInvestorLevelRule(tx, referrer.id);
+        const bonusAmount = roundMoney(input.amount * referrerLevelRule.bonusRate);
 
         await tx.referral.create({
           data: {
             referrerInvestorId: referrer.id,
             referredInvestorId: investor.id,
             sourceInvestmentId: sourceInvestment.id,
-            bonusAmount: roundMoney(input.amount * referrerLevelRule.bonusRate)
+            bonusAmount
           }
         });
+
+        notificationEvents.push({
+          investorId: referrer.id,
+          type: "referral_invested",
+          variables: {
+            name: investor.fullName ?? investor.email ?? "Tu referido"
+          }
+        });
+
+        if (bonusAmount > 0) {
+          notificationEvents.push({
+            investorId: referrer.id,
+            type: "community_bonus_accredited",
+            variables: {
+              amount: formatNotificationAmount(bonusAmount)
+            }
+          });
+        }
       }
     }
 
-    return { investor, investment };
+    return { investor, investment, notificationEvents };
   });
+
+  await dispatchNotificationEvents(result.notificationEvents);
+
+  return {
+    investor: result.investor,
+    investment: result.investment
+  };
 }
 
 async function assertReferralTargetOpen(referredByCode?: string, sourceInvestmentId?: string) {
@@ -1604,7 +1713,7 @@ async function confirmStripeInvestmentCheckout(sessionId: string) {
 }
 
 async function reinvestInvestment(investmentId: string, input: z.infer<typeof reinvestSchema>) {
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const investment = await tx.investment.findUniqueOrThrow({
       where: { id: investmentId },
       include: {
@@ -1678,6 +1787,70 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
     const totalGenerated = week.totalGenerated;
     const reinvestedAmount = roundMoney(totalGenerated * (input.reinvestPercent / 100));
     const withdrawalAmount = roundMoney(totalGenerated - reinvestedAmount);
+    const investor = await tx.investor.findUnique({
+      select: {
+        email: true,
+        fullName: true
+      },
+      where: { id: investment.investorId }
+    });
+    const referrerLinks = await tx.referral.findMany({
+      select: {
+        referrerInvestorId: true
+      },
+      where: {
+        referredInvestorId: investment.investorId
+      }
+    });
+    const notificationEvents: NotificationEvent[] = [
+      {
+        investorId: investment.investorId,
+        type: "weekly_yield_accredited",
+        variables: {
+          amount: formatNotificationAmount(week.weeklyYield)
+        }
+      },
+      {
+        investorId: investment.investorId,
+        type: "reinvestment_completed",
+        variables: {
+          amount: formatNotificationAmount(reinvestedAmount)
+        }
+      }
+    ];
+
+    if (withdrawalAmount > 0) {
+      notificationEvents.push({
+        investorId: investment.investorId,
+        type: "withdrawal_available",
+        variables: {
+          amount: formatNotificationAmount(withdrawalAmount)
+        }
+      });
+    }
+
+    for (const link of referrerLinks) {
+      const referrerLevelRule = await getInvestorLevelRule(tx, link.referrerInvestorId);
+      const bonusAmount = roundMoney(reinvestedAmount * referrerLevelRule.bonusRate);
+
+      notificationEvents.push({
+        investorId: link.referrerInvestorId,
+        type: "referral_reinvested",
+        variables: {
+          name: investor?.fullName ?? investor?.email ?? "Tu referido"
+        }
+      });
+
+      if (bonusAmount > 0) {
+        notificationEvents.push({
+          investorId: link.referrerInvestorId,
+          type: "community_bonus_accredited",
+          variables: {
+            amount: formatNotificationAmount(bonusAmount)
+          }
+        });
+      }
+    }
 
     const payment = await tx.payment.create({
       data: {
@@ -1691,6 +1864,7 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
     });
 
     return {
+      notificationEvents,
       payment,
       reinvestedAmount,
       totalGenerated,
@@ -1698,10 +1872,20 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
       weekNumber
     };
   });
+
+  await dispatchNotificationEvents(result.notificationEvents);
+
+  return {
+    payment: result.payment,
+    reinvestedAmount: result.reinvestedAmount,
+    totalGenerated: result.totalGenerated,
+    withdrawalAmount: result.withdrawalAmount,
+    weekNumber: result.weekNumber
+  };
 }
 
 async function collectFinalInvestment(investmentId: string, input: z.infer<typeof collectSchema>) {
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const investment = await tx.investment.findUniqueOrThrow({
       where: { id: investmentId },
       include: {
@@ -1775,6 +1959,26 @@ async function collectFinalInvestment(investmentId: string, input: z.infer<typeo
     }
 
     const totalGenerated = week.totalGenerated;
+    const notificationEvents: NotificationEvent[] = [
+      {
+        investorId: investment.investorId,
+        type: "weekly_yield_accredited",
+        variables: {
+          amount: formatNotificationAmount(week.weeklyYield)
+        }
+      },
+      {
+        investorId: investment.investorId,
+        type: "cycle_completed"
+      },
+      {
+        investorId: investment.investorId,
+        type: "withdrawal_available",
+        variables: {
+          amount: formatNotificationAmount(totalGenerated)
+        }
+      }
+    ];
     const payment = await tx.payment.create({
       data: {
         investorId: investment.investorId,
@@ -1795,12 +1999,22 @@ async function collectFinalInvestment(investmentId: string, input: z.infer<typeo
     });
 
     return {
+      notificationEvents,
       payment,
       totalGenerated,
       withdrawalAmount: totalGenerated,
       weekNumber
     };
   });
+
+  await dispatchNotificationEvents(result.notificationEvents);
+
+  return {
+    payment: result.payment,
+    totalGenerated: result.totalGenerated,
+    withdrawalAmount: result.withdrawalAmount,
+    weekNumber: result.weekNumber
+  };
 }
 
 function getTotalGenerated(input: { principalAmount: number; referrals: Array<{ referredAmount: number }>; levelRule?: InvestorLevelRule }) {
