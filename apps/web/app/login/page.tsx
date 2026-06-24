@@ -3,8 +3,10 @@ import { GoogleSignInButton } from "./sign-in-button";
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams?: { ref?: string } }) {
   const googleReady = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  const referralCode = typeof searchParams?.ref === "string" ? searchParams.ref : "";
+  const callbackUrl = referralCode ? `/dashboard?ref=${encodeURIComponent(referralCode)}` : "/dashboard";
 
   return (
     <main className="loginShell">
@@ -24,7 +26,7 @@ export default async function LoginPage() {
             inversionistas, ciclos y pagos.
           </p>
         </div>
-        <GoogleSignInButton enabled={googleReady} />
+        <GoogleSignInButton callbackUrl={callbackUrl} enabled={googleReady} />
         {!googleReady ? (
           <p className="loginWarning">
             Falta configurar Google OAuth en el servidor.

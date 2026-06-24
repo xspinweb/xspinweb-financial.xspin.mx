@@ -42,7 +42,10 @@ const controls = [
   "La operacion puede auditar captacion, provisionamiento, pagos e ingreso neto."
 ];
 
-export default function HomePage() {
+export default function HomePage({ searchParams }: { searchParams?: { ref?: string } }) {
+  const referralCode = typeof searchParams?.ref === "string" ? searchParams.ref : "";
+  const accessHref = referralCode ? `/login?ref=${encodeURIComponent(referralCode)}` : "/login";
+
   return (
     <main>
       <header className="siteHeader">
@@ -54,7 +57,7 @@ export default function HomePage() {
           <a href="#rendimiento">Rendimiento</a>
           <a href="#control">Control</a>
         </nav>
-        <a className="headerAccess" href="/login">Acceso</a>
+        <a className="headerAccess" href={accessHref}>Acceso</a>
       </header>
       <section className="hero">
         <div className="marketGlow" aria-hidden="true" />
