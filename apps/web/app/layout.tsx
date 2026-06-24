@@ -11,8 +11,8 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://pay.xspin.mx"),
   applicationName: "Xspin Pay",
-  title: "XSpin Pay",
-  description: "Comienza tu ciclo de inversion, construye tu comunidad y haz crecer tu capital semana a semana.",
+  title: "XSPIN Pay",
+  description: "🚀 Te invito a formar parte de XSPIN. Comienza tu ciclo de inversión, construye tu comunidad y haz crecer tu capital cada semana.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
     title: "Xspin Pay"
   },
   openGraph: {
-    title: "XSpin Pay",
-    description: "Comienza tu ciclo de inversion, construye tu comunidad y haz crecer tu capital semana a semana.",
+    title: "XSPIN Pay",
+    description: "🚀 Te invito a formar parte de XSPIN. Comienza tu ciclo de inversión, construye tu comunidad y haz crecer tu capital cada semana.",
     images: [
       {
         url: "/logos/xspin-official.png",
@@ -36,8 +36,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "XSpin Pay",
-    description: "Comienza tu ciclo de inversion, construye tu comunidad y haz crecer tu capital semana a semana.",
+    title: "XSPIN Pay",
+    description: "🚀 Te invito a formar parte de XSPIN. Comienza tu ciclo de inversión, construye tu comunidad y haz crecer tu capital cada semana.",
     images: ["/logos/xspin-official.png"]
   },
   icons: {

@@ -654,8 +654,8 @@ function InviteReferralModal({
   const [copiedValue, setCopiedValue] = useState<"link" | null>(null);
   const referralCode = investorCode ? `${investorCode}-${investmentId}` : "PENDIENTE";
   const referralLink = `https://pay.xspin.mx/register?ref=${encodeURIComponent(referralCode)}`;
-  const shareTitle = "XSpin";
-  const shareIntro = "🚀 Te invito a formar parte de XSpin.\n\nComienza tu ciclo de inversión, construye tu comunidad y haz crecer tu capital semana a semana.\n\n🔗 Regístrate aquí:";
+  const shareTitle = "XSPIN";
+  const shareIntro = "🚀 Te invito a formar parte de XSPIN.\n\nComienza tu ciclo de inversión, construye tu comunidad y haz crecer tu capital cada semana.\n\n🔗 Regístrate aquí:";
   const shareMessage = `${shareIntro}\n${referralLink}`;
   const encodedUrl = encodeURIComponent(referralLink);
   const encodedText = encodeURIComponent(shareIntro);
