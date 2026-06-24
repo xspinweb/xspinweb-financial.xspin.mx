@@ -652,13 +652,14 @@ function InviteReferralModal({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [copiedValue, setCopiedValue] = useState<"link" | "code" | null>(null);
-  const [origin, setOrigin] = useState("");
   const referralCode = investorCode ? `${investorCode}-${investmentId}` : "PENDIENTE";
-  const referralLink = `${origin || "https://pay.xspin.mx"}/dashboard?ref=${encodeURIComponent(referralCode)}&inv=${investmentId}`;
-
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
+  const referralLink = `https://pay.xspin.mx/register?ref=${encodeURIComponent(referralCode)}`;
+  const shareTitle = "Invitacion XSpin";
+  const shareIntro = `Te invito a unirte a XSpin. Usa mi codigo ${referralCode} y comienza tu ciclo desde aqui:`;
+  const shareMessage = `${shareIntro} ${referralLink}`;
+  const encodedUrl = encodeURIComponent(referralLink);
+  const encodedText = encodeURIComponent(shareIntro);
+  const encodedMessage = encodeURIComponent(shareMessage);
 
   useEffect(() => {
     if (!isOpen) {
@@ -681,37 +682,126 @@ function InviteReferralModal({
   }
 
   async function copyValue(value: string, type: "link" | "code") {
-    await navigator.clipboard.writeText(value);
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+    }
     setCopiedValue(type);
+    window.setTimeout(() => setCopiedValue(null), 1800);
+  }
+
+  function openShareUrl(url: string) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  async function shareNative() {
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: shareMessage, title: shareTitle, url: referralLink });
+        return;
+      } catch {
+        return;
+      }
+    }
+
+    await copyValue(referralLink, "link");
   }
 
   const modal = isOpen
     ? createPortal(
-        <div className="modalOverlay" role="presentation">
-          <section className="investmentModal" role="dialog" aria-modal="true" aria-labelledby={`invite-${investmentId}`}>
-            <div className="inviteModalContent">
-              <div className="modalHeader">
-                <div>
-                  <span className="loginEyebrow">Referidos</span>
-                  <h2 id={`invite-${investmentId}`}>Invitar referido</h2>
-                </div>
-                <button className="modalClose" type="button" aria-label="Cerrar" onClick={closeModal}>
-                  x
-                </button>
-              </div>
+        <div className="shareSheetOverlay" role="presentation" onClick={closeModal}>
+          <section
+            className="shareSheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`invite-${investmentId}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button className="shareSheetHandle" type="button" aria-label="Cerrar invitacion" onClick={closeModal} />
+            <button className="shareSheetClose" type="button" aria-label="Cerrar" onClick={closeModal}>
+              x
+            </button>
 
-              <CopyBox
-                label="Link de invitacion"
-                value={referralLink}
-                copied={copiedValue === "link"}
-                onCopy={() => copyValue(referralLink, "link")}
-              />
-              <CopyBox
-                label="Codigo de referido"
-                value={referralCode}
-                copied={copiedValue === "code"}
-                onCopy={() => copyValue(referralCode, "code")}
-              />
+            <header className="shareSheetHeader">
+              <span className="shareSheetHeroIcon">
+                <InviteIcon />
+              </span>
+              <div>
+                <h2 id={`invite-${investmentId}`}>Invitar referido</h2>
+                <p>Comparte tu enlace o codigo y gana recompensas por cada referido activo.</p>
+              </div>
+            </header>
+
+            <div className="shareSheetReferral">
+              <span>Codigo</span>
+              <strong>{referralCode}</strong>
+            </div>
+
+            <div className="shareSheetDivider" />
+            <p className="shareSheetLabel">Compartir con</p>
+
+            <div className="shareActionGrid">
+              <button className="shareActionButton tone-link" type="button" onClick={() => copyValue(referralLink, "link")}>
+                <span className="shareActionIcon">
+                  <LinkShareIcon />
+                </span>
+                <strong>{copiedValue === "link" ? "Copiado" : "Copiar enlace"}</strong>
+              </button>
+              <button className="shareActionButton tone-code" type="button" onClick={() => copyValue(referralCode, "code")}>
+                <span className="shareActionIcon">
+                  <CodeShareIcon />
+                </span>
+                <strong>{copiedValue === "code" ? "Copiado" : "Copiar codigo"}</strong>
+              </button>
+              <button className="shareActionButton tone-whatsapp" type="button" onClick={() => openShareUrl(`https://wa.me/?text=${encodedMessage}`)}>
+                <span className="shareActionIcon">
+                  <WhatsAppShareIcon />
+                </span>
+                <strong>WhatsApp</strong>
+              </button>
+              <button
+                className="shareActionButton tone-telegram"
+                type="button"
+                onClick={() => openShareUrl(`https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`)}
+              >
+                <span className="shareActionIcon">
+                  <TelegramShareIcon />
+                </span>
+                <strong>Telegram</strong>
+              </button>
+              <button className="shareActionButton tone-sms" type="button" onClick={() => (window.location.href = `sms:?&body=${encodedMessage}`)}>
+                <span className="shareActionIcon">
+                  <SmsShareIcon />
+                </span>
+                <strong>SMS</strong>
+              </button>
+              <button className="shareActionButton tone-facebook" type="button" onClick={() => openShareUrl(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`)}>
+                <span className="shareActionIcon">
+                  <FacebookShareIcon />
+                </span>
+                <strong>Facebook</strong>
+              </button>
+              <button className="shareActionButton tone-messenger" type="button" onClick={shareNative}>
+                <span className="shareActionIcon">
+                  <MessengerShareIcon />
+                </span>
+                <strong>Messenger</strong>
+              </button>
+              <button
+                className="shareActionButton tone-email"
+                type="button"
+                onClick={() => (window.location.href = `mailto:?subject=${encodeURIComponent(shareTitle)}&body=${encodedMessage}`)}
+              >
+                <span className="shareActionIcon">
+                  <EmailShareIcon />
+                </span>
+                <strong>Email</strong>
+              </button>
+              <button className="shareActionButton tone-more" type="button" onClick={shareNative}>
+                <span className="shareActionIcon">
+                  <MoreShareIcon />
+                </span>
+                <strong>Mas</strong>
+              </button>
             </div>
           </section>
         </div>,
@@ -1347,24 +1437,83 @@ function normalizeInvestment(investment: Investment): Investment {
   };
 }
 
-function CopyBox({ copied, label, onCopy, value }: { copied: boolean; label: string; onCopy: () => void; value: string }) {
-  return (
-    <div className="copyBox">
-      <span>{label}</span>
-      <div>
-        <strong>{value}</strong>
-        <button type="button" onClick={onCopy}>
-          {copied ? "Copiado" : "Copiar"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function InviteIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M9.5 11.4a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 2.3c-4.1 0-7.3 2.1-7.3 4.8V20h10.2a6.3 6.3 0 0 1-.4-2.2c0-1.4.5-2.8 1.3-3.8-1.1-.2-2.4-.3-3.8-.3Zm8.4-1a5.1 5.1 0 1 0 0 10.2 5.1 5.1 0 0 0 0-10.2Zm.8 2.5v2h2v1.6h-2v2h-1.6v-2h-2v-1.6h2v-2Z" />
+    </svg>
+  );
+}
+
+function LinkShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9.2 14.8a1 1 0 0 1 0-1.4l4.2-4.2a1 1 0 1 1 1.4 1.4l-4.2 4.2a1 1 0 0 1-1.4 0Z" />
+      <path d="M8.1 18.6a4.7 4.7 0 0 1-3.3-8l2.4-2.4a4.7 4.7 0 0 1 6.6 0 1 1 0 0 1-1.4 1.4 2.7 2.7 0 0 0-3.8 0l-2.4 2.4a2.7 2.7 0 0 0 3.8 3.8 1 1 0 1 1 1.4 1.4 4.6 4.6 0 0 1-3.3 1.4Zm5.7-2.8a4.7 4.7 0 0 1-3.3-1.4 1 1 0 1 1 1.4-1.4 2.7 2.7 0 0 0 3.8 0l2.4-2.4a2.7 2.7 0 0 0-3.8-3.8 1 1 0 0 1-1.4-1.4 4.7 4.7 0 0 1 6.6 6.6l-2.4 2.4a4.7 4.7 0 0 1-3.3 1.4Z" />
+    </svg>
+  );
+}
+
+function CodeShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 4h6v6H4V4Zm2 2v2h2V6H6Zm8-2h6v6h-6V4Zm2 2v2h2V6h-2ZM4 14h6v6H4v-6Zm2 2v2h2v-2H6Zm8-1h2v2h-2v-2Zm2 2h2v-2h2v4h-2v1h-4v-2h2v-1Z" />
+    </svg>
+  );
+}
+
+function WhatsAppShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 3.1a8.8 8.8 0 0 0-7.6 13.2L3.2 21l4.8-1.2A8.8 8.8 0 1 0 12 3.1Zm0 15.8a7 7 0 0 1-3.6-1l-.3-.2-2.5.7.7-2.4-.2-.4A7 7 0 1 1 12 18.9Zm3.8-5.2c-.2-.1-1.2-.6-1.4-.7-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a5.7 5.7 0 0 1-2.8-2.5c-.2-.2 0-.4.1-.5l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.7-1.6c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.2-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.7 2.7 4.2 3.7.6.3 1 .4 1.4.5.6.2 1.1.2 1.5.1.5-.1 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1 0-.2-.2-.2-.4-.3Z" />
+    </svg>
+  );
+}
+
+function TelegramShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.8 4.2 3.9 10.7c-1.1.4-1.1 1.1-.2 1.4l4.3 1.3 1.7 5.2c.2.7.4 1 .8 1 .4 0 .6-.2.9-.5l2.1-2 4.4 3.2c.8.5 1.3.3 1.6-.8l2.8-13.3c.3-1.2-.4-1.7-1.5-1.2Zm-3.4 3.1-8 7.2-.3 3.1-1.2-4 9.2-5.8c.4-.3.8-.6.3-.5Z" />
+    </svg>
+  );
+}
+
+function SmsShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2h9A3.5 3.5 0 0 1 20 5.5v6a3.5 3.5 0 0 1-3.5 3.5H11l-5.2 4.4A1.1 1.1 0 0 1 4 18.5v-13Zm3.5-1.4A1.4 1.4 0 0 0 6.1 5.5v10.7l4.1-3.4h6.3a1.4 1.4 0 0 0 1.4-1.4v-6A1.4 1.4 0 0 0 16.5 4h-9Z" />
+    </svg>
+  );
+}
+
+function FacebookShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M14 8h2.5V4.2c-.4-.1-1.8-.2-3.4-.2-3.4 0-5.7 2.1-5.7 6v3.3H4v4.2h3.4V24h4.3v-6.5h3.4l.5-4.2h-3.9v-2.9C11.7 9.2 12 8 14 8Z" />
+    </svg>
+  );
+}
+
+function MessengerShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2C6.5 2 2.2 6 2.2 11.4c0 2.8 1.1 5.1 3 6.8v3.6l3.3-1.8c1.1.3 2.3.5 3.5.5 5.5 0 9.8-4 9.8-9.4S17.5 2 12 2Zm1 12.6-2.5-2.7-5 2.7 5.5-5.9 2.6 2.7 4.9-2.7-5.5 5.9Z" />
+    </svg>
+  );
+}
+
+function EmailShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4.5 5h15A2.5 2.5 0 0 1 22 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 2 16.5v-9A2.5 2.5 0 0 1 4.5 5Zm0 2a.5.5 0 0 0-.5.5v.4l8 4.5 8-4.5v-.4a.5.5 0 0 0-.5-.5h-15Zm15 10a.5.5 0 0 0 .5-.5v-6.3l-7.5 4.2a1 1 0 0 1-1 0L4 10.2v6.3a.5.5 0 0 0 .5.5h15Z" />
+    </svg>
+  );
+}
+
+function MoreShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 12a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm5 0a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm5 0a2 2 0 1 1 4 0 2 2 0 0 1-4 0Z" />
     </svg>
   );
 }
