@@ -1331,16 +1331,23 @@ a {
   fill: currentColor;
 }
 
-.notificationButton span {
+.notificationButton .notificationBadge {
   position: absolute;
-  top: 7px;
-  right: 8px;
-  width: 6px;
-  height: 6px;
+  top: -4px;
+  right: -4px;
+  min-width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
   border: 1px solid rgba(5, 11, 18, 0.9);
-  border-radius: 50%;
+  border-radius: 999px;
   background: var(--green);
+  color: #041015;
+  font-size: 9px;
+  font-weight: 950;
+  line-height: 1;
   box-shadow: 0 0 12px rgba(53, 224, 161, 0.9);
+  padding: 0 4px;
 }
 
 .notificationButton:hover {
@@ -1348,6 +1355,247 @@ a {
   background: rgba(53, 224, 161, 0.12);
   color: var(--green);
   transform: translateY(-1px);
+}
+
+.notificationButton.hasUnread {
+  animation: notificationPulse 1.8s ease-in-out 1;
+}
+
+.notificationsMenu {
+  position: relative;
+}
+
+.notificationsPanel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: -48px;
+  z-index: 80;
+  width: min(420px, calc(100vw - 28px));
+  max-height: min(620px, calc(100vh - 110px));
+  display: grid;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(53, 224, 161, 0.16);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(53, 224, 161, 0.16), transparent 34%),
+    linear-gradient(145deg, rgba(9, 19, 31, 0.96), rgba(7, 13, 23, 0.92));
+  backdrop-filter: blur(22px);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.56), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding: 16px;
+}
+
+.notificationsPanelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.notificationsPanelHeader strong,
+.notificationCard strong {
+  color: var(--ink);
+}
+
+.notificationsPanelHeader strong {
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.notificationsPanelHeader span,
+.notificationMeta,
+.notificationBody > span,
+.notificationsEmpty {
+  color: var(--muted);
+}
+
+.notificationsPanelHeader button {
+  border: 1px solid rgba(53, 224, 161, 0.22);
+  border-radius: 999px;
+  background: rgba(53, 224, 161, 0.08);
+  color: var(--green);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+.notificationsPanelHeader button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.notificationFilters {
+  display: flex;
+  gap: 7px;
+  margin: 0 -16px;
+  overflow-x: auto;
+  padding: 0 16px 2px;
+  scrollbar-width: none;
+}
+
+.notificationFilters::-webkit-scrollbar {
+  display: none;
+}
+
+.notificationFilters button {
+  flex: 0 0 auto;
+  border: 1px solid rgba(159, 178, 196, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 8px 10px;
+}
+
+.notificationFilters button.active {
+  border-color: rgba(53, 224, 161, 0.36);
+  background: rgba(53, 224, 161, 0.14);
+  color: var(--green);
+}
+
+.notificationsList {
+  display: grid;
+  gap: 9px;
+  max-height: 430px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.notificationCard {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 10px;
+  border: 1px solid rgba(159, 178, 196, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 11px;
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.notificationCard.unread {
+  border-color: rgba(53, 224, 161, 0.24);
+  background: linear-gradient(135deg, rgba(53, 224, 161, 0.11), rgba(255, 255, 255, 0.035));
+  box-shadow: inset 3px 0 0 rgba(53, 224, 161, 0.76);
+}
+
+.notificationCard:hover {
+  border-color: rgba(53, 224, 161, 0.3);
+  transform: translateY(-1px);
+}
+
+.notificationIcon {
+  display: grid !important;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 18px !important;
+}
+
+.notificationBody {
+  min-width: 0;
+  display: grid !important;
+  gap: 4px;
+}
+
+.notificationMeta {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px !important;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.notificationBody strong {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.notificationBody strong em {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(53, 224, 161, 0.16);
+  color: var(--green);
+  font-size: 10px;
+  font-style: normal;
+}
+
+.notificationBody > span {
+  font-size: 12px !important;
+  line-height: 1.35;
+}
+
+.priorityBadge {
+  width: fit-content;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 950;
+  padding: 4px 7px;
+  text-transform: capitalize;
+}
+
+.priorityBadge.high {
+  background: rgba(255, 105, 130, 0.14);
+  color: #ff6d86;
+}
+
+.priorityBadge.medium {
+  background: rgba(255, 206, 73, 0.14);
+  color: #ffd15c;
+}
+
+.priorityBadge.low {
+  background: rgba(53, 224, 161, 0.13);
+  color: var(--green);
+}
+
+.notificationAction {
+  align-self: center;
+  border-radius: 999px;
+  background: rgba(53, 224, 161, 0.1);
+  color: var(--green) !important;
+  font-size: 11px !important;
+  font-weight: 950;
+  padding: 6px 8px;
+}
+
+.notificationsEmpty {
+  border: 1px dashed rgba(159, 178, 196, 0.18);
+  border-radius: 16px;
+  font-size: 13px;
+  margin: 0;
+  padding: 18px;
+  text-align: center;
+}
+
+@keyframes notificationPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.08);
+  }
 }
 
 .appHeader span {
@@ -7352,6 +7600,31 @@ a {
   .notificationButton svg {
     height: 16px;
     width: 16px;
+  }
+
+  .notificationsPanel {
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: calc(82px + env(safe-area-inset-bottom));
+    left: 12px;
+    width: auto;
+    max-height: min(72vh, 620px);
+    border-radius: 24px 24px 18px 18px;
+    padding: 14px;
+  }
+
+  .notificationsList {
+    max-height: min(50vh, 420px);
+  }
+
+  .notificationsPanelHeader strong {
+    font-size: 16px;
+  }
+
+  .notificationsPanelHeader button {
+    font-size: 10px;
+    padding: 7px 9px;
   }
 
   .dashboardHero {

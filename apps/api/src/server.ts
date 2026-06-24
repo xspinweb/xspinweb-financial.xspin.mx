@@ -96,6 +96,27 @@ const identityVerificationSchema = z.object({
   message: "Agrega al menos un documento de verificacion."
 });
 
+const notificationCategorySchema = z.enum([
+  "INVESTMENTS",
+  "COMMUNITY",
+  "LEVELS",
+  "PAYMENTS",
+  "SECURITY",
+  "SYSTEM",
+  "REMINDERS",
+  "SPECIAL"
+]);
+
+const notificationReadSchema = z.object({
+  email: z.string().email(),
+  notificationId: z.string().min(1)
+});
+
+const notificationReadAllSchema = z.object({
+  category: notificationCategorySchema.optional(),
+  email: z.string().email()
+});
+
 type PortfolioInvestment = {
   id: string;
   principalAmount: unknown;
@@ -240,6 +261,243 @@ type StripeCheckoutSession = {
   url?: string;
 };
 
+const notificationCategories = [
+  { label: "Inversiones", value: "INVESTMENTS" },
+  { label: "Comunidad", value: "COMMUNITY" },
+  { label: "Niveles", value: "LEVELS" },
+  { label: "Pagos", value: "PAYMENTS" },
+  { label: "Seguridad", value: "SECURITY" },
+  { label: "Sistema", value: "SYSTEM" },
+  { label: "Recordatorios", value: "REMINDERS" },
+  { label: "Especiales", value: "SPECIAL" }
+];
+
+const notificationPriorityLabels = {
+  HIGH: "alta",
+  LOW: "baja",
+  MEDIUM: "media"
+} as const;
+
+const notificationTemplates = {
+  investment_created: {
+    category: "INVESTMENTS",
+    icon: "✅",
+    message: "Tu inversión de {amount} se registró correctamente. Tu ciclo ha comenzado.",
+    priority: "MEDIUM",
+    title: "Inversión realizada"
+  },
+  reinvestment_completed: {
+    category: "INVESTMENTS",
+    icon: "🔄",
+    message: "Se ha realizado la reinversión automática de {amount} correspondiente a tu ciclo.",
+    priority: "MEDIUM",
+    title: "Reinversión realizada"
+  },
+  cycle_completed: {
+    category: "INVESTMENTS",
+    icon: "🎉",
+    message: "¡Felicidades! Has concluido exitosamente tu ciclo de inversión.",
+    priority: "HIGH",
+    title: "Ciclo completado"
+  },
+  weekly_yield_accredited: {
+    category: "INVESTMENTS",
+    icon: "📈",
+    message: "Se acreditó un rendimiento de {amount} a tu inversión.",
+    priority: "MEDIUM",
+    title: "Rendimiento semanal acreditado"
+  },
+  withdrawal_available: {
+    category: "INVESTMENTS",
+    icon: "💸",
+    message: "Ya puedes retirar {amount} correspondientes a esta semana.",
+    priority: "HIGH",
+    title: "Retiro disponible"
+  },
+  referral_registered: {
+    category: "COMMUNITY",
+    icon: "👤",
+    message: "{name} acaba de registrarse con tu invitación.",
+    priority: "LOW",
+    title: "Nuevo referido registrado"
+  },
+  referral_invested: {
+    category: "COMMUNITY",
+    icon: "✅",
+    message: "{name} realizó su primera inversión.",
+    priority: "MEDIUM",
+    title: "Referido activó su inversión"
+  },
+  referral_reinvested: {
+    category: "COMMUNITY",
+    icon: "🔄",
+    message: "{name} reinvirtió exitosamente su ciclo.",
+    priority: "MEDIUM",
+    title: "Referido reinvirtió"
+  },
+  community_bonus_accredited: {
+    category: "COMMUNITY",
+    icon: "💰",
+    message: "Se acreditó un bono de {amount} por la actividad de tu comunidad.",
+    priority: "MEDIUM",
+    title: "Bono acreditado"
+  },
+  referral_pending: {
+    category: "COMMUNITY",
+    icon: "⚠️",
+    message: "Uno de tus referidos aún no ha invertido. Completa tu red para activar el rendimiento.",
+    priority: "HIGH",
+    title: "Referido pendiente"
+  },
+  referral_inactive: {
+    category: "COMMUNITY",
+    icon: "❌",
+    message: "Uno de tus referidos perdió el estado activo y dejó de generar bono.",
+    priority: "MEDIUM",
+    title: "Referido inactivo"
+  },
+  level_up: {
+    category: "LEVELS",
+    icon: "🥉",
+    message: "¡Ahora eres {level}!",
+    priority: "HIGH",
+    title: "Nuevo nivel"
+  },
+  benefits_unlocked: {
+    category: "LEVELS",
+    icon: "🔓",
+    message: "Ya puedes invertir hasta {limit}.",
+    priority: "HIGH",
+    title: "Beneficios desbloqueados"
+  },
+  next_level_progress: {
+    category: "LEVELS",
+    icon: "📊",
+    message: "Te falta {cycles} ciclo para convertirte en {level}.",
+    priority: "LOW",
+    title: "Progreso"
+  },
+  withdrawal_requested: {
+    category: "PAYMENTS",
+    icon: "💵",
+    message: "Tu solicitud de retiro fue recibida.",
+    priority: "MEDIUM",
+    title: "Solicitud de retiro"
+  },
+  withdrawal_approved: {
+    category: "PAYMENTS",
+    icon: "✅",
+    message: "Tu retiro fue aprobado y está siendo procesado.",
+    priority: "HIGH",
+    title: "Retiro aprobado"
+  },
+  withdrawal_sent: {
+    category: "PAYMENTS",
+    icon: "🏦",
+    message: "Tu retiro ya fue enviado a tu método de pago.",
+    priority: "HIGH",
+    title: "Retiro enviado"
+  },
+  withdrawal_rejected: {
+    category: "PAYMENTS",
+    icon: "❌",
+    message: "Tu retiro requiere validación adicional.",
+    priority: "HIGH",
+    title: "Retiro rechazado"
+  },
+  new_login: {
+    category: "SECURITY",
+    icon: "🔑",
+    message: "Se inició sesión desde un nuevo dispositivo.",
+    priority: "HIGH",
+    title: "Inicio de sesión nuevo"
+  },
+  password_changed: {
+    category: "SECURITY",
+    icon: "🔒",
+    message: "Tu contraseña fue actualizada correctamente.",
+    priority: "HIGH",
+    title: "Contraseña cambiada"
+  },
+  two_factor_enabled: {
+    category: "SECURITY",
+    icon: "📱",
+    message: "La autenticación en dos pasos quedó habilitada.",
+    priority: "MEDIUM",
+    title: "2FA activado"
+  },
+  failed_login_attempts: {
+    category: "SECURITY",
+    icon: "⚠️",
+    message: "Detectamos varios intentos fallidos de acceso.",
+    priority: "HIGH",
+    title: "Intento fallido"
+  },
+  maintenance: {
+    category: "SYSTEM",
+    icon: "🔧",
+    message: "La plataforma entrará en mantenimiento el {date}.",
+    priority: "MEDIUM",
+    title: "Mantenimiento"
+  },
+  promotion: {
+    category: "SYSTEM",
+    icon: "🎁",
+    message: "Nuevo evento disponible para usuarios {level}.",
+    priority: "LOW",
+    title: "Promociones"
+  },
+  new_limit: {
+    category: "SYSTEM",
+    icon: "📈",
+    message: "Ya puedes invertir hasta {limit}.",
+    priority: "HIGH",
+    title: "Nuevo límite"
+  },
+  reinvestment_soon: {
+    category: "REMINDERS",
+    icon: "⏰",
+    message: "Tu reinversión automática se realizará en 24 horas.",
+    priority: "MEDIUM",
+    title: "Falta poco"
+  },
+  cycle_ends_tomorrow: {
+    category: "REMINDERS",
+    icon: "⏳",
+    message: "Tu ciclo termina mañana.",
+    priority: "HIGH",
+    title: "Finaliza el ciclo"
+  },
+  complete_referrals: {
+    category: "REMINDERS",
+    icon: "⚠️",
+    message: "Aún necesitas {count} referido activo para habilitar el rendimiento de esta semana.",
+    priority: "HIGH",
+    title: "Completa tus referidos"
+  },
+  streak: {
+    category: "SPECIAL",
+    icon: "🔥",
+    message: "Llevas {cycles} ciclos consecutivos completados.",
+    priority: "LOW",
+    title: "Racha"
+  },
+  goal_reached: {
+    category: "SPECIAL",
+    icon: "🎯",
+    message: "Superaste los {amount} de volumen acumulado.",
+    priority: "MEDIUM",
+    title: "Meta alcanzada"
+  },
+  next_level_near: {
+    category: "SPECIAL",
+    icon: "👑",
+    message: "Estás al {progress}% para convertirte en {level}.",
+    priority: "MEDIUM",
+    title: "Próximo nivel"
+  }
+} as const;
+
 const server = createServer(async (req, res) => {
   try {
     await handleRequest(req, res);
@@ -270,6 +528,29 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
       ok: true,
       service: "pay-financial-api"
     });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/notifications") {
+    const email = z.string().email().parse(url.searchParams.get("email"));
+    const categoryParam = url.searchParams.get("category") || undefined;
+    const category = categoryParam ? notificationCategorySchema.parse(categoryParam) : undefined;
+    const notifications = await getInvestorNotifications(email, category);
+    sendJson(res, 200, notifications);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/notifications/read") {
+    const input = notificationReadSchema.parse(await readJson(req));
+    const result = await markNotificationRead(input.email, input.notificationId);
+    sendJson(res, 200, result);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/notifications/read-all") {
+    const input = notificationReadAllSchema.parse(await readJson(req));
+    const result = await markAllNotificationsRead(input.email, input.category);
+    sendJson(res, 200, result);
     return;
   }
 
@@ -461,6 +742,148 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   sendJson(res, 404, {
     error: "Ruta no encontrada"
   });
+}
+
+async function getInvestorNotifications(email: string, category?: z.infer<typeof notificationCategorySchema>) {
+  const investor = await prisma.investor.findFirst({
+    select: { id: true },
+    where: { email }
+  });
+
+  if (!investor) {
+    return {
+      categories: notificationCategories,
+      notifications: [],
+      templateTypes: Object.keys(notificationTemplates),
+      unreadCount: 0
+    };
+  }
+
+  const [notifications, unreadCount] = await Promise.all([
+    prisma.notification.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 80,
+      where: {
+        investorId: investor.id,
+        ...(category ? { category } : {})
+      }
+    }),
+    prisma.notification.count({
+      where: {
+        investorId: investor.id,
+        readAt: null
+      }
+    })
+  ]);
+
+  const sorted = [...notifications].sort((current, next) => {
+    const unreadDelta = Number(current.readAt !== null) - Number(next.readAt !== null);
+    if (unreadDelta !== 0) {
+      return unreadDelta;
+    }
+
+    return next.createdAt.getTime() - current.createdAt.getTime();
+  });
+
+  return {
+    categories: notificationCategories,
+    notifications: compactSimilarNotifications(sorted).map((notification) => ({
+      actionUrl: notification.actionUrl,
+      category: notification.category,
+      categoryLabel: notificationCategories.find((item) => item.value === notification.category)?.label ?? notification.category,
+      createdAt: notification.createdAt.toISOString(),
+      groupCount: notification.groupCount,
+      icon: notification.icon,
+      id: notification.id,
+      isRead: notification.readAt !== null,
+      message: notification.message,
+      priority: notificationPriorityLabels[notification.priority],
+      priorityKey: notification.priority,
+      readAt: notification.readAt?.toISOString() ?? null,
+      title: notification.title,
+      type: notification.type
+    })),
+    templateTypes: Object.keys(notificationTemplates),
+    unreadCount
+  };
+}
+
+async function markNotificationRead(email: string, notificationId: string) {
+  const investor = await prisma.investor.findFirst({
+    select: { id: true },
+    where: { email }
+  });
+
+  if (!investor) {
+    return { ok: true };
+  }
+
+  await prisma.notification.updateMany({
+    data: { readAt: new Date() },
+    where: {
+      id: notificationId,
+      investorId: investor.id,
+      readAt: null
+    }
+  });
+
+  return { ok: true };
+}
+
+async function markAllNotificationsRead(email: string, category?: z.infer<typeof notificationCategorySchema>) {
+  const investor = await prisma.investor.findFirst({
+    select: { id: true },
+    where: { email }
+  });
+
+  if (!investor) {
+    return { ok: true };
+  }
+
+  await prisma.notification.updateMany({
+    data: { readAt: new Date() },
+    where: {
+      investorId: investor.id,
+      readAt: null,
+      ...(category ? { category } : {})
+    }
+  });
+
+  return { ok: true };
+}
+
+type DbNotification = Prisma.NotificationGetPayload<Record<string, never>>;
+
+type CompactNotification = DbNotification & {
+  groupCount: number;
+};
+
+function compactSimilarNotifications(notifications: DbNotification[]): CompactNotification[] {
+  const compacted: CompactNotification[] = [];
+  const grouped = new Set<string>();
+
+  notifications.forEach((notification) => {
+    if (grouped.has(notification.id)) {
+      return;
+    }
+
+    const similar = notifications.filter((candidate) => {
+      const sameReadState = Boolean(candidate.readAt) === Boolean(notification.readAt);
+      return sameReadState
+        && candidate.type === notification.type
+        && candidate.category === notification.category
+        && candidate.message === notification.message
+        && candidate.actionUrl === notification.actionUrl;
+    });
+
+    similar.slice(1).forEach((candidate) => grouped.add(candidate.id));
+    compacted.push({
+      ...notification,
+      groupCount: similar.length
+    });
+  });
+
+  return compacted;
 }
 
 async function getPortfolio(email: string) {
