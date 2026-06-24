@@ -1301,22 +1301,22 @@ a {
 .appHeaderLogo {
   display: block;
   height: auto;
-  width: clamp(122px, 13vw, 154px);
+  width: clamp(104px, 10vw, 128px);
   filter: drop-shadow(0 0 14px rgba(53, 224, 161, 0.18));
 }
 
 .appHeaderActions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .notificationButton {
   position: relative;
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   border: 1px solid rgba(159, 178, 196, 0.12);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.06);
@@ -1326,17 +1326,17 @@ a {
 }
 
 .notificationButton svg {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   fill: currentColor;
 }
 
 .notificationButton span {
   position: absolute;
-  top: 9px;
-  right: 10px;
-  width: 7px;
-  height: 7px;
+  top: 7px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
   border: 1px solid rgba(5, 11, 18, 0.9);
   border-radius: 50%;
   background: var(--green);
@@ -1373,8 +1373,8 @@ a {
 .userFallback {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   background: rgba(53, 224, 161, 0.13);
   color: var(--green);
   font-weight: 900;
@@ -1404,12 +1404,12 @@ a {
 }
 
 .menuChevron {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.06);
   fill: var(--muted);
-  padding: 8px;
+  padding: 7px;
   transition: background 180ms ease, fill 180ms ease, transform 180ms ease;
 }
 
@@ -1425,34 +1425,34 @@ a {
 
 .userDropdown {
   position: absolute;
-  top: calc(100% + 12px);
+  top: calc(100% + 10px);
   right: 0;
   z-index: 40;
-  min-width: 150px;
+  min-width: 132px;
   display: grid;
   gap: 4px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgba(8, 17, 28, 0.94);
   backdrop-filter: blur(18px);
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.45);
-  padding: 8px;
+  padding: 6px;
 }
 
 .userDropdown button {
   width: 100%;
-  min-height: 42px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   border: 0;
-  border-radius: 10px;
+  border-radius: 9px;
   background: transparent;
   color: var(--ink);
   cursor: pointer;
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 850;
-  padding: 0 12px;
+  padding: 0 10px;
   text-align: left;
   text-decoration: none;
 }
@@ -7020,7 +7020,7 @@ a {
 
   .appHeaderLogo {
     display: block;
-    width: 132px;
+    width: 108px;
     height: auto;
   }
 
@@ -7112,22 +7112,32 @@ a {
   }
 
   .appHeaderLogo {
-    width: 150px;
+    width: 116px;
   }
 
   .userAvatar,
   .userFallback {
-    flex: 0 0 54px;
-    height: 54px !important;
-    max-height: 54px;
-    max-width: 54px;
-    width: 54px !important;
+    flex: 0 0 34px;
+    height: 34px !important;
+    max-height: 34px;
+    max-width: 34px;
+    width: 34px !important;
   }
 
   .menuChevron {
-    height: 44px;
-    padding: 10px;
-    width: 44px;
+    height: 30px;
+    padding: 7px;
+    width: 30px;
+  }
+
+  .notificationButton {
+    height: 34px;
+    width: 34px;
+  }
+
+  .notificationButton svg {
+    height: 16px;
+    width: 16px;
   }
 
   .dashboardHero {
