@@ -721,23 +721,9 @@ function InviteReferralModal({
               x
             </button>
 
-            <header className="shareSheetHeader">
-              <span className="shareSheetHeroIcon">
-                <InviteIcon />
-              </span>
-              <div>
-                <h2 id={`invite-${investmentId}`}>Invitar referido</h2>
-                <p>Comparte tu enlace o codigo y gana recompensas por cada referido activo.</p>
-              </div>
-            </header>
-
-            <div className="shareSheetReferral">
-              <span>Codigo</span>
-              <strong>{referralCode}</strong>
-            </div>
-
-            <div className="shareSheetDivider" />
-            <p className="shareSheetLabel">Compartir con</p>
+            <p className="shareSheetLabel" id={`invite-${investmentId}`}>
+              Compartir con
+            </p>
 
             <div className="shareActionGrid">
               <button className="shareActionButton tone-link" type="button" onClick={() => copyValue(referralLink, "link")}>
