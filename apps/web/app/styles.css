@@ -1368,12 +1368,12 @@ a {
 .notificationsPanel {
   position: absolute;
   top: calc(100% + 12px);
-  right: -48px;
+  right: 0;
   z-index: 80;
-  width: min(420px, calc(100vw - 28px));
+  width: min(360px, calc(100vw - 28px));
   max-height: min(620px, calc(100vh - 110px));
   display: grid;
-  gap: 12px;
+  gap: 10px;
   overflow: hidden;
   border: 1px solid rgba(53, 224, 161, 0.16);
   border-radius: 22px;
@@ -1382,7 +1382,7 @@ a {
     linear-gradient(145deg, rgba(9, 19, 31, 0.96), rgba(7, 13, 23, 0.92));
   backdrop-filter: blur(22px);
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.56), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  padding: 16px;
+  padding: 14px;
 }
 
 .notificationsPanelHeader {
@@ -1398,7 +1398,7 @@ a {
 }
 
 .notificationsPanelHeader strong {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 950;
 }
 
@@ -1416,47 +1416,15 @@ a {
   color: var(--green);
   cursor: pointer;
   font: inherit;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 900;
-  padding: 8px 10px;
+  padding: 7px 9px;
   white-space: nowrap;
 }
 
 .notificationsPanelHeader button:disabled {
   cursor: default;
   opacity: 0.45;
-}
-
-.notificationFilters {
-  display: flex;
-  gap: 7px;
-  margin: 0 -16px;
-  overflow-x: auto;
-  padding: 0 16px 2px;
-  scrollbar-width: none;
-}
-
-.notificationFilters::-webkit-scrollbar {
-  display: none;
-}
-
-.notificationFilters button {
-  flex: 0 0 auto;
-  border: 1px solid rgba(159, 178, 196, 0.12);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: 11px;
-  font-weight: 900;
-  padding: 8px 10px;
-}
-
-.notificationFilters button.active {
-  border-color: rgba(53, 224, 161, 0.36);
-  background: rgba(53, 224, 161, 0.14);
-  color: var(--green);
 }
 
 .notificationsList {
@@ -7604,22 +7572,22 @@ a {
 
   .notificationsPanel {
     position: fixed;
-    top: auto;
-    right: 12px;
-    bottom: calc(82px + env(safe-area-inset-bottom));
-    left: 12px;
+    top: calc(env(safe-area-inset-top) + 70px);
+    right: 18px;
+    bottom: auto;
+    left: 18px;
     width: auto;
-    max-height: min(72vh, 620px);
-    border-radius: 24px 24px 18px 18px;
+    max-height: min(58vh, 480px);
+    border-radius: 18px;
     padding: 14px;
   }
 
   .notificationsList {
-    max-height: min(50vh, 420px);
+    max-height: min(42vh, 340px);
   }
 
   .notificationsPanelHeader strong {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .notificationsPanelHeader button {

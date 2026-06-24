@@ -2,11 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-type NotificationCategory = {
-  label: string;
-  value: string;
-};
-
 type NotificationItem = {
   actionUrl?: string | null;
   category: string;
@@ -24,7 +19,6 @@ type NotificationItem = {
 };
 
 type NotificationsResponse = {
-  categories: NotificationCategory[];
   notifications: NotificationItem[];
   unreadCount: number;
 };
@@ -34,17 +28,15 @@ type NotificationsBellProps = {
 };
 
 export function NotificationsBell({ userEmail }: NotificationsBellProps) {
-  const [categories, setCategories] = useState<NotificationCategory[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [unreadCount, setUnreadCount] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    void loadNotifications(selectedCategory);
-  }, [selectedCategory, userEmail]);
+    void loadNotifications();
+  }, [userEmail]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -72,7 +64,7 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
     };
   }, [isOpen]);
 
-  async function loadNotifications(category: string) {
+  async function loadNotifications() {
     if (!userEmail) {
       return;
     }
@@ -80,14 +72,12 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
     setIsLoading(true);
 
     try {
-      const categoryParam = category === "ALL" ? "" : `&category=${encodeURIComponent(category)}`;
-      const response = await fetch(`/api/notifications?email=${encodeURIComponent(userEmail)}${categoryParam}`);
+      const response = await fetch(`/api/notifications?email=${encodeURIComponent(userEmail)}`);
       if (!response.ok) {
         throw new Error("No se pudieron cargar las notificaciones.");
       }
 
       const data = (await response.json()) as NotificationsResponse;
-      setCategories(data.categories);
       setNotifications(data.notifications);
       setUnreadCount(data.unreadCount);
     } catch {
@@ -117,10 +107,7 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
     setUnreadCount(0);
 
     await fetch("/api/notifications/read-all", {
-      body: JSON.stringify({
-        email: userEmail,
-        ...(selectedCategory === "ALL" ? {} : { category: selectedCategory })
-      }),
+      body: JSON.stringify({ email: userEmail }),
       headers: { "Content-Type": "application/json" },
       method: "POST"
     }).catch(() => undefined);
@@ -161,22 +148,6 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
               Marcar todas como leidas
             </button>
           </header>
-
-          <div className="notificationFilters" aria-label="Filtros de notificaciones">
-            <button className={selectedCategory === "ALL" ? "active" : ""} type="button" onClick={() => setSelectedCategory("ALL")}>
-              Todas
-            </button>
-            {categories.map((category) => (
-              <button
-                className={selectedCategory === category.value ? "active" : ""}
-                key={category.value}
-                type="button"
-                onClick={() => setSelectedCategory(category.value)}
-              >
-                {category.label}
-              </button>
-            ))}
-          </div>
 
           <div className="notificationsList">
             {isLoading ? <p className="notificationsEmpty">Cargando notificaciones...</p> : null}
