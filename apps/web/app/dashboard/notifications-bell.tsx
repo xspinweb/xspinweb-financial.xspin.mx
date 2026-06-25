@@ -245,6 +245,12 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
               <span>{unreadCount > 0 ? `${unreadCount} sin leer` : "Todo al dia"}</span>
             </div>
             <button type="button" onClick={markAllAsRead} disabled={unreadCount === 0}>
+              <span className="notificationsMarkIcon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="m4.5 12.5 4.2 4.2L19.5 5.8" />
+                  <path d="M20 12v6.2A1.8 1.8 0 0 1 18.2 20H5.8A1.8 1.8 0 0 1 4 18.2V5.8A1.8 1.8 0 0 1 5.8 4H15" />
+                </svg>
+              </span>
               Marcar todas como leidas
             </button>
           </header>
@@ -332,17 +338,23 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                     style={{ "--notification-drag-x": `${dragOffsets[notification.id] ?? 0}px` } as CSSProperties}
                     type="button"
                   >
+                    <span className={`notificationUnreadDot ${notification.isRead ? "" : "active"}`} aria-hidden="true" />
+                    <span className={`notificationIcon notificationIcon-${getNotificationTone(notification)}`} aria-hidden="true">
+                      <NotificationGlyph notification={notification} />
+                    </span>
                     <span className="notificationBody">
-                      <span className="notificationMeta">
-                        <span>{formatRelativeDate(notification.createdAt)}</span>
-                      </span>
                       <strong>
                         {notification.title}
                         {notification.groupCount > 1 ? <em>{notification.groupCount}</em> : null}
                       </strong>
                       <span>{notification.message}</span>
                     </span>
-                    {notification.actionUrl ? <span className="notificationAction">Abrir</span> : null}
+                    <span className="notificationTime">{formatRelativeDate(notification.createdAt)}</span>
+                    <span className="notificationDots" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
                   </button>
                 ))
               : null}
@@ -378,4 +390,67 @@ function formatRelativeDate(value: string) {
   }
 
   return `hace ${Math.floor(diff / year)} a`;
+}
+
+function getNotificationTone(notification: NotificationItem) {
+  const value = `${notification.type} ${notification.category} ${notification.title}`.toLowerCase();
+
+  if (value.includes("refer")) {
+    return "purple";
+  }
+
+  if (value.includes("bono")) {
+    return "blue";
+  }
+
+  if (value.includes("retiro") || value.includes("wallet") || value.includes("pago")) {
+    return "yellow";
+  }
+
+  return "green";
+}
+
+function NotificationGlyph({ notification }: { notification: NotificationItem }) {
+  const tone = getNotificationTone(notification);
+
+  if (tone === "purple") {
+    return (
+      <svg viewBox="0 0 24 24">
+        <path d="M15 19a6 6 0 0 0-12 0" />
+        <circle cx="9" cy="8" r="4" />
+        <path d="M19 8v6" />
+        <path d="M22 11h-6" />
+      </svg>
+    );
+  }
+
+  if (tone === "blue") {
+    return (
+      <svg viewBox="0 0 24 24">
+        <path d="M20 12v10H4V12" />
+        <path d="M2 7h20v5H2z" />
+        <path d="M12 22V7" />
+        <path d="M12 7H7.5A2.5 2.5 0 1 1 10 4.5C10 6 12 7 12 7Z" />
+        <path d="M12 7h4.5A2.5 2.5 0 1 0 14 4.5C14 6 12 7 12 7Z" />
+      </svg>
+    );
+  }
+
+  if (tone === "yellow") {
+    return (
+      <svg viewBox="0 0 24 24">
+        <path d="M4 7.5h13.5A2.5 2.5 0 0 1 20 10v8.5A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-11Z" />
+        <path d="M4 8.5 15.5 5v4" />
+        <path d="M16 14h.01" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24">
+      <path d="M4 7.5h13.5A2.5 2.5 0 0 1 20 10v8.5A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-11Z" />
+      <path d="M4 8.5 15.5 5v4" />
+      <path d="M16 14h.01" />
+    </svg>
+  );
 }
