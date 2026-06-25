@@ -7,7 +7,7 @@ import { config } from "./config.js";
 import { prisma } from "./db.js";
 
 const createInvestmentSchema = z.object({
-  amount: z.number().min(20).max(2000),
+  amount: z.number().min(20).max(100000),
   email: z.string().email(),
   fullName: z.string().optional(),
   referredByCode: z.string().optional(),
@@ -108,6 +108,11 @@ const notificationCategorySchema = z.enum([
 ]);
 
 const notificationReadSchema = z.object({
+  email: z.string().email(),
+  notificationId: z.string().min(1)
+});
+
+const notificationDeleteSchema = z.object({
   email: z.string().email(),
   notificationId: z.string().min(1)
 });
@@ -564,6 +569,13 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/notifications/delete") {
+    const input = notificationDeleteSchema.parse(await readJson(req));
+    const result = await deleteNotification(input.email, input.notificationId);
+    sendJson(res, 200, result);
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/notifications/read-all") {
     const input = notificationReadAllSchema.parse(await readJson(req));
     const result = await markAllNotificationsRead(input.email, input.category);
@@ -954,6 +966,28 @@ async function markAllNotificationsRead(email: string, category?: z.infer<typeof
       investorId: investor.id,
       readAt: null,
       ...(category ? { category } : {})
+    }
+  });
+
+  await publishNotificationUpdate(investor.id);
+
+  return { ok: true };
+}
+
+async function deleteNotification(email: string, notificationId: string) {
+  const investor = await prisma.investor.findFirst({
+    select: { id: true },
+    where: { email }
+  });
+
+  if (!investor) {
+    return { ok: true };
+  }
+
+  await prisma.notification.deleteMany({
+    where: {
+      id: notificationId,
+      investorId: investor.id
     }
   });
 
@@ -1628,6 +1662,13 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
       fullName: input.fullName
     });
     const investorLevelBefore = await getInvestorLevelSnapshot(tx, investor.id);
+    const investorLevelRule = getLevelRule(investorLevelBefore.current.key);
+    const investmentLimit = investorLevelRule.investmentLimit > 0 ? investorLevelRule.investmentLimit : investorLevelRules[1].investmentLimit;
+
+    if (input.amount > investmentLimit) {
+      throw new Error(`Tu nivel actual permite invertir hasta ${formatNotificationAmount(investmentLimit)}.`);
+    }
+
     const calculated = calculateInitialInvestment(input.amount, rules);
     const latestInvestment = await tx.investment.findFirst({
       where: { investorId: investor.id },
@@ -1768,6 +1809,8 @@ async function createStripeInvestmentCheckout(input: z.infer<typeof createInvest
     throw new Error("Stripe no esta configurado en el servidor.");
   }
 
+  await assertInvestmentAmountAllowed(input.email, input.amount);
+
   const session = await stripeRequest<StripeCheckoutSession>("checkout/sessions", {
     "mode": "payment",
     "payment_method_types[0]": "card",
@@ -1794,6 +1837,16 @@ async function createStripeInvestmentCheckout(input: z.infer<typeof createInvest
     sessionId: session.id,
     url: session.url
   };
+}
+
+async function assertInvestmentAmountAllowed(email: string, amount: number) {
+  const investorLevel = await getInvestorLevel(email);
+  const levelRule = getLevelRule(investorLevel.current.key);
+  const investmentLimit = levelRule.investmentLimit > 0 ? levelRule.investmentLimit : investorLevelRules[1].investmentLimit;
+
+  if (amount > investmentLimit) {
+    throw new Error(`Tu nivel actual permite invertir hasta ${formatNotificationAmount(investmentLimit)}.`);
+  }
 }
 
 async function confirmStripeInvestmentCheckout(sessionId: string) {

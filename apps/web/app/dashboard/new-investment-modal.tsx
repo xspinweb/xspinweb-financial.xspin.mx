@@ -4,14 +4,14 @@ import { type CSSProperties, type FormEvent, useEffect, useMemo, useState } from
 import { createPortal } from "react-dom";
 
 const minInvestment = 20;
-const maxInvestment = 2000;
 const investmentStep = 10;
 
 type NewInvestmentModalProps = {
+  maxInvestment: number;
   onInvestmentCreated: (amount: number) => Promise<void>;
 };
 
-export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalProps) {
+export function NewInvestmentModal({ maxInvestment, onInvestmentCreated }: NewInvestmentModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState(minInvestment);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -19,8 +19,12 @@ export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalPr
   const [submitError, setSubmitError] = useState("");
   const [isMounted, setIsMounted] = useState(false);
 
-  const amountProgress = useMemo(() => ((amount - minInvestment) / (maxInvestment - minInvestment)) * 100, [amount]);
-  const hasValidAmount = amount >= minInvestment && amount <= maxInvestment;
+  const effectiveMaxInvestment = Math.max(minInvestment, maxInvestment);
+  const amountProgress = useMemo(
+    () => ((amount - minInvestment) / (effectiveMaxInvestment - minInvestment)) * 100,
+    [amount, effectiveMaxInvestment]
+  );
+  const hasValidAmount = amount >= minInvestment && amount <= effectiveMaxInvestment;
   const showAmountError = !hasValidAmount;
   const canSubmit = hasValidAmount && acceptedTerms && !isSubmitting;
 
@@ -57,6 +61,7 @@ export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalPr
   }, [isOpen]);
 
   function openModal() {
+    setAmount((current) => Math.min(Math.max(current, minInvestment), effectiveMaxInvestment));
     setIsOpen(true);
   }
 
@@ -109,7 +114,7 @@ export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalPr
                 <input
                   aria-label="Cantidad a invertir"
                   className="amountSlider"
-                  max={maxInvestment}
+                  max={effectiveMaxInvestment}
                   min={minInvestment}
                   name="amount"
                   onChange={(event) => setAmount(Number(event.target.value))}
@@ -120,11 +125,11 @@ export function NewInvestmentModal({ onInvestmentCreated }: NewInvestmentModalPr
                 />
                 <div className="amountRangeLabels">
                   <span>{formatMoney(minInvestment)}</span>
-                  <span>{formatMoney(maxInvestment)}</span>
+                  <span>{formatMoney(effectiveMaxInvestment)}</span>
                 </div>
               </label>
 
-              {showAmountError ? <p className="formError">Monto permitido: de $20 a $2,000 MXN.</p> : null}
+              {showAmountError ? <p className="formError">Monto permitido: de $20 a {formatMoney(effectiveMaxInvestment)} MXN.</p> : null}
               {submitError ? <p className="formError">{submitError}</p> : null}
 
               <label className="termsCheck">

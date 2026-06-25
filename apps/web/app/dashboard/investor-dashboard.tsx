@@ -141,6 +141,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   const primaryInvestment = investments.find((investment) => investment.id === selectedInvestmentId) ?? investments[0];
   const currentPrimaryWeek = getCurrentInvestmentWeek(primaryInvestment);
   const projectionRule = projectionLevelRules[investorLevel?.current.key ?? "explorer"];
+  const maxInvestmentByLevel = projectionRule.investmentLimit > 0 ? projectionRule.investmentLimit : projectionLevelRules.starter.investmentLimit;
   const projectedWeeks = buildPortfolioProjection(investments, projectionRule);
   const totalInvested = roundMoney(investments.reduce((total, investment) => total + investment.amount, 0));
   const projectedBalance = projectedWeeks.at(-1)?.totalGenerated ?? totalInvested;
@@ -273,7 +274,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
       <section className="wealthGroupsPanel">
         <div className="wealthSectionHeader">
           <h2>Mis grupos de inversion</h2>
-          <NewInvestmentModal onInvestmentCreated={handleInvestmentCreated} />
+          <NewInvestmentModal maxInvestment={maxInvestmentByLevel} onInvestmentCreated={handleInvestmentCreated} />
         </div>
 
         {isLoading ? (

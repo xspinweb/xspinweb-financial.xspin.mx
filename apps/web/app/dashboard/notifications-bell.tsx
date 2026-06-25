@@ -34,6 +34,8 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
   const touchStartYRef = useRef<number | null>(null);
+  const cardTouchStartRef = useRef<{ id: string; x: number; y: number } | null>(null);
+  const ignoredClickRef = useRef<string | null>(null);
 
   useEffect(() => {
     void loadNotifications();
@@ -72,18 +74,18 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
 
     function handleClick(event: MouseEvent) {
       if (!panelRef.current?.contains(event.target as Node)) {
-        void closeNotifications();
+        closeNotifications();
       }
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        void closeNotifications();
+        closeNotifications();
       }
     }
 
     function handleScroll() {
-      void closeNotifications();
+      closeNotifications();
     }
 
     document.addEventListener("mousedown", handleClick);
@@ -125,7 +127,7 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
       return;
     }
 
-    setNotifications((current) => current.map((item) => (item.id === notification.id ? { ...item, isRead: true } : item)));
+    setNotifications((current) => current.filter((item) => item.id !== notification.id));
     setUnreadCount((current) => Math.max(0, current - 1));
 
     await fetch("/api/notifications/read", {
@@ -146,12 +148,21 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
     }).catch(() => undefined);
   }
 
-  async function closeNotifications() {
+  function closeNotifications() {
     setIsOpen(false);
+    touchStartYRef.current = null;
+    cardTouchStartRef.current = null;
+  }
 
-    if (unreadCount > 0 || notifications.length > 0) {
-      await markAllAsRead();
-    }
+  async function deleteNotification(notification: NotificationItem) {
+    setNotifications((current) => current.filter((item) => item.id !== notification.id));
+    setUnreadCount((current) => (notification.isRead ? current : Math.max(0, current - 1)));
+
+    await fetch("/api/notifications/delete", {
+      body: JSON.stringify({ email: userEmail, notificationId: notification.id }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST"
+    }).catch(() => undefined);
   }
 
   function openNotification(notification: NotificationItem) {
@@ -172,7 +183,7 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
         aria-label="Notificaciones"
         onClick={() => {
           if (isOpen) {
-            void closeNotifications();
+            closeNotifications();
             return;
           }
 
@@ -204,7 +215,7 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
 
             if (currentY - startY > 42) {
               touchStartYRef.current = null;
-              void closeNotifications();
+              closeNotifications();
             }
           }}
         >
@@ -226,7 +237,44 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                   <button
                     className={notification.isRead ? "notificationCard" : "notificationCard unread"}
                     key={notification.id}
-                    onClick={() => openNotification(notification)}
+                    onClick={() => {
+                      if (ignoredClickRef.current === notification.id) {
+                        ignoredClickRef.current = null;
+                        return;
+                      }
+
+                      openNotification(notification);
+                    }}
+                    onTouchEnd={(event) => {
+                      const start = cardTouchStartRef.current;
+                      const touch = event.changedTouches[0];
+
+                      if (!start || !touch || start.id !== notification.id) {
+                        return;
+                      }
+
+                      cardTouchStartRef.current = null;
+                      const deltaX = touch.clientX - start.x;
+                      const deltaY = touch.clientY - start.y;
+
+                      if (deltaX < -64 && Math.abs(deltaY) < 48) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        ignoredClickRef.current = notification.id;
+                        void deleteNotification(notification);
+                      }
+                    }}
+                    onTouchStart={(event) => {
+                      const touch = event.touches[0];
+
+                      if (touch) {
+                        cardTouchStartRef.current = {
+                          id: notification.id,
+                          x: touch.clientX,
+                          y: touch.clientY
+                        };
+                      }
+                    }}
                     type="button"
                   >
                     <span className="notificationBody">
