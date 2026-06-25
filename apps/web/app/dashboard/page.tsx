@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import { getAppRole } from "../../lib/access";
 import { authOptions } from "../../lib/auth";
 import { InvestorDashboard } from "./investor-dashboard";
@@ -16,6 +17,10 @@ export default async function DashboardPage() {
   const isSuperAdmin = role === "SUPER_ADMIN";
   const userName = session?.user?.name ?? "Usuario";
   const userEmail = session?.user?.email ?? "";
+
+  if (isSuperAdmin) {
+    redirect("/admin/dashboard");
+  }
 
   return (
     <div className="dashboardContent">
