@@ -338,7 +338,7 @@ const notificationTemplates = {
   community_bonus_accredited: {
     category: "COMMUNITY",
     icon: "💰",
-    message: "Se acreditó un bono de {amount} por la actividad de tu comunidad.",
+    message: "Se acreditó un bono por la actividad de tu comunidad.",
     priority: "MEDIUM",
     title: "Bono acreditado"
   },
@@ -1704,10 +1704,7 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
         if (bonusAmount > 0) {
           notificationEvents.push({
             investorId: referrer.id,
-            type: "community_bonus_accredited",
-            variables: {
-              amount: formatNotificationAmount(bonusAmount)
-            }
+            type: "community_bonus_accredited"
           });
         }
 
@@ -1988,10 +1985,7 @@ async function reinvestInvestment(investmentId: string, input: z.infer<typeof re
       if (bonusAmount > 0) {
         notificationEvents.push({
           investorId: link.referrerInvestorId,
-          type: "community_bonus_accredited",
-          variables: {
-            amount: formatNotificationAmount(bonusAmount)
-          }
+          type: "community_bonus_accredited"
         });
       }
     }
