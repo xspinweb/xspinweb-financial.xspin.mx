@@ -765,6 +765,7 @@ async function getInvestorNotifications(email: string, category?: z.infer<typeof
       take: 80,
       where: {
         investorId: investor.id,
+        readAt: null,
         ...(category ? { category } : {})
       }
     }),
@@ -909,6 +910,37 @@ function formatNotificationAmount(amount: number) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })} MXN`;
+}
+
+function buildLevelChangeNotifications(
+  investorId: string,
+  before: ReturnType<typeof buildInvestorLevel>,
+  after: ReturnType<typeof buildInvestorLevel>
+): NotificationEvent[] {
+  if (before.current.key === after.current.key) {
+    return [];
+  }
+
+  const currentRule = getLevelRule(after.current.key);
+  const events: NotificationEvent[] = [{
+    investorId,
+    type: "level_up",
+    variables: {
+      level: after.current.name
+    }
+  }];
+
+  if (currentRule.investmentLimit > 0) {
+    events.push({
+      investorId,
+      type: "benefits_unlocked",
+      variables: {
+        limit: formatNotificationAmount(currentRule.investmentLimit)
+      }
+    });
+  }
+
+  return events;
 }
 
 async function dispatchNotificationEvents(events: NotificationEvent[]) {
@@ -1485,6 +1517,7 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
       email: input.email,
       fullName: input.fullName
     });
+    const investorLevelBefore = await getInvestorLevelSnapshot(tx, investor.id);
     const calculated = calculateInitialInvestment(input.amount, rules);
     const latestInvestment = await tx.investment.findFirst({
       where: { investorId: investor.id },
@@ -1514,14 +1547,6 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
       }
     }];
 
-    if (!latestInvestment) {
-      notificationEvents.push({
-        investorId: investor.id,
-        type: "level_up",
-        variables: { level: "Starter" }
-      });
-    }
-
     const referralTarget = parseReferralTarget(input.referredByCode, input.sourceInvestmentId);
 
     if (referralTarget.referredByCode && referralTarget.sourceInvestmentId) {
@@ -1545,7 +1570,8 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
       const sourceAcceptsReferrals = sourceInvestment ? sourceInvestment.payments.length === 0 : false;
 
       if (referrer && sourceInvestment && sourceAcceptsReferrals && referrer.id !== investor.id) {
-        const referrerLevelRule = await getInvestorLevelRule(tx, referrer.id);
+        const referrerLevelBefore = await getInvestorLevelSnapshot(tx, referrer.id);
+        const referrerLevelRule = getLevelRule(referrerLevelBefore.current.key);
         const bonusAmount = roundMoney(input.amount * referrerLevelRule.bonusRate);
 
         await tx.referral.create({
@@ -1574,8 +1600,16 @@ async function createInvestment(input: z.infer<typeof createInvestmentSchema>) {
             }
           });
         }
+
+        notificationEvents.push(
+          ...buildLevelChangeNotifications(referrer.id, referrerLevelBefore, await getInvestorLevelSnapshot(tx, referrer.id))
+        );
       }
     }
+
+    notificationEvents.push(
+      ...buildLevelChangeNotifications(investor.id, investorLevelBefore, await getInvestorLevelSnapshot(tx, investor.id))
+    );
 
     return { investor, investment, notificationEvents };
   });
@@ -1958,6 +1992,7 @@ async function collectFinalInvestment(investmentId: string, input: z.infer<typeo
       throw new Error(`El cobro final requiere que los ${referrals.length} referidos vinculados hayan invertido o reinvertido.`);
     }
 
+    const investorLevelBefore = await getInvestorLevelSnapshot(tx, investment.investorId);
     const totalGenerated = week.totalGenerated;
     const notificationEvents: NotificationEvent[] = [
       {
@@ -1997,6 +2032,10 @@ async function collectFinalInvestment(investmentId: string, input: z.infer<typeo
       },
       where: { id: investment.id }
     });
+
+    notificationEvents.push(
+      ...buildLevelChangeNotifications(investment.investorId, investorLevelBefore, await getInvestorLevelSnapshot(tx, investment.investorId))
+    );
 
     return {
       notificationEvents,
@@ -2084,6 +2123,12 @@ function getReinvestedAmount(notes?: string | null) {
 }
 
 async function getInvestorLevelRule(tx: Prisma.TransactionClient, investorId: string) {
+  const level = await getInvestorLevelSnapshot(tx, investorId);
+
+  return getLevelRule(level.current.key);
+}
+
+async function getInvestorLevelSnapshot(tx: Prisma.TransactionClient, investorId: string) {
   const investments = await tx.investment.findMany({
     select: {
       payments: {
@@ -2106,9 +2151,8 @@ async function getInvestorLevelRule(tx: Prisma.TransactionClient, investorId: st
     },
     where: { investorId }
   });
-  const level = buildInvestorLevel(investments);
 
-  return getLevelRule(level.current.key);
+  return buildInvestorLevel(investments);
 }
 
 async function getOrCreateInvestor(tx: Prisma.TransactionClient, input: { email: string; fullName?: string }) {

@@ -33,6 +33,7 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
+  const touchStartYRef = useRef<number | null>(null);
 
   useEffect(() => {
     void loadNotifications();
@@ -45,22 +46,28 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
 
     function handleClick(event: MouseEvent) {
       if (!panelRef.current?.contains(event.target as Node)) {
-        setIsOpen(false);
+        void closeNotifications();
       }
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setIsOpen(false);
+        void closeNotifications();
       }
+    }
+
+    function handleScroll() {
+      void closeNotifications();
     }
 
     document.addEventListener("mousedown", handleClick);
     document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       document.removeEventListener("mousedown", handleClick);
       document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, [isOpen]);
 
@@ -103,7 +110,7 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
   }
 
   async function markAllAsRead() {
-    setNotifications((current) => current.map((item) => ({ ...item, isRead: true })));
+    setNotifications([]);
     setUnreadCount(0);
 
     await fetch("/api/notifications/read-all", {
@@ -111,6 +118,14 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
       headers: { "Content-Type": "application/json" },
       method: "POST"
     }).catch(() => undefined);
+  }
+
+  async function closeNotifications() {
+    setIsOpen(false);
+
+    if (unreadCount > 0 || notifications.length > 0) {
+      await markAllAsRead();
+    }
   }
 
   function openNotification(notification: NotificationItem) {
@@ -129,7 +144,14 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         aria-label="Notificaciones"
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={() => {
+          if (isOpen) {
+            void closeNotifications();
+            return;
+          }
+
+          setIsOpen(true);
+        }}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 22a2.8 2.8 0 0 0 2.7-2h-5.4A2.8 2.8 0 0 0 12 22Zm7-6.4V11a7 7 0 0 0-5.2-6.8V3a1.8 1.8 0 1 0-3.6 0v1.2A7 7 0 0 0 5 11v4.6L3.3 18v.9h17.4V18Z" />
@@ -138,7 +160,28 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
       </button>
 
       {isOpen ? (
-        <section className="notificationsPanel" role="dialog" aria-label="Notificaciones recientes">
+        <section
+          className="notificationsPanel"
+          role="dialog"
+          aria-label="Notificaciones recientes"
+          onTouchStart={(event) => {
+            touchStartYRef.current = event.touches[0]?.clientY ?? null;
+          }}
+          onTouchMove={(event) => {
+            const startY = touchStartYRef.current;
+
+            if (startY === null) {
+              return;
+            }
+
+            const currentY = event.touches[0]?.clientY ?? startY;
+
+            if (currentY - startY > 42) {
+              touchStartYRef.current = null;
+              void closeNotifications();
+            }
+          }}
+        >
           <header className="notificationsPanelHeader">
             <div>
               <strong>Notificaciones</strong>
@@ -160,10 +203,8 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                     onClick={() => openNotification(notification)}
                     type="button"
                   >
-                    <span className="notificationIcon">{notification.icon}</span>
                     <span className="notificationBody">
                       <span className="notificationMeta">
-                        <span>{notification.categoryLabel}</span>
                         <span>{formatRelativeDate(notification.createdAt)}</span>
                       </span>
                       <strong>
@@ -171,7 +212,6 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                         {notification.groupCount > 1 ? <em>{notification.groupCount}</em> : null}
                       </strong>
                       <span>{notification.message}</span>
-                      <small className={`priorityBadge ${notification.priorityKey.toLowerCase()}`}>{notification.priority}</small>
                     </span>
                     {notification.actionUrl ? <span className="notificationAction">Abrir</span> : null}
                   </button>
