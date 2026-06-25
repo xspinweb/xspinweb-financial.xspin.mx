@@ -10322,8 +10322,12 @@ a {
 
 .adminDashboard {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 420px;
+  grid-template-columns: minmax(0, 1fr);
   min-height: 100vh;
+}
+
+.adminDashboard.hasDetail {
+  grid-template-columns: minmax(0, 1fr) 420px;
 }
 
 .adminMain {
@@ -10666,10 +10670,37 @@ a {
   border-top: 0;
   min-width: 0;
   padding: 22px;
+  position: relative;
+}
+
+.adminDetailClose {
+  align-items: center;
+  background: rgba(9, 20, 34, 0.76);
+  border: 1px solid rgba(156, 182, 204, 0.22);
+  border-radius: 999px;
+  color: #dce7f5;
+  display: inline-flex;
+  font-size: 16px;
+  font-weight: 900;
+  height: 34px;
+  justify-content: center;
+  line-height: 1;
+  position: absolute;
+  right: 18px;
+  text-decoration: none;
+  top: 18px;
+  width: 34px;
+  z-index: 2;
+}
+
+.adminDetailClose:hover {
+  border-color: rgba(32, 220, 159, 0.45);
+  color: #35e4a6;
 }
 
 .adminDetailHeader {
   align-items: flex-start;
+  padding-right: 38px;
 }
 
 .adminAvatar {

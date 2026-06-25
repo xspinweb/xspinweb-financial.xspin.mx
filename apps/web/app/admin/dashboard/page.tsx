@@ -21,10 +21,10 @@ const dateTime = new Intl.DateTimeFormat("es-MX", {
 
 export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
   const data = await getAdminDashboardData(searchParams?.user);
-  const selected = data.selectedUser;
+  const selected = searchParams?.user ? data.users.find((user) => user.id === searchParams.user) ?? null : null;
 
   return (
-    <div className="adminDashboard">
+    <div className={selected ? "adminDashboard hasDetail" : "adminDashboard"}>
       <section className="adminMain">
         <header className="adminTopbar">
           <div>
@@ -33,7 +33,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
           </div>
           <label className="adminSearch">
             <input placeholder="Buscar usuario..." />
-            <span>⌕</span>
+            <span>Buscar</span>
           </label>
         </header>
 
@@ -75,7 +75,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                 </tr>
               </thead>
               <tbody>
-                {data.users.map((user) => (
+                {data.users.length ? data.users.map((user) => (
                   <tr className={selected?.id === user.id ? "selected" : ""} key={user.id}>
                     <td>{user.labelId}</td>
                     <td>
@@ -94,120 +94,92 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                     <td>{timeAgo(user.lastAccessAt)}</td>
                     <td><Link className="adminIconLink" href={`/admin/dashboard?user=${user.id}`}>Ver</Link></td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan={11}>Aun no hay usuarios registrados.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </section>
-
-        <section className="adminChartGrid">
-          <article className="adminPanel adminChartPanel">
-            <h2>Inversiones vs Pagos</h2>
-            <div className="adminLineChart" aria-hidden="true">
-              {data.charts.investmentTrend.map((value, index) => (
-                <span key={`${value}-${index}`} style={{ height: `${value}%` }} />
-              ))}
-            </div>
-          </article>
-          <article className="adminPanel adminDonutPanel">
-            <h2>Usuarios por nivel</h2>
-            <div className="adminDonut"><span>{data.stats.totalUsers}<small>Total</small></span></div>
-            <ul>
-              {data.charts.byLevel.map((level) => (
-                <li key={level.label}><span>{level.label}</span><b>{level.count}</b></li>
-              ))}
-            </ul>
-          </article>
-          <article className="adminPanel adminDonutPanel">
-            <h2>Retiros por estado</h2>
-            <div className="adminDonut warm"><span>{data.stats.pendingWithdrawals}<small>Pendientes</small></span></div>
-            <ul>
-              <li><span>Pendientes</span><b>{data.charts.withdrawals.pending}</b></li>
-              <li><span>Aprobados</span><b>{data.charts.withdrawals.approved}</b></li>
-              <li><span>Rechazados</span><b>{data.charts.withdrawals.rejected}</b></li>
-            </ul>
-          </article>
-        </section>
       </section>
 
-      <aside className="adminDetailPanel">
-        {selected ? (
-          <>
-            <div className="adminDetailHeader">
-              <div className="adminAvatar">{selected.fullName.slice(0, 1).toUpperCase()}</div>
-              <div>
-                <h2>{selected.fullName}</h2>
-                <span>{selected.email}</span>
-                <small>{selected.phone}</small>
-                <div className="adminDetailBadges">
-                  <AdminPill tone={selected.level.toLowerCase()}>{selected.level}</AdminPill>
-                  <AdminPill tone="id">ID: {selected.labelId}</AdminPill>
-                </div>
+      {selected ? (
+        <aside className="adminDetailPanel">
+          <Link className="adminDetailClose" href="/admin/dashboard" aria-label="Cerrar detalle">x</Link>
+          <div className="adminDetailHeader">
+            <div className="adminAvatar">{selected.fullName.slice(0, 1).toUpperCase()}</div>
+            <div>
+              <h2>{selected.fullName}</h2>
+              <span>{selected.email}</span>
+              <small>{selected.phone}</small>
+              <div className="adminDetailBadges">
+                <AdminPill tone={selected.level.toLowerCase()}>{selected.level}</AdminPill>
+                <AdminPill tone="id">ID: {selected.labelId}</AdminPill>
               </div>
-              <AdminStatus status={selected.connection} />
             </div>
+            <AdminStatus status={selected.connection} />
+          </div>
 
-            <div className="adminTabs">
-              <span className="active">Resumen</span>
-              <span>Inversiones</span>
-              <span>Wallet</span>
-              <span>Documentos</span>
-              <span>Actividad</span>
+          <div className="adminTabs">
+            <span className="active">Resumen</span>
+            <span>Inversiones</span>
+            <span>Wallet</span>
+            <span>Documentos</span>
+            <span>Actividad</span>
+          </div>
+
+          <AdminInfo title="Informacion general" rows={[
+            ["Pais", selected.country],
+            ["Ciudad", selected.city],
+            ["Fecha nacimiento", selected.birthDate ? dateTime.format(selected.birthDate) : "-"],
+            ["Fecha registro", dateTime.format(selected.registeredAt)],
+            ["Estado conexion", selected.connection],
+            ["Ultimo acceso", dateTime.format(selected.lastAccessAt)]
+          ]} />
+
+          <section className="adminInfoCard">
+            <h3>Resumen financiero</h3>
+            <div className="adminMiniGrid">
+              <AdminMini label="Patrimonio total" value={money.format(selected.patrimony)} />
+              <AdminMini label="Total invertido" value={money.format(selected.totalInvested)} />
+              <AdminMini label="Total cobrado" value={money.format(selected.totalPaid)} />
+              <AdminMini label="Grupos activos" value={String(selected.activeGroups)} />
+              <AdminMini label="Referidos totales" value={String(selected.activeReferrals)} />
+              <AdminMini label="Bonos generados" value={money.format(selected.bonuses)} />
             </div>
+          </section>
 
-            <AdminInfo title="Informacion general" rows={[
-              ["Pais", selected.country],
-              ["Ciudad", selected.city],
-              ["Fecha nacimiento", selected.birthDate ? dateTime.format(selected.birthDate) : "-"],
-              ["Fecha registro", dateTime.format(selected.registeredAt)],
-              ["Estado conexion", selected.connection],
-              ["Ultimo acceso", dateTime.format(selected.lastAccessAt)]
-            ]} />
-
-            <section className="adminInfoCard">
-              <h3>Resumen financiero</h3>
-              <div className="adminMiniGrid">
-                <AdminMini label="Patrimonio total" value={money.format(selected.patrimony)} />
-                <AdminMini label="Total invertido" value={money.format(selected.totalInvested)} />
-                <AdminMini label="Total cobrado" value={money.format(selected.totalPaid)} />
-                <AdminMini label="Grupos activos" value={String(selected.activeGroups)} />
-                <AdminMini label="Referidos totales" value={String(selected.activeReferrals)} />
-                <AdminMini label="Bonos generados" value={money.format(selected.bonuses)} />
-              </div>
-            </section>
-
-            <section className="adminInfoCard">
-              <h3>Metodo de pago principal</h3>
-              <div className="adminPaymentRow">
-                <span>{selected.primaryPayoutMethod.label}</span>
-                <small>{selected.primaryPayoutMethod.detail}</small>
-                {selected.primaryPayoutMethod.isPrimary ? <AdminPill tone="verificado">Principal</AdminPill> : null}
-              </div>
-            </section>
-
-            <section className="adminInfoCard">
-              <h3>Ultima solicitud de retiro</h3>
-              {selected.lastWithdrawal ? (
-                <AdminInfoRows rows={[
-                  ["Fecha", dateTime.format(selected.lastWithdrawal.date)],
-                  ["Metodo", selected.lastWithdrawal.method.label],
-                  ["Monto", money.format(selected.lastWithdrawal.amount)],
-                  ["Estado", selected.lastWithdrawal.status]
-                ]} />
-              ) : (
-                <p className="adminEmpty">Sin retiros registrados.</p>
-              )}
-            </section>
-
-            <div className="adminDetailActions">
-              <Link href={`/admin/usuarios/${selected.id}`}>Editar usuario</Link>
-              <button type="button">Suspender usuario</button>
+          <section className="adminInfoCard">
+            <h3>Metodo de pago principal</h3>
+            <div className="adminPaymentRow">
+              <span>{selected.primaryPayoutMethod.label}</span>
+              <small>{selected.primaryPayoutMethod.detail}</small>
+              {selected.primaryPayoutMethod.isPrimary ? <AdminPill tone="verificado">Principal</AdminPill> : null}
             </div>
-          </>
-        ) : (
-          <p className="adminEmpty">Aun no hay usuarios registrados.</p>
-        )}
-      </aside>
+          </section>
+
+          <section className="adminInfoCard">
+            <h3>Ultima solicitud de retiro</h3>
+            {selected.lastWithdrawal ? (
+              <AdminInfoRows rows={[
+                ["Fecha", dateTime.format(selected.lastWithdrawal.date)],
+                ["Metodo", selected.lastWithdrawal.method.label],
+                ["Monto", money.format(selected.lastWithdrawal.amount)],
+                ["Estado", selected.lastWithdrawal.status]
+              ]} />
+            ) : (
+              <p className="adminEmpty">Sin retiros registrados.</p>
+            )}
+          </section>
+
+          <div className="adminDetailActions">
+            <Link href={`/admin/usuarios/${selected.id}`}>Editar usuario</Link>
+            <button type="button">Suspender usuario</button>
+          </div>
+        </aside>
+      ) : null}
     </div>
   );
 }
