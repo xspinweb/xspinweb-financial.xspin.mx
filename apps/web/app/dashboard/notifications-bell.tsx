@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 
 type NotificationItem = {
   actionUrl?: string | null;
@@ -31,6 +31,8 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [deletingNotificationIds, setDeletingNotificationIds] = useState<string[]>([]);
+  const [dragOffsets, setDragOffsets] = useState<Record<string, number>>({});
   const [unreadCount, setUnreadCount] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
   const touchStartYRef = useRef<number | null>(null);
@@ -115,6 +117,8 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
       const data = (await response.json()) as NotificationsResponse;
       setNotifications(data.notifications);
       setUnreadCount(data.unreadCount);
+      setDeletingNotificationIds([]);
+      setDragOffsets({});
     } catch {
       setNotifications([]);
     } finally {
@@ -152,17 +156,33 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
     setIsOpen(false);
     touchStartYRef.current = null;
     cardTouchStartRef.current = null;
+    setDragOffsets({});
   }
 
   async function deleteNotification(notification: NotificationItem) {
-    setNotifications((current) => current.filter((item) => item.id !== notification.id));
-    setUnreadCount((current) => (notification.isRead ? current : Math.max(0, current - 1)));
+    if (deletingNotificationIds.includes(notification.id)) {
+      return;
+    }
+
+    setDeletingNotificationIds((current) => [...current, notification.id]);
+    setDragOffsets((current) => ({ ...current, [notification.id]: -420 }));
 
     await fetch("/api/notifications/delete", {
       body: JSON.stringify({ email: userEmail, notificationId: notification.id }),
       headers: { "Content-Type": "application/json" },
       method: "POST"
     }).catch(() => undefined);
+
+    window.setTimeout(() => {
+      setNotifications((current) => current.filter((item) => item.id !== notification.id));
+      setUnreadCount((current) => (notification.isRead ? current : Math.max(0, current - 1)));
+      setDeletingNotificationIds((current) => current.filter((id) => id !== notification.id));
+      setDragOffsets((current) => {
+        const next = { ...current };
+        delete next[notification.id];
+        return next;
+      });
+    }, 180);
   }
 
   function openNotification(notification: NotificationItem) {
@@ -235,7 +255,11 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
             {!isLoading
               ? notifications.map((notification) => (
                   <button
-                    className={notification.isRead ? "notificationCard" : "notificationCard unread"}
+                    className={[
+                      notification.isRead ? "notificationCard" : "notificationCard unread",
+                      dragOffsets[notification.id] ? "dragging" : "",
+                      deletingNotificationIds.includes(notification.id) ? "removing" : ""
+                    ].filter(Boolean).join(" ")}
                     key={notification.id}
                     onClick={() => {
                       if (ignoredClickRef.current === notification.id) {
@@ -262,6 +286,31 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                         event.stopPropagation();
                         ignoredClickRef.current = notification.id;
                         void deleteNotification(notification);
+                        return;
+                      }
+
+                      setDragOffsets((current) => {
+                        const next = { ...current };
+                        delete next[notification.id];
+                        return next;
+                      });
+                    }}
+                    onTouchMove={(event) => {
+                      const start = cardTouchStartRef.current;
+                      const touch = event.touches[0];
+
+                      if (!start || !touch || start.id !== notification.id) {
+                        return;
+                      }
+
+                      const deltaX = touch.clientX - start.x;
+                      const deltaY = touch.clientY - start.y;
+
+                      if (deltaX < -8 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                        setDragOffsets((current) => ({
+                          ...current,
+                          [notification.id]: Math.max(deltaX, -126)
+                        }));
                       }
                     }}
                     onTouchStart={(event) => {
@@ -273,8 +322,14 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                           x: touch.clientX,
                           y: touch.clientY
                         };
+                        setDragOffsets((current) => {
+                          const next = { ...current };
+                          delete next[notification.id];
+                          return next;
+                        });
                       }
                     }}
+                    style={{ "--notification-drag-x": `${dragOffsets[notification.id] ?? 0}px` } as CSSProperties}
                     type="button"
                   >
                     <span className="notificationBody">
