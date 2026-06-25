@@ -197,7 +197,7 @@ export default function HomePage({ searchParams }: { searchParams?: { ref?: stri
                 </div>
                 <div className="phoneAvatar">X</div>
               </div>
-              <p className="phoneGreeting">Hola, Novaseg</p>
+              <p className="phoneGreeting">Hola, Melissa</p>
               <h2>Tu patrimonio</h2>
               <p className="phoneSub">Resumen general de tu actividad</p>
               <div className="phoneBalance">
@@ -306,20 +306,22 @@ export default function HomePage({ searchParams }: { searchParams?: { ref?: stri
             </a>
           </div>
         </div>
-        <div className="landingCoinScene" aria-hidden="true">
+        <div className="landingCoinScene landingGrowthArtwork" aria-hidden="true">
           <div className="coinStack">
             <span />
             <span />
             <span />
           </div>
-          <Image src="/logos/xspin-mark.svg" alt="" width={170} height={170} />
+          <div className="growthMarkPlate">
+            <Image src="/logos/xspin-mark.svg" alt="" width={170} height={170} />
+          </div>
           <ArrowRight className="coinArrow" size={132} />
         </div>
       </section>
 
       <section className="landingTrust" id="testimonios">
-        <p>Con la confianza de nuestra comunidad</p>
-        <div className="trustRow">
+        <div className="trustRow landingReviewPanel">
+          <p>Con la confianza de nuestra comunidad</p>
           <div className="avatarStack" aria-hidden="true">
             {["AR", "JM", "LV", "RG", "MS"].map((initials) => (
               <span key={initials}>{initials}</span>
