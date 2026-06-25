@@ -40,6 +40,32 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
   }, [userEmail]);
 
   useEffect(() => {
+    if (!userEmail || typeof EventSource === "undefined") {
+      return;
+    }
+
+    const stream = new EventSource(`/api/notifications/stream?email=${encodeURIComponent(userEmail)}`);
+
+    stream.addEventListener("notifications", (event) => {
+      try {
+        const data = JSON.parse((event as MessageEvent).data) as NotificationsResponse;
+        setNotifications(data.notifications);
+        setUnreadCount(data.unreadCount);
+      } catch {
+        void loadNotifications();
+      }
+    });
+
+    stream.onerror = () => {
+      void loadNotifications();
+    };
+
+    return () => {
+      stream.close();
+    };
+  }, [userEmail]);
+
+  useEffect(() => {
     if (!isOpen) {
       return;
     }

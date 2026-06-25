@@ -498,6 +498,17 @@ const notificationTemplates = {
   }
 } as const;
 
+type NotificationStream = {
+  email: string;
+  heartbeat: ReturnType<typeof setInterval>;
+  investorId: string;
+  refresh: ReturnType<typeof setInterval>;
+  res: ServerResponse;
+  signature: string;
+};
+
+const notificationStreams = new Map<string, Set<NotificationStream>>();
+
 const server = createServer(async (req, res) => {
   try {
     await handleRequest(req, res);
@@ -537,6 +548,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     const category = categoryParam ? notificationCategorySchema.parse(categoryParam) : undefined;
     const notifications = await getInvestorNotifications(email, category);
     sendJson(res, 200, notifications);
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/notifications/stream") {
+    const email = z.string().email().parse(url.searchParams.get("email"));
+    await handleNotificationsStream(req, res, email);
     return;
   }
 
@@ -809,6 +826,94 @@ async function getInvestorNotifications(email: string, category?: z.infer<typeof
   };
 }
 
+async function handleNotificationsStream(req: IncomingMessage, res: ServerResponse, email: string) {
+  const investor = await prisma.investor.findFirst({
+    select: { id: true },
+    where: { email }
+  });
+
+  res.writeHead(200, {
+    "Cache-Control": "no-cache, no-transform",
+    "Connection": "keep-alive",
+    "Content-Type": "text/event-stream",
+    "X-Accel-Buffering": "no"
+  });
+  res.write("retry: 5000\n\n");
+
+  if (!investor) {
+    writeSse(res, "notifications", {
+      categories: notificationCategories,
+      notifications: [],
+      templateTypes: Object.keys(notificationTemplates),
+      unreadCount: 0
+    });
+    res.end();
+    return;
+  }
+
+  const stream: NotificationStream = {
+    email,
+    heartbeat: setInterval(() => {
+      res.write(": heartbeat\n\n");
+    }, 25000),
+    investorId: investor.id,
+    refresh: setInterval(() => {
+      void sendNotificationStreamUpdate(stream);
+    }, 15000),
+    res,
+    signature: ""
+  };
+  const streams = notificationStreams.get(investor.id) ?? new Set<NotificationStream>();
+  streams.add(stream);
+  notificationStreams.set(investor.id, streams);
+
+  req.on("close", () => {
+    clearInterval(stream.heartbeat);
+    clearInterval(stream.refresh);
+    streams.delete(stream);
+
+    if (streams.size === 0) {
+      notificationStreams.delete(investor.id);
+    }
+  });
+
+  await sendNotificationStreamUpdate(stream, true);
+}
+
+async function sendNotificationStreamUpdate(stream: NotificationStream, force = false) {
+  const payload = await getInvestorNotifications(stream.email);
+  const signature = buildNotificationsSignature(payload);
+
+  if (!force && signature === stream.signature) {
+    return;
+  }
+
+  stream.signature = signature;
+  writeSse(stream.res, "notifications", payload);
+}
+
+function buildNotificationsSignature(payload: Awaited<ReturnType<typeof getInvestorNotifications>>) {
+  return JSON.stringify({
+    ids: payload.notifications.map((notification) => `${notification.id}:${notification.groupCount}:${notification.isRead}`).join("|"),
+    unreadCount: payload.unreadCount
+  });
+}
+
+function writeSse(res: ServerResponse, event: string, data: unknown) {
+  res.write(`event: ${event}\n`);
+  res.write(`data: ${JSON.stringify(data)}\n\n`);
+}
+
+async function publishNotificationUpdate(investorId: string) {
+  const streams = notificationStreams.get(investorId);
+
+  if (!streams?.size) {
+    return;
+  }
+
+  await Promise.all([...streams].map((stream) => sendNotificationStreamUpdate(stream, true)));
+}
+
 async function markNotificationRead(email: string, notificationId: string) {
   const investor = await prisma.investor.findFirst({
     select: { id: true },
@@ -827,6 +932,8 @@ async function markNotificationRead(email: string, notificationId: string) {
       readAt: null
     }
   });
+
+  await publishNotificationUpdate(investor.id);
 
   return { ok: true };
 }
@@ -849,6 +956,8 @@ async function markAllNotificationsRead(email: string, category?: z.infer<typeof
       ...(category ? { category } : {})
     }
   });
+
+  await publishNotificationUpdate(investor.id);
 
   return { ok: true };
 }
@@ -964,6 +1073,7 @@ async function dispatchNotificationEvents(events: NotificationEvent[]) {
           type: event.type
         }
       });
+      await publishNotificationUpdate(event.investorId);
     } catch (error) {
       console.error("No se pudo crear la notificacion", error);
     }
