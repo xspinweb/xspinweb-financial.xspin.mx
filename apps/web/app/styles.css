@@ -1174,31 +1174,40 @@ a {
   display: grid;
   place-items: center;
   background:
-    radial-gradient(circle at 78% 18%, rgba(23, 198, 211, 0.18), transparent 28%),
-    radial-gradient(circle at 20% 34%, rgba(126, 29, 255, 0.2), transparent 28%),
-    var(--deep);
-  padding: 24px;
+    radial-gradient(circle at 50% 12%, rgba(53, 224, 161, 0.12), transparent 26%),
+    radial-gradient(circle at 18% 20%, rgba(23, 198, 211, 0.12), transparent 30%),
+    radial-gradient(circle at 86% 22%, rgba(190, 46, 255, 0.15), transparent 30%),
+    linear-gradient(180deg, #07111d 0%, #03070d 100%);
+  padding: 22px;
 }
 
 .loginPanel,
 .dashboardPanel {
-  width: min(460px, 100%);
+  width: min(520px, 100%);
   border: 1px solid var(--line);
-  border-radius: 18px;
-  background: rgba(8, 15, 24, 0.86);
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.34);
-  padding: 30px;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(9, 18, 31, 0.88), rgba(4, 9, 17, 0.95)),
+    rgba(5, 11, 18, 0.92);
+  box-shadow:
+    0 36px 110px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  padding: 32px;
 }
 
 .loginPanel {
   display: grid;
-  gap: 24px;
+  gap: 34px;
+  min-height: min(760px, calc(100vh - 44px));
+  align-content: start;
+  justify-items: center;
+  text-align: center;
 }
 
 .loginPanel h1,
 .dashboardPanel h1 {
-  margin: 8px 0 12px;
-  font-size: clamp(30px, 4vw, 42px);
+  margin: 0 0 12px;
+  font-size: clamp(28px, 4vw, 38px);
   line-height: 1.05;
 }
 
@@ -1207,6 +1216,32 @@ a {
   color: var(--muted);
   line-height: 1.6;
   margin: 0;
+}
+
+.loginLogo {
+  width: min(410px, 88%);
+  height: auto;
+  object-fit: contain;
+  margin-top: 8px;
+  filter: drop-shadow(0 18px 42px rgba(23, 198, 211, 0.18));
+}
+
+.loginCopy {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.loginCopy h1 {
+  color: #f6f8fb;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.loginCopy p {
+  color: #aeb9c8;
+  font-size: 17px;
 }
 
 .loginEyebrow {
@@ -1219,23 +1254,30 @@ a {
 
 .googleButton {
   width: 100%;
-  min-height: 54px;
+  min-height: 78px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 10px;
-  background: #ffffff;
-  color: #111820;
+  gap: 28px;
+  border: 1px solid rgba(40, 210, 218, 0.5);
+  border-radius: 16px;
+  background:
+    linear-gradient(90deg, rgba(23, 198, 211, 0.1), rgba(190, 46, 255, 0.1)),
+    rgba(8, 16, 29, 0.72);
+  color: #f5f7fb;
   cursor: pointer;
   font: inherit;
   font-weight: 800;
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  font-size: 18px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 34px rgba(23, 198, 211, 0.08);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .googleButton:hover {
-  box-shadow: 0 18px 40px rgba(23, 198, 211, 0.14);
+  border-color: rgba(190, 46, 255, 0.72);
+  box-shadow: 0 18px 48px rgba(23, 198, 211, 0.16);
   transform: translateY(-2px);
 }
 
@@ -1256,13 +1298,31 @@ a {
 .googleIcon {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
 }
 
 .googleIcon svg {
-  width: 22px;
-  height: 22px;
+  width: 34px;
+  height: 34px;
+}
+
+.loginLegal {
+  align-self: end;
+  color: #9ba6b8 !important;
+  font-size: 14px;
+  line-height: 1.7 !important;
+  margin-top: auto !important;
+}
+
+.loginLegal a {
+  color: #20d7e9;
+  text-decoration: none;
+}
+
+.loginLegal a:hover {
+  text-decoration: underline;
 }
 
 .appShell {

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { GoogleSignInButton } from "./sign-in-button";
 
 export const dynamic = "force-dynamic";
@@ -12,19 +13,16 @@ export default async function LoginPage({ searchParams }: { searchParams?: { ref
     <main className="loginShell">
       <section className="loginPanel">
         <Image
-          src="/logos/xspin-logo.svg"
-          alt="Xspin"
-          width={180}
-          height={48}
+          className="loginLogo"
+          src="/logos/xspin-logo-full.png"
+          alt="XSpin"
+          width={410}
+          height={138}
           priority
         />
-        <div>
-          <span className="loginEyebrow">Acceso privado</span>
-          <h1>Entra a la operacion financiera.</h1>
-          <p>
-            Usa tu cuenta de Google autorizada para acceder al panel interno de
-            inversionistas, ciclos y pagos.
-          </p>
+        <div className="loginCopy">
+          <h1>Inicia sesion</h1>
+          <p>Accede a tu cuenta para continuar</p>
         </div>
         <GoogleSignInButton callbackUrl={callbackUrl} enabled={googleReady} />
         {!googleReady ? (
@@ -32,6 +30,12 @@ export default async function LoginPage({ searchParams }: { searchParams?: { ref
             Falta configurar Google OAuth en el servidor.
           </p>
         ) : null}
+        <p className="loginLegal">
+          Al continuar, aceptas nuestros{" "}
+          <Link href="/terminos-y-condiciones">Terminos y Condiciones</Link>
+          <br />
+          y nuestra <Link href="/politica-de-privacidad">Politica de Privacidad.</Link>
+        </p>
       </section>
     </main>
   );
