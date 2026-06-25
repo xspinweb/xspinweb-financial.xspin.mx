@@ -71,14 +71,6 @@ function Sparkles({ size, className }: IconProps) {
   );
 }
 
-function Star({ size, className, fill }: IconProps) {
-  return (
-    <IconBase size={size} className={className} fill={fill}>
-      <path d="m12 2 3 6 7 .9-5 4.8 1.2 6.8L12 17l-6.2 3.5L7 13.7 2 8.9 9 8l3-6Z" />
-    </IconBase>
-  );
-}
-
 function UserPlus({ size, className }: IconProps) {
   return (
     <IconBase size={size} className={className}>
@@ -306,36 +298,19 @@ export default function HomePage({ searchParams }: { searchParams?: { ref?: stri
             </a>
           </div>
         </div>
-        <div className="landingCoinScene landingGrowthArtwork" aria-hidden="true">
-          <div className="coinStack">
-            <span />
-            <span />
-            <span />
-          </div>
-          <div className="growthMarkPlate">
-            <Image src="/logos/xspin-mark.svg" alt="" width={170} height={170} />
-          </div>
-          <ArrowRight className="coinArrow" size={132} />
+        <div className="landingGrowthArtwork" aria-hidden="true">
+          <Image src="/landing/growth-cta.png" alt="" width={560} height={360} />
         </div>
       </section>
 
       <section className="landingTrust" id="testimonios">
-        <div className="trustRow landingReviewPanel">
-          <p>Con la confianza de nuestra comunidad</p>
-          <div className="avatarStack" aria-hidden="true">
-            {["AR", "JM", "LV", "RG", "MS"].map((initials) => (
-              <span key={initials}>{initials}</span>
-            ))}
-            <strong>+10K</strong>
-          </div>
-          <div className="rating">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <Star key={index} size={20} fill="currentColor" aria-hidden="true" />
-            ))}
-            <strong>4.8/5</strong>
-            <span>Basado en mas de 2,500 resenas</span>
-          </div>
-        </div>
+        <Image
+          className="landingReviewImage"
+          src="/landing/reviews-trust.png"
+          alt="Con la confianza de nuestra comunidad. Calificacion 4.8 de 5 basada en mas de 2,500 resenas."
+          width={760}
+          height={124}
+        />
       </section>
     </main>
   );
