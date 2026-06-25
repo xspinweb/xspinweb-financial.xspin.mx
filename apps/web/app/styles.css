@@ -2045,12 +2045,12 @@ a {
 @media (max-width: 760px) {
   .landingHeader {
     width: calc(100% - 32px);
-    height: 86px;
+    height: 72px;
     grid-template-columns: 1fr auto;
   }
 
   .landingBrand img {
-    width: 154px;
+    width: 138px;
   }
 
   .landingNav {
@@ -2058,9 +2058,9 @@ a {
   }
 
   .landingLogin {
-    min-height: 44px;
-    padding: 0 16px;
-    font-size: 13px;
+    min-height: 38px;
+    padding: 0 13px;
+    font-size: 12px;
   }
 
   .landingHero,
@@ -2070,72 +2070,168 @@ a {
   }
 
   .landingHero {
-    padding: 118px 0 54px;
+    grid-template-columns: minmax(0, 0.58fr) minmax(118px, 0.42fr);
+    align-items: center;
+    gap: 8px;
+    padding: 92px 0 42px;
   }
 
   .landingHero h1 {
-    margin-top: 34px;
-    font-size: 56px;
+    margin: 18px 0 14px;
+    font-size: clamp(34px, 10vw, 42px);
+    line-height: 1.02;
   }
 
   .landingHeroCopy p {
-    font-size: 18px;
+    max-width: 210px;
+    font-size: 13px;
+    line-height: 1.42;
+  }
+
+  .landingBadge {
+    gap: 6px;
+    font-size: 10px;
+    padding: 7px 10px;
   }
 
   .landingHeroActions,
   .landingPrimary,
   .landingSecondary {
-    width: 100%;
+    width: auto;
+  }
+
+  .landingHeroActions {
+    margin-top: 22px;
+  }
+
+  .landingPrimary,
+  .landingSecondary {
+    min-height: 44px;
+    border-radius: 8px;
+    font-size: 12px;
+    padding: 0 16px;
+  }
+
+  .landingSecurity {
+    gap: 7px;
+    margin-top: 16px;
+    font-size: 11px;
   }
 
   .landingPhoneWrap {
-    min-height: 650px;
-    margin-top: 34px;
+    min-height: 390px;
+    margin-top: 0;
+    overflow: visible;
   }
 
   .landingPhone {
-    top: 20px;
-    width: 330px;
-    height: 670px;
-    border-radius: 44px;
-    transform: translateX(-50%) rotate(3deg);
+    top: 18px;
+    left: auto;
+    right: -58px;
+    width: 210px;
+    height: 430px;
+    border-width: 5px;
+    border-radius: 32px;
+    transform: rotate(6deg);
   }
 
   .phoneScreen {
-    inset: 10px;
-    border-radius: 34px;
-    padding: 58px 18px 22px;
+    inset: 7px;
+    border-radius: 25px;
+    padding: 42px 12px 14px;
+  }
+
+  .phoneNotch {
+    top: 9px;
+    width: 82px;
+    height: 20px;
+    border-radius: 0 0 14px 14px;
   }
 
   .phoneTopbar img {
-    width: 86px;
+    width: 54px;
   }
 
   .phoneBell,
   .phoneAvatar {
-    width: 36px;
-    height: 36px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .phoneBell svg,
+  .phoneAvatar svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .phoneAvatar {
+    font-size: 11px;
   }
 
   .phoneGreeting {
-    margin-top: 32px;
+    margin-top: 24px;
+    font-size: 10px;
   }
 
   .phoneScreen h2 {
-    font-size: 23px;
+    font-size: 15px;
+  }
+
+  .phoneSub {
+    margin: 5px 0 10px;
+    font-size: 9px;
   }
 
   .phoneBalance {
-    min-height: 130px;
-    padding: 16px;
+    min-height: 82px;
+    padding: 10px;
+  }
+
+  .phoneBalance span,
+  .phoneBalance small {
+    font-size: 8px;
+  }
+
+  .phoneBalance strong {
+    margin-top: 6px;
+    font-size: 14px;
+  }
+
+  .phoneBalance small {
+    margin-top: 4px;
   }
 
   .phoneBalance svg {
-    width: 120px;
+    right: 8px;
+    bottom: 9px;
+    width: 72px;
+    height: 38px;
   }
 
   .phoneStats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    margin-top: 9px;
+  }
+
+  .phoneStats div {
+    min-height: 58px;
+    gap: 4px;
+    border-radius: 8px;
+    padding: 7px 4px;
+  }
+
+  .phoneStats svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .phoneStats span {
+    font-size: 6px;
+  }
+
+  .phoneStats strong {
+    font-size: 7px;
   }
 
   .phoneActivity {
@@ -2143,13 +2239,47 @@ a {
   }
 
   .landingHow {
-    padding: 68px 22px 48px;
+    padding: 42px 16px 34px;
+  }
+
+  .landingHow h2 {
+    font-size: 28px;
   }
 
   .landingSteps,
   .landingMetrics,
   .landingCta {
-    grid-template-columns: 1fr;
+    grid-template-columns: none;
+  }
+
+  .landingSteps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 30px;
+  }
+
+  .landingStep {
+    gap: 10px;
+  }
+
+  .landingStepIcon {
+    width: 68px;
+    height: 68px;
+  }
+
+  .landingStepIcon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .landingStep h3 {
+    font-size: 13px;
+  }
+
+  .landingStep p {
+    max-width: 100px;
+    font-size: 10px;
+    line-height: 1.35;
   }
 
   .stepConnector {
@@ -2157,15 +2287,94 @@ a {
   }
 
   .landingMetrics {
-    padding: 34px 22px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 18px 10px;
+    margin-bottom: 42px;
+    border-radius: 16px;
+  }
+
+  .landingMetrics article {
+    gap: 6px;
+  }
+
+  .landingMetrics svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .landingMetrics strong {
+    font-size: 22px;
+  }
+
+  .landingMetrics span {
+    font-size: 10px;
+    line-height: 1.25;
   }
 
   .landingCta {
-    padding: 38px 24px;
+    grid-template-columns: minmax(0, 0.58fr) minmax(118px, 0.42fr);
+    gap: 8px;
+    align-items: center;
+    padding: 24px 18px;
+    border-radius: 16px;
+  }
+
+  .landingCta h2 {
+    font-size: 28px;
+  }
+
+  .landingCta p {
+    margin-top: 12px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .landingCtaActions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 18px;
   }
 
   .landingCoinScene {
-    min-height: 240px;
+    min-height: 170px;
+  }
+
+  .landingCoinScene > img {
+    right: 28px;
+    bottom: 36px;
+    width: 92px;
+  }
+
+  .coinArrow {
+    right: 0;
+    top: 20px;
+    width: 74px;
+    height: 74px;
+  }
+
+  .coinStack {
+    left: 4px;
+    bottom: 32px;
+    width: 72px;
+    height: 62px;
+  }
+
+  .coinStack span {
+    width: 66px;
+    height: 18px;
+    box-shadow: 0 5px 0 #062b43, 0 0 16px rgba(35, 220, 223, 0.25);
+  }
+
+  .coinStack span:nth-child(2) {
+    bottom: 15px;
+    left: 10px;
+  }
+
+  .coinStack span:nth-child(3) {
+    bottom: 30px;
+    left: 18px;
   }
 
   .trustRow {
