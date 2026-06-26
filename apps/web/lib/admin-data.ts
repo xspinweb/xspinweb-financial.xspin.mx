@@ -1,8 +1,9 @@
 import { prisma } from "./prisma";
 
 const cycleWeeks = 8;
+const superAdminEmail = "carlos.rosado.escobar@gmail.com";
 
-export type AdminLevel = "Explorer" | "Starter" | "Builder" | "Elite" | "Legend";
+export type AdminLevel = "ADMIN" | "Explorer" | "Starter" | "Builder" | "Elite" | "Legend";
 
 export async function getAdminDashboardData(selectedUserId?: string) {
   const today = new Date();
@@ -86,7 +87,9 @@ export async function getAdminDashboardData(selectedUserId?: string) {
     })
   ]);
 
-  const users = investors.map((investor) => mapInvestor(investor));
+  const users = investors
+    .map((investor) => mapInvestor(investor))
+    .sort((a, b) => Number(b.isAdmin) - Number(a.isAdmin) || b.registeredAt.getTime() - a.registeredAt.getTime());
   const selectedUser = users.find((user) => user.id === selectedUserId) ?? users[0] ?? null;
 
   return {
@@ -148,7 +151,8 @@ function mapInvestor(investor: InvestorWithRelations) {
   const totalPaid = investor.payments.reduce((sum, payment) => sum + money(payment.amount), 0);
   const completedCycles = investor.investments.filter((investment) => investment.status === "PAID" || investment.paidAt).length;
   const activeReferrals = investor.referralsGiven.filter((referral) => referral.referredInvestor.investments.length > 0).length;
-  const level = getLevel({ totalInvested, completedCycles, activeReferrals });
+  const isAdmin = investor.email?.toLowerCase() === superAdminEmail;
+  const level = isAdmin ? "ADMIN" : getLevel({ totalInvested, completedCycles, activeReferrals });
   const activeGroups = new Set(investor.investments.filter((investment) => investment.status === "ACTIVE").map((investment) => investment.group.groupNumber));
   const lastInvestment = investor.investments[0];
   const lastWithdrawal = investor.payments
@@ -159,6 +163,7 @@ function mapInvestor(investor: InvestorWithRelations) {
     id: investor.id,
     code: investor.investorCode,
     labelId: `#${investor.investorCode?.slice(-6) || investor.id.slice(-6)}`,
+    isAdmin,
     level,
     fullName: investor.fullName ?? "Usuario sin nombre",
     profileImage: investor.profileImage ?? null,

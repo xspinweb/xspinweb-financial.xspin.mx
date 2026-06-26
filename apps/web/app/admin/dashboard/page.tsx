@@ -66,7 +66,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                   <th>Usuario</th>
                   <th>Nivel</th>
                   <th>Pais</th>
-                  <th>Patrimonio</th>
+                  <th>Inversion</th>
                   <th>Grupos</th>
                   <th>Estado</th>
                   <th>KYC</th>
@@ -87,7 +87,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                     <td>{user.userName}</td>
                     <td><AdminPill tone={user.level.toLowerCase()}>{user.level}</AdminPill></td>
                     <td>{user.country}</td>
-                    <td>{money.format(user.patrimony)}</td>
+                    <td>{money.format(user.totalInvested)}</td>
                     <td>{user.activeGroups}</td>
                     <td><AdminStatus status={user.connection} /></td>
                     <td><AdminPill tone={user.kyc.toLowerCase()}>{user.kyc}</AdminPill></td>
@@ -142,9 +142,8 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
           <section className="adminInfoCard">
             <h3>Resumen financiero</h3>
             <div className="adminMiniGrid">
-              <AdminMini label="Patrimonio total" value={money.format(selected.patrimony)} />
-              <AdminMini label="Total invertido" value={money.format(selected.totalInvested)} />
-              <AdminMini label="Total cobrado" value={money.format(selected.totalPaid)} />
+              <AdminMini label="Inversion total" value={money.format(selected.totalInvested)} />
+              <AdminMini label="Cobrado total" value={money.format(selected.totalPaid)} />
               <AdminMini label="Grupos activos" value={String(selected.activeGroups)} />
               <AdminMini label="Referidos totales" value={String(selected.activeReferrals)} />
               <AdminMini label="Bonos generados" value={money.format(selected.bonuses)} />
