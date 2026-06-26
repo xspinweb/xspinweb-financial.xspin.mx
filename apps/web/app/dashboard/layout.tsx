@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { getAppRole, getNavItems } from "../../lib/access";
 import { authOptions } from "../../lib/auth";
+import { ensureInvestorAccount } from "../../lib/investor-account";
 import { BottomNav } from "./bottom-nav";
 import { NotificationsBell } from "./notifications-bell";
 import { UserMenu } from "./user-menu";
@@ -17,6 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const userName = session.user?.name ?? "Usuario";
   const userEmail = session.user?.email ?? "";
   const avatar = session.user?.image;
+  await ensureInvestorAccount({ email: userEmail, name: userName, image: avatar });
   const role = getAppRole(userEmail);
   const navItems = getNavItems(role);
 

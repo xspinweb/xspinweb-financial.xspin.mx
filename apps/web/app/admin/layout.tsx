@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../lib/auth";
 import { getAppRole } from "../../lib/access";
+import { ensureInvestorAccount } from "../../lib/investor-account";
 
 const adminNav = [
   { label: "Dashboard", href: "/admin/dashboard" },
@@ -24,6 +25,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (getAppRole(session.user.email) !== "SUPER_ADMIN") {
     redirect("/dashboard");
   }
+
+  await ensureInvestorAccount({
+    email: session.user.email,
+    name: session.user.name,
+    image: session.user.image
+  });
 
   return (
     <main className="adminShell">

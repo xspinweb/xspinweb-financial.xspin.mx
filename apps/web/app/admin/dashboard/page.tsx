@@ -80,7 +80,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                     <td>{user.labelId}</td>
                     <td>
                       <span className="adminUserCell">
-                        <span>{user.fullName.slice(0, 1).toUpperCase()}</span>
+                        <AdminAvatar name={user.fullName} src={user.profileImage} size="sm" />
                         {user.fullName}
                       </span>
                     </td>
@@ -109,7 +109,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
         <aside className="adminDetailPanel">
           <Link className="adminDetailClose" href="/admin/dashboard" aria-label="Cerrar detalle">x</Link>
           <div className="adminDetailHeader">
-            <div className="adminAvatar">{selected.fullName.slice(0, 1).toUpperCase()}</div>
+            <AdminAvatar name={selected.fullName} src={selected.profileImage} size="lg" />
             <div>
               <h2>{selected.fullName}</h2>
               <span>{selected.email}</span>
@@ -200,6 +200,20 @@ function AdminPill({ children, tone }: { children: React.ReactNode; tone: string
 
 function AdminStatus({ status }: { status: string }) {
   return <span className={`adminStatus ${status.toLowerCase()}`}><i />{status}</span>;
+}
+
+function AdminAvatar({ name, src, size }: { name: string; src?: string | null; size: "sm" | "lg" }) {
+  const className = size === "lg" ? "adminAvatar" : "adminUserAvatar";
+
+  if (src) {
+    return (
+      <span className={className}>
+        <img src={src} alt="" referrerPolicy="no-referrer" />
+      </span>
+    );
+  }
+
+  return <span className={className}>{name.slice(0, 1).toUpperCase()}</span>;
 }
 
 function AdminInfo({ title, rows }: { title: string; rows: Array<[string, string]> }) {

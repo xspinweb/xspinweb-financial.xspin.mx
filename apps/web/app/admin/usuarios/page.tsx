@@ -42,7 +42,12 @@ export default async function AdminUsersPage() {
               <tr key={user.id}>
                 <td>{user.labelId}</td>
                 <td><span className={`adminPill ${user.level.toLowerCase()}`}>{user.level}</span></td>
-                <td><Link href={`/admin/dashboard?user=${user.id}`}>{user.fullName}</Link></td>
+                <td>
+                  <Link className="adminUserCell" href={`/admin/dashboard?user=${user.id}`}>
+                    <AdminAvatar name={user.fullName} src={user.profileImage} />
+                    {user.fullName}
+                  </Link>
+                </td>
                 <td>{user.email}</td>
                 <td>{user.phone}</td>
                 <td>{user.country}</td>
@@ -60,4 +65,16 @@ export default async function AdminUsersPage() {
       </div>
     </section>
   );
+}
+
+function AdminAvatar({ name, src }: { name: string; src?: string | null }) {
+  if (src) {
+    return (
+      <span className="adminUserAvatar">
+        <img src={src} alt="" referrerPolicy="no-referrer" />
+      </span>
+    );
+  }
+
+  return <span className="adminUserAvatar">{name.slice(0, 1).toUpperCase()}</span>;
 }

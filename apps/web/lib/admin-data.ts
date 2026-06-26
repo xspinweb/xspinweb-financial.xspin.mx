@@ -161,6 +161,7 @@ function mapInvestor(investor: InvestorWithRelations) {
     labelId: `#${investor.investorCode?.slice(-6) || investor.id.slice(-6)}`,
     level,
     fullName: investor.fullName ?? "Usuario sin nombre",
+    profileImage: investor.profileImage ?? null,
     userName: investor.email?.split("@")[0] ?? investor.investorCode,
     email: investor.email ?? "-",
     phone: investor.phone ?? "-",

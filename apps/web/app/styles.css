@@ -10507,7 +10507,7 @@ a {
   gap: 8px;
 }
 
-.adminUserCell span,
+.adminUserAvatar,
 .adminAvatar {
   align-items: center;
   background: linear-gradient(135deg, #31e7a6, #1f7aff);
@@ -10516,11 +10516,20 @@ a {
   display: inline-flex;
   font-weight: 900;
   justify-content: center;
+  overflow: hidden;
 }
 
-.adminUserCell span {
+.adminUserAvatar {
   height: 26px;
   width: 26px;
+}
+
+.adminUserAvatar img,
+.adminAvatar img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .adminIconLink {
