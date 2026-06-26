@@ -2318,7 +2318,13 @@ async function getOrCreateInvestor(tx: Prisma.TransactionClient, input: { email:
   });
 
   if (current) {
-    return current;
+    return tx.investor.update({
+      where: { id: current.id },
+      data: {
+        ...(input.fullName && current.fullName !== input.fullName ? { fullName: input.fullName } : {}),
+        updatedAt: new Date()
+      }
+    });
   }
 
   return tx.investor.create({

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { confirmWithdrawal, declineWithdrawal, toggleInvestorStatus } from "../actions";
 import { getAdminDashboardData } from "../../../lib/admin-data";
 
 export const dynamic = "force-dynamic";
@@ -125,7 +126,9 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
           <div className="adminTabs">
             <span className="active">Resumen</span>
             <span>Inversiones</span>
+            <span>Bonos</span>
             <span>Wallet</span>
+            <span>Metodos de pago</span>
             <span>Documentos</span>
             <span>Actividad</span>
           </div>
@@ -145,37 +148,56 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
               <AdminMini label="Inversion total" value={money.format(selected.totalInvested)} />
               <AdminMini label="Cobrado total" value={money.format(selected.totalPaid)} />
               <AdminMini label="Grupos activos" value={String(selected.activeGroups)} />
-              <AdminMini label="Referidos totales" value={String(selected.activeReferrals)} />
-              <AdminMini label="Bonos generados" value={money.format(selected.bonuses)} />
+              <AdminMini label="Referidos totales" value={selected.referralSummary} />
             </div>
           </section>
 
           <section className="adminInfoCard">
-            <h3>Metodo de pago principal</h3>
-            <div className="adminPaymentRow">
-              <span>{selected.primaryPayoutMethod.label}</span>
-              <small>{selected.primaryPayoutMethod.detail}</small>
-              {selected.primaryPayoutMethod.isPrimary ? <AdminPill tone="verificado">Principal</AdminPill> : null}
+            <h3>Bonos generados</h3>
+            <div className="adminMiniGrid adminMiniGridCompact">
+              <AdminMini label="Total bonos" value={money.format(selected.bonuses)} />
+              <AdminMini label="Referidos activos" value={String(selected.activeReferrals)} />
             </div>
           </section>
 
+          <AdminPaymentMethods methods={selected.payoutMethods} />
+
           <section className="adminInfoCard">
-            <h3>Ultima solicitud de retiro</h3>
+            <h3>Registro de retiro</h3>
             {selected.lastWithdrawal ? (
-              <AdminInfoRows rows={[
-                ["Fecha", dateTime.format(selected.lastWithdrawal.date)],
-                ["Metodo", selected.lastWithdrawal.method.label],
-                ["Monto", money.format(selected.lastWithdrawal.amount)],
-                ["Estado", selected.lastWithdrawal.status]
-              ]} />
+              <>
+                <AdminInfoRows rows={[
+                  ["Fecha solicitud", dateTime.format(selected.lastWithdrawal.date)],
+                  ["Metodo", selected.lastWithdrawal.method.label],
+                  ["Monto solicitado", money.format(selected.lastWithdrawal.amount)],
+                  ["Estado", selected.lastWithdrawal.status]
+                ]} />
+                {selected.lastWithdrawal.status === "Pendiente" ? (
+                  <div className="adminWithdrawalActions">
+                    <form action={declineWithdrawal}>
+                      <input name="paymentId" type="hidden" value={selected.lastWithdrawal.id} />
+                      <button className="decline" type="submit">Declinar pago</button>
+                    </form>
+                    <form action={confirmWithdrawal}>
+                      <input name="paymentId" type="hidden" value={selected.lastWithdrawal.id} />
+                      <button className="confirm" type="submit">Confirmar pago</button>
+                    </form>
+                  </div>
+                ) : null}
+              </>
             ) : (
               <p className="adminEmpty">Sin retiros registrados.</p>
             )}
           </section>
 
           <div className="adminDetailActions">
-            <Link href={`/admin/usuarios/${selected.id}`}>Editar usuario</Link>
-            <button type="button">Suspender usuario</button>
+            <form action={toggleInvestorStatus}>
+              <input name="investorId" type="hidden" value={selected.id} />
+              <input name="nextStatus" type="hidden" value={selected.accountStatus === "BLOCKED" ? "ACTIVE" : "BLOCKED"} />
+              <button className={selected.accountStatus === "BLOCKED" ? "enable" : "suspend"} type="submit">
+                {selected.accountStatus === "BLOCKED" ? "Habilitar cuenta" : "Suspender usuario"}
+              </button>
+            </form>
           </div>
         </aside>
       ) : null}
@@ -234,6 +256,46 @@ function AdminInfoRows({ rows }: { rows: Array<[string, string]> }) {
         </div>
       ))}
     </dl>
+  );
+}
+
+type AdminPaymentMethod = {
+  label: string;
+  detail: string;
+  isPrimary: boolean;
+  fields: Array<[string, string]>;
+};
+
+function AdminPaymentMethods({ methods }: { methods: AdminPaymentMethod[] }) {
+  return (
+    <section className="adminInfoCard">
+      <h3>Metodos de pago</h3>
+      {methods.length ? (
+        <div className="adminPaymentMethods">
+          {methods.map((method, index) => (
+            <article className={method.isPrimary ? "adminPaymentMethodCard primary" : "adminPaymentMethodCard"} key={`${method.label}-${index}`}>
+              <div className="adminPaymentMethodTop">
+                <div>
+                  <strong>{method.label}</strong>
+                  <small>{method.detail}</small>
+                </div>
+                {method.isPrimary ? <AdminPill tone="verificado">Principal</AdminPill> : null}
+              </div>
+              <dl className="adminPaymentFields">
+                {method.fields.map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="adminEmpty">Sin metodos registrados.</p>
+      )}
+    </section>
   );
 }
 

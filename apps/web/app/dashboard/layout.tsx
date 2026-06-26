@@ -18,7 +18,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const userName = session.user?.name ?? "Usuario";
   const userEmail = session.user?.email ?? "";
   const avatar = session.user?.image;
-  await ensureInvestorAccount({ email: userEmail, name: userName, image: avatar });
+  const investor = await ensureInvestorAccount({ email: userEmail, name: userName, image: avatar });
+
+  if (investor?.status === "BLOCKED") {
+    redirect("/login?error=suspended");
+  }
+
   const role = getAppRole(userEmail);
   const navItems = getNavItems(role);
 

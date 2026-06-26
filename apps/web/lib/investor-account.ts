@@ -25,15 +25,17 @@ export async function ensureInvestorAccount(input: InvestorAccountInput) {
   });
 
   if (current) {
-    const data: { fullName?: string; profileImage?: string | null; email?: string } = {};
+    if (current.status === "BLOCKED") {
+      return current;
+    }
+
+    const data: { fullName?: string; profileImage?: string | null; email?: string; updatedAt: Date } = {
+      updatedAt: new Date()
+    };
 
     if (!current.email || current.email !== email) data.email = email;
     if (!current.fullName || current.fullName !== fullName) data.fullName = fullName;
     if (profileImage && current.profileImage !== profileImage) data.profileImage = profileImage;
-
-    if (Object.keys(data).length === 0) {
-      return current;
-    }
 
     return prisma.investor.update({
       where: { id: current.id },

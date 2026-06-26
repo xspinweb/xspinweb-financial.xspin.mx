@@ -4,10 +4,11 @@ import { GoogleSignInButton } from "./sign-in-button";
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage({ searchParams }: { searchParams?: { ref?: string } }) {
+export default async function LoginPage({ searchParams }: { searchParams?: { ref?: string; error?: string } }) {
   const googleReady = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   const referralCode = typeof searchParams?.ref === "string" ? searchParams.ref : "";
   const callbackUrl = referralCode ? `/dashboard?ref=${encodeURIComponent(referralCode)}` : "/dashboard";
+  const suspended = searchParams?.error === "suspended";
 
   return (
     <main className="loginShell">
@@ -25,6 +26,11 @@ export default async function LoginPage({ searchParams }: { searchParams?: { ref
           <p>Accede a tu cuenta para continuar</p>
         </div>
         <GoogleSignInButton callbackUrl={callbackUrl} enabled={googleReady} />
+        {suspended ? (
+          <p className="loginWarning">
+            Tu cuenta se encuentra suspendida. Ponte en contacto con soporte.
+          </p>
+        ) : null}
         {!googleReady ? (
           <p className="loginWarning">
             Falta configurar Google OAuth en el servidor.

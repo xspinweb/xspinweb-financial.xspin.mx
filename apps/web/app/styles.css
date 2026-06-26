@@ -10809,6 +10809,10 @@ a {
   padding: 14px;
 }
 
+.adminMiniGridCompact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .adminMini strong {
   display: block;
   font-size: 15px;
@@ -10835,8 +10839,78 @@ a {
   color: #aab8cb;
 }
 
+.adminPaymentMethods {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.adminPaymentMethodCard {
+  background: linear-gradient(145deg, rgba(6, 15, 29, 0.88), rgba(12, 24, 39, 0.72));
+  border: 1px solid rgba(156, 182, 204, 0.14);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.adminPaymentMethodCard.primary {
+  border-color: rgba(53, 228, 166, 0.55);
+  box-shadow: 0 0 22px rgba(53, 228, 166, 0.08), inset 0 0 18px rgba(53, 228, 166, 0.04);
+}
+
+.adminPaymentMethodTop {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.adminPaymentMethodTop strong {
+  color: #f5f7fb;
+  display: block;
+  font-size: 14px;
+}
+
+.adminPaymentMethodTop small {
+  color: #aab8cb;
+  display: block;
+  font-size: 12px;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+
+.adminPaymentFields {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.adminPaymentFields div {
+  border-top: 1px solid rgba(156, 182, 204, 0.1);
+  display: grid;
+  gap: 4px;
+  padding-top: 8px;
+}
+
+.adminPaymentFields dt {
+  color: #aab8cb;
+  font-size: 11px;
+}
+
+.adminPaymentFields dd {
+  color: #f5f7fb;
+  font-size: 12px;
+  font-weight: 800;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .adminDetailActions {
   margin-top: 18px;
+}
+
+.adminDetailActions form {
+  display: flex;
+  flex: 1;
 }
 
 .adminDetailActions a,
@@ -10845,10 +10919,47 @@ a {
   text-align: center;
 }
 
-.adminDetailActions button {
+.adminDetailActions button.suspend {
   background: rgba(255, 82, 82, 0.15);
   border-color: rgba(255, 82, 82, 0.32);
   color: #ff7777;
+}
+
+.adminDetailActions button.enable {
+  background: rgba(53, 228, 166, 0.16);
+  border-color: rgba(53, 228, 166, 0.38);
+  color: #35e4a6;
+}
+
+.adminWithdrawalActions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.adminWithdrawalActions form {
+  display: flex;
+}
+
+.adminWithdrawalActions button {
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 900;
+  min-height: 42px;
+  width: 100%;
+}
+
+.adminWithdrawalActions .decline {
+  background: rgba(255, 82, 82, 0.14);
+  border: 1px solid rgba(255, 82, 82, 0.32);
+  color: #ff7777;
+}
+
+.adminWithdrawalActions .confirm {
+  background: rgba(53, 228, 166, 0.16);
+  border: 1px solid rgba(53, 228, 166, 0.38);
+  color: #35e4a6;
 }
 
 .adminRoutePage {

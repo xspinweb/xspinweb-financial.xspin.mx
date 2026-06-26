@@ -58,7 +58,15 @@ export async function getAdminDashboardData(selectedUserId?: string) {
     prisma.investor.count({ where: { createdAt: { gte: today } } }),
     prisma.investment.count({ where: { status: "ACTIVE" } }),
     prisma.investment.aggregate({ _sum: { principalAmount: true } }),
-    prisma.payment.aggregate({ _sum: { amount: true } }),
+    prisma.payment.aggregate({
+      where: {
+        OR: [
+          { notes: { contains: "admin_confirmed" } },
+          { notes: { contains: "admin confirmado" } }
+        ]
+      },
+      _sum: { amount: true }
+    }),
     prisma.identityVerification.count({
       where: {
         OR: [
@@ -71,7 +79,12 @@ export async function getAdminDashboardData(selectedUserId?: string) {
     prisma.payment.findMany({
       where: {
         paymentType: "ADJUSTMENT",
-        notes: { contains: "retiro" }
+        AND: [
+          { notes: { contains: "Wallet: retiro solicitado" } },
+          { NOT: { notes: { contains: "admin_confirmed" } } },
+          { NOT: { notes: { contains: "admin confirmado" } } },
+          { NOT: { notes: { contains: "admin_declined" } } }
+        ]
       },
       orderBy: { paidAt: "desc" },
       take: 30,
@@ -136,7 +149,7 @@ type InvestorWithRelations = Awaited<ReturnType<typeof prisma.investor.findMany>
     newReinvestment: unknown;
     previousReinvestment: unknown;
   }>;
-  payments: Array<{ amount: unknown; paymentType: string; paidAt: Date; notes: string | null }>;
+  payments: Array<{ id: string; amount: unknown; paymentType: string; paidAt: Date; notes: string | null }>;
   payoutMethods: Array<Record<string, unknown>>;
   referralsGiven: Array<{
     referredInvestor: {
@@ -148,9 +161,10 @@ type InvestorWithRelations = Awaited<ReturnType<typeof prisma.investor.findMany>
 
 function mapInvestor(investor: InvestorWithRelations) {
   const totalInvested = investor.investments.reduce((sum, investment) => sum + money(investment.principalAmount), 0);
-  const totalPaid = investor.payments.reduce((sum, payment) => sum + money(payment.amount), 0);
+  const totalPaid = investor.payments.filter(isAdminConfirmedPayment).reduce((sum, payment) => sum + money(payment.amount), 0);
   const completedCycles = investor.investments.filter((investment) => investment.status === "PAID" || investment.paidAt).length;
   const activeReferrals = investor.referralsGiven.filter((referral) => referral.referredInvestor.investments.length > 0).length;
+  const totalReferrals = investor.referralsGiven.length;
   const isAdmin = investor.email?.toLowerCase() === superAdminEmail;
   const level = isAdmin ? "ADMIN" : getLevel({ totalInvested, completedCycles, activeReferrals });
   const activeGroups = new Set(investor.investments.filter((investment) => investment.status === "ACTIVE").map((investment) => investment.group.groupNumber));
@@ -166,6 +180,7 @@ function mapInvestor(investor: InvestorWithRelations) {
     isAdmin,
     level,
     fullName: investor.fullName ?? "Usuario sin nombre",
+    accountStatus: investor.status,
     profileImage: investor.profileImage ?? null,
     userName: investor.email?.split("@")[0] ?? investor.investorCode,
     email: investor.email ?? "-",
@@ -184,7 +199,9 @@ function mapInvestor(investor: InvestorWithRelations) {
     totalPaid,
     patrimony: totalInvested + totalPaid,
     bonuses: investor.investments.reduce((sum, investment) => sum + money(investment.referralBonusAmount), 0),
+    totalReferrals,
     activeReferrals,
+    referralSummary: `${totalReferrals}/${activeReferrals}`,
     investments: investor.investments.map((investment) => ({
       id: investment.id,
       group: `G-${investment.group.groupNumber}`,
@@ -202,9 +219,10 @@ function mapInvestor(investor: InvestorWithRelations) {
     lastWithdrawal: lastWithdrawal
       ? {
           date: lastWithdrawal.paidAt,
+          id: lastWithdrawal.id,
           amount: money(lastWithdrawal.amount),
           method: formatPayoutMethod(investor.payoutMethods[0]),
-          status: "Pendiente"
+          status: getWithdrawalStatus(lastWithdrawal.notes)
         }
       : null,
     notifications: investor.notifications,
@@ -248,34 +266,73 @@ function getKycStatus(identityVerification: unknown) {
 }
 
 function formatPayoutMethod(method?: Record<string, unknown>) {
-  if (!method) return { type: "-", label: "Sin metodo", detail: "-", isPrimary: false };
+  if (!method) return { type: "-", label: "Sin metodo", detail: "-", isPrimary: false, fields: [] as Array<[string, string]> };
   const type = String(method.type ?? "-");
   if (type === "BANK") {
     return {
       type,
       label: "Transferencia Bancaria",
-      detail: `${method.bankName ?? "Banco"} | CLABE: ${mask(String(method.clabe ?? ""))}`,
-      isPrimary: Boolean(method.isPrimary)
+      detail: `${method.bankName ?? "Banco"} | CLABE: ${method.clabe ?? "-"}`,
+      isPrimary: Boolean(method.isPrimary),
+      fields: compactFields([
+        ["Titular", method.accountHolder],
+        ["Banco", method.bankName],
+        ["CLABE", method.clabe]
+      ])
     };
   }
-  if (type === "PAYPAL") return { type, label: "PayPal", detail: String(method.email ?? "-"), isPrimary: Boolean(method.isPrimary) };
-  if (type === "PAXUM") return { type, label: "Paxum", detail: String(method.paxumAccount ?? "-"), isPrimary: Boolean(method.isPrimary) };
+  if (type === "PAYPAL") {
+    return {
+      type,
+      label: "PayPal",
+      detail: String(method.email ?? "-"),
+      isPrimary: Boolean(method.isPrimary),
+      fields: compactFields([["Correo PayPal", method.email]])
+    };
+  }
+  if (type === "PAXUM") {
+    return {
+      type,
+      label: "Paxum",
+      detail: String(method.paxumAccount ?? "-"),
+      isPrimary: Boolean(method.isPrimary),
+      fields: compactFields([
+        ["Titular", method.accountHolder],
+        ["Correo Paxum", method.email],
+        ["Cuenta Paxum", method.paxumAccount]
+      ])
+    };
+  }
   return {
     type,
     label: `${method.coin ?? "Crypto"} Wallet`,
-    detail: mask(String(method.walletAddress ?? "")),
-    isPrimary: Boolean(method.isPrimary)
+    detail: String(method.walletAddress ?? "-"),
+    isPrimary: Boolean(method.isPrimary),
+    fields: compactFields([
+      ["Criptomoneda", method.coin],
+      ["Wallet", method.walletAddress]
+    ])
   };
+}
+
+function compactFields(fields: Array<[string, unknown]>): Array<[string, string]> {
+  return fields.map(([label, value]) => [label, String(value ?? "-")]);
+}
+
+function isAdminConfirmedPayment(payment: { paymentType: string; notes: string | null }) {
+  const notes = payment.notes?.toLowerCase() ?? "";
+  return notes.includes("admin confirmado") || notes.includes("admin_confirmed");
+}
+
+function getWithdrawalStatus(notes?: string | null) {
+  const normalized = notes?.toLowerCase() ?? "";
+  if (normalized.includes("admin_confirmed") || normalized.includes("admin confirmado")) return "Confirmado";
+  if (normalized.includes("admin_declined") || normalized.includes("admin declinado")) return "Declinado";
+  return "Pendiente";
 }
 
 function money(value: unknown) {
   return Number(value ?? 0);
-}
-
-function mask(value: string) {
-  if (!value) return "-";
-  if (value.length <= 8) return value;
-  return `${value.slice(0, 4)}...${value.slice(-4)}`;
 }
 
 function isOnline(date: Date) {
