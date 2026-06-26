@@ -16,7 +16,7 @@ export async function getAdminDashboardData(selectedUserId?: string) {
     newToday,
     activeInvestments,
     totalInvested,
-    totalPaid,
+    confirmedPayouts,
     kycPending,
     withdrawalPayments
   ] = await Promise.all([
@@ -35,11 +35,17 @@ export async function getAdminDashboardData(selectedUserId?: string) {
           }
         },
         payments: true,
+        reinvestments: true,
         payoutMethods: {
           orderBy: [{ isPrimary: "desc" }, { createdAt: "desc" }]
         },
         referralsGiven: {
           include: {
+            sourceInvestment: {
+              include: {
+                group: true
+              }
+            },
             referredInvestor: {
               include: {
                 investments: true
@@ -58,14 +64,13 @@ export async function getAdminDashboardData(selectedUserId?: string) {
     prisma.investor.count({ where: { createdAt: { gte: today } } }),
     prisma.investment.count({ where: { status: "ACTIVE" } }),
     prisma.investment.aggregate({ _sum: { principalAmount: true } }),
-    prisma.payment.aggregate({
+    prisma.payment.findMany({
       where: {
         OR: [
           { notes: { contains: "admin_confirmed" } },
           { notes: { contains: "admin confirmado" } }
         ]
-      },
-      _sum: { amount: true }
+      }
     }),
     prisma.identityVerification.count({
       where: {
@@ -78,12 +83,12 @@ export async function getAdminDashboardData(selectedUserId?: string) {
     }),
     prisma.payment.findMany({
       where: {
-        paymentType: "ADJUSTMENT",
         AND: [
-          { notes: { contains: "Wallet: retiro solicitado" } },
+          { notes: { contains: "retiro" } },
           { NOT: { notes: { contains: "admin_confirmed" } } },
           { NOT: { notes: { contains: "admin confirmado" } } },
-          { NOT: { notes: { contains: "admin_declined" } } }
+          { NOT: { notes: { contains: "admin_declined" } } },
+          { NOT: { notes: { contains: "admin declinado" } } }
         ]
       },
       orderBy: { paidAt: "desc" },
@@ -114,7 +119,7 @@ export async function getAdminDashboardData(selectedUserId?: string) {
       pendingWithdrawals: withdrawalPayments.length,
       pendingKyc: kycPending,
       totalInvested: money(totalInvested._sum.principalAmount),
-      totalPaid: money(totalPaid._sum.amount)
+      totalPaid: confirmedPayouts.reduce((sum, payment) => sum + Math.abs(money(payment.amount)), 0)
     },
     users,
     selectedUser,
@@ -150,9 +155,17 @@ type InvestorWithRelations = Awaited<ReturnType<typeof prisma.investor.findMany>
     previousReinvestment: unknown;
   }>;
   payments: Array<{ id: string; amount: unknown; paymentType: string; paidAt: Date; notes: string | null }>;
+  reinvestments: Array<{ paidYieldAmount: unknown }>;
   payoutMethods: Array<Record<string, unknown>>;
   referralsGiven: Array<{
+    bonusAmount: unknown;
+    sourceInvestment: {
+      cycleNumber: number;
+      group: { groupNumber: number };
+    } | null;
     referredInvestor: {
+      fullName: string | null;
+      email: string | null;
       investments: Array<{ id: string }>;
     };
   }>;
@@ -161,7 +174,7 @@ type InvestorWithRelations = Awaited<ReturnType<typeof prisma.investor.findMany>
 
 function mapInvestor(investor: InvestorWithRelations) {
   const totalInvested = investor.investments.reduce((sum, investment) => sum + money(investment.principalAmount), 0);
-  const totalPaid = investor.payments.filter(isAdminConfirmedPayment).reduce((sum, payment) => sum + money(payment.amount), 0);
+  const totalPaid = investor.payments.filter(isAdminConfirmedPayment).reduce((sum, payment) => sum + Math.abs(money(payment.amount)), 0);
   const completedCycles = investor.investments.filter((investment) => investment.status === "PAID" || investment.paidAt).length;
   const activeReferrals = investor.referralsGiven.filter((referral) => referral.referredInvestor.investments.length > 0).length;
   const totalReferrals = investor.referralsGiven.length;
@@ -169,8 +182,14 @@ function mapInvestor(investor: InvestorWithRelations) {
   const level = isAdmin ? "ADMIN" : getLevel({ totalInvested, completedCycles, activeReferrals });
   const activeGroups = new Set(investor.investments.filter((investment) => investment.status === "ACTIVE").map((investment) => investment.group.groupNumber));
   const lastInvestment = investor.investments[0];
+  const withdrawalPayments = investor.payments.filter(isWithdrawalPayment);
+  const walletCredits = investor.reinvestments.reduce((sum, reinvestment) => sum + money(reinvestment.paidYieldAmount), 0);
+  const walletDebits = withdrawalPayments
+    .filter((payment) => getWithdrawalStatus(payment.notes) !== "Declinado")
+    .reduce((sum, payment) => sum + Math.abs(money(payment.amount)), 0);
+  const walletBalance = Math.max(walletCredits - walletDebits, 0);
   const lastWithdrawal = investor.payments
-    .filter((payment) => payment.paymentType === "ADJUSTMENT" && payment.notes?.toLowerCase().includes("retiro"))
+    .filter(isWithdrawalPayment)
     .sort((a, b) => b.paidAt.getTime() - a.paidAt.getTime())[0];
 
   return {
@@ -212,8 +231,16 @@ function mapInvestor(investor: InvestorWithRelations) {
       bonus: money(investment.referralBonusAmount),
       dueAt: investment.paymentDueAt,
       createdAt: investment.createdAt,
-      status: investment.status
+      status: investment.status,
+      type: investment.newReinvestment ? "Reinversion" : "Inversion"
     })),
+    bonusItems: investor.referralsGiven.map((referral) => ({
+      referredName: referral.referredInvestor.fullName ?? referral.referredInvestor.email ?? "Referido",
+      amount: money(referral.bonusAmount),
+      group: referral.sourceInvestment ? `G-${referral.sourceInvestment.group.groupNumber}` : "-",
+      week: referral.sourceInvestment ? `${Math.min(referral.sourceInvestment.cycleNumber, cycleWeeks)} de ${cycleWeeks}` : "-"
+    })),
+    walletBalance,
     payoutMethods: investor.payoutMethods.map(formatPayoutMethod),
     primaryPayoutMethod: formatPayoutMethod(investor.payoutMethods[0]),
     lastWithdrawal: lastWithdrawal
@@ -322,6 +349,10 @@ function compactFields(fields: Array<[string, unknown]>): Array<[string, string]
 function isAdminConfirmedPayment(payment: { paymentType: string; notes: string | null }) {
   const notes = payment.notes?.toLowerCase() ?? "";
   return notes.includes("admin confirmado") || notes.includes("admin_confirmed");
+}
+
+function isWithdrawalPayment(payment: { paymentType: string; notes: string | null }) {
+  return payment.notes?.toLowerCase().includes("retiro") ?? false;
 }
 
 function getWithdrawalStatus(notes?: string | null) {

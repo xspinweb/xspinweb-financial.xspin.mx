@@ -211,9 +211,11 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
     }
 
     void loadIdentity();
+    const interval = window.setInterval(loadIdentity, 5000);
 
     return () => {
       isCurrent = false;
+      window.clearInterval(interval);
     };
   }, [userEmail]);
 
@@ -489,29 +491,29 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
               icon={<DocumentIcon />}
               title="Identificacion oficial"
               subtitle={isIdentityLoading ? "Consultando estado de verificacion." : identity.frontImage && identity.backImage ? "Anverso y reverso capturados correctamente." : "INE, Pasaporte o Licencia de conducir"}
-              action={isIdentityLoading ? "Cargando" : identity.status === "SUBMITTED" ? "Validacion" : identity.status === "VERIFIED" ? "Verificado" : "Capturar"}
-              actionIcon={isIdentityLoading || identity.status === "SUBMITTED" ? undefined : <CameraIcon />}
-              actionTone={isIdentityLoading ? "purple" : identity.status === "SUBMITTED" ? "orange" : identity.status === "VERIFIED" ? "green" : "purple"}
-              disabled={isIdentityLoading || identity.status === "SUBMITTED" || identity.status === "VERIFIED"}
+              action={isIdentityLoading ? "Cargando" : identity.status === "SUBMITTED" ? "Validacion" : identity.status === "VERIFIED" ? "Verificado" : identity.status === "REJECTED" ? "Rechazado" : "Capturar"}
+              actionIcon={isIdentityLoading || identity.status === "SUBMITTED" || identity.status === "VERIFIED" || identity.status === "REJECTED" ? undefined : <CameraIcon />}
+              actionTone={isIdentityLoading ? "purple" : identity.status === "SUBMITTED" ? "orange" : identity.status === "VERIFIED" ? "green" : identity.status === "REJECTED" ? "orange" : "purple"}
+              disabled={isIdentityLoading || identity.status === "SUBMITTED" || identity.status === "VERIFIED" || identity.status === "REJECTED"}
               onAction={() => setIdentityModalMode("id")}
             />
             <ProfileRow
               icon={<UserCheckIcon />}
               title="Selfie"
               subtitle={isIdentityLoading ? "Consultando estado de selfie." : identity.selfieImage ? "Selfie capturada correctamente." : "Foto frontal para validar que eres tu."}
-              action={isIdentityLoading ? "Cargando" : identity.selfieStatus === "SUBMITTED" ? "Validacion" : identity.selfieStatus === "VERIFIED" ? "Verificado" : "Capturar"}
-              actionIcon={isIdentityLoading || identity.selfieStatus === "SUBMITTED" ? undefined : <CameraIcon />}
-              actionTone={isIdentityLoading ? "purple" : identity.selfieStatus === "SUBMITTED" ? "orange" : identity.selfieStatus === "VERIFIED" ? "green" : "purple"}
-              disabled={isIdentityLoading || identity.selfieStatus === "SUBMITTED" || identity.selfieStatus === "VERIFIED"}
+              action={isIdentityLoading ? "Cargando" : identity.selfieStatus === "SUBMITTED" ? "Validacion" : identity.selfieStatus === "VERIFIED" ? "Verificado" : identity.selfieStatus === "REJECTED" ? "Rechazado" : "Capturar"}
+              actionIcon={isIdentityLoading || identity.selfieStatus === "SUBMITTED" || identity.selfieStatus === "VERIFIED" || identity.selfieStatus === "REJECTED" ? undefined : <CameraIcon />}
+              actionTone={isIdentityLoading ? "purple" : identity.selfieStatus === "SUBMITTED" ? "orange" : identity.selfieStatus === "VERIFIED" ? "green" : identity.selfieStatus === "REJECTED" ? "orange" : "purple"}
+              disabled={isIdentityLoading || identity.selfieStatus === "SUBMITTED" || identity.selfieStatus === "VERIFIED" || identity.selfieStatus === "REJECTED"}
               onAction={() => setIdentityModalMode("selfie")}
             />
             <ProfileRow
               icon={<ReceiptIcon />}
               title="Comprobante de domicilio"
               subtitle={isIdentityLoading ? "Consultando comprobante." : identity.proofOfAddressFileName || "Recibo de luz, agua, gas o estado de cuenta"}
-              action={isIdentityLoading ? "Cargando" : identity.proofOfAddressStatus === "SUBMITTED" ? "Validacion" : identity.proofOfAddressStatus === "VERIFIED" ? "Verificado" : isUploadingProof ? "Subiendo" : "Pendiente"}
-              actionTone={isIdentityLoading ? "purple" : identity.proofOfAddressStatus === "SUBMITTED" ? "orange" : identity.proofOfAddressStatus === "VERIFIED" ? "green" : "yellow"}
-              disabled={isIdentityLoading || isUploadingProof || identity.proofOfAddressStatus === "SUBMITTED" || identity.proofOfAddressStatus === "VERIFIED"}
+              action={isIdentityLoading ? "Cargando" : identity.proofOfAddressStatus === "SUBMITTED" ? "Validacion" : identity.proofOfAddressStatus === "VERIFIED" ? "Verificado" : identity.proofOfAddressStatus === "REJECTED" ? "Rechazado" : isUploadingProof ? "Subiendo" : "Pendiente"}
+              actionTone={isIdentityLoading ? "purple" : identity.proofOfAddressStatus === "SUBMITTED" ? "orange" : identity.proofOfAddressStatus === "VERIFIED" ? "green" : identity.proofOfAddressStatus === "REJECTED" ? "orange" : "yellow"}
+              disabled={isIdentityLoading || isUploadingProof || identity.proofOfAddressStatus === "SUBMITTED" || identity.proofOfAddressStatus === "VERIFIED" || identity.proofOfAddressStatus === "REJECTED"}
               onAction={() => proofInputRef.current?.click()}
             />
           </div>
@@ -645,6 +647,8 @@ function ProfileRow({
       ) : null}
       {action ? (
         <button className={`profileActionButton ${actionTone}`} type="button" onClick={onAction} disabled={disabled}>
+          {action === "Verificado" ? <img className="profileVerificationMark" src="/verificacion.png" alt="" /> : null}
+          {action === "Rechazado" ? <img className="profileVerificationMark" src="/rechazado.png" alt="" /> : null}
           {actionIcon}
           {action}
           {actionIcon ? null : <ChevronIcon />}

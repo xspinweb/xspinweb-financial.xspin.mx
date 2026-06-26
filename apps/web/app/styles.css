@@ -10568,10 +10568,23 @@ a {
 
 .adminPill.builder,
 .adminPill.pendiente,
-.adminPill.due {
+.adminPill.due,
+.adminPill.submitted {
   background: rgba(255, 207, 74, 0.12);
   border-color: rgba(255, 207, 74, 0.3);
   color: #ffcf4a;
+}
+
+.adminPill.rejected {
+  background: rgba(255, 82, 82, 0.14);
+  border-color: rgba(255, 82, 82, 0.34);
+  color: #ff7777;
+}
+
+.adminPill.verified {
+  background: rgba(53, 228, 166, 0.14);
+  border-color: rgba(53, 228, 166, 0.36);
+  color: #35e4a6;
 }
 
 .adminPill.elite,
@@ -10758,10 +10771,11 @@ a {
   overflow-x: auto;
 }
 
-.adminTabs span {
+.adminTabs a {
   color: #aab8cb;
   font-size: 13px;
   padding: 0 0 12px;
+  text-decoration: none;
   white-space: nowrap;
 }
 
@@ -10904,6 +10918,109 @@ a {
   overflow-wrap: anywhere;
 }
 
+.adminMovementList,
+.adminDocumentList {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.adminMovementCard {
+  align-items: center;
+  background: linear-gradient(145deg, rgba(6, 15, 29, 0.9), rgba(13, 28, 45, 0.72));
+  border: 1px solid rgba(156, 182, 204, 0.12);
+  border-radius: 12px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px;
+}
+
+.adminMovementCard strong,
+.adminMovementCard b {
+  color: #f5f7fb;
+  font-size: 13px;
+}
+
+.adminMovementCard span,
+.adminMovementCard small {
+  color: #aab8cb;
+  display: block;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.adminMovementTag {
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  padding: 7px 10px;
+}
+
+.adminMovementTag.investment {
+  background: rgba(53, 228, 166, 0.14);
+  color: #35e4a6;
+}
+
+.adminMovementTag.reinvestment {
+  background: rgba(45, 151, 255, 0.16);
+  color: #55b7ff;
+}
+
+.adminDocumentCard {
+  background: linear-gradient(145deg, rgba(6, 15, 29, 0.9), rgba(13, 28, 45, 0.72));
+  border: 1px solid rgba(156, 182, 204, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.adminDocumentTop {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.adminDocumentPreviews {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.adminDocumentPreview {
+  align-items: center;
+  background: rgba(3, 9, 19, 0.5);
+  border: 1px solid rgba(156, 182, 204, 0.12);
+  border-radius: 10px;
+  color: #aab8cb;
+  display: grid;
+  min-height: 96px;
+  overflow: hidden;
+  text-align: center;
+  text-decoration: none;
+}
+
+.adminDocumentPreview img {
+  display: block;
+  height: 118px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.adminDocumentPreview figcaption {
+  color: #aab8cb;
+  font-size: 11px;
+  padding: 6px;
+}
+
+.adminDocumentPreview.empty,
+.adminDocumentPreview.file {
+  font-size: 12px;
+  padding: 12px;
+}
+
 .adminDetailActions {
   margin-top: 18px;
 }
@@ -10993,6 +11110,12 @@ a {
 .adminUserReviewCard a {
   color: #35e4a6;
   font-weight: 900;
+}
+
+.profileVerificationMark {
+  height: 22px;
+  object-fit: contain;
+  width: 22px;
 }
 
 @media (max-width: 1180px) {

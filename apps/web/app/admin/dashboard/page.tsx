@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { confirmWithdrawal, declineWithdrawal, toggleInvestorStatus } from "../actions";
+import { confirmWithdrawal, declineWithdrawal, toggleInvestorStatus, updateKycDocumentStatus } from "../actions";
 import { getAdminDashboardData } from "../../../lib/admin-data";
+import { AdminRealtimeRefresh } from "./admin-realtime-refresh";
 
 export const dynamic = "force-dynamic";
 
 type AdminDashboardPageProps = {
   searchParams?: {
     user?: string;
+    tab?: string;
   };
 };
 
@@ -20,12 +22,30 @@ const dateTime = new Intl.DateTimeFormat("es-MX", {
   timeStyle: "short"
 });
 
+const adminTabs = [
+  ["resumen", "Resumen"],
+  ["inversiones", "Inversiones"],
+  ["bonos", "Bonos"],
+  ["wallet", "Wallet"],
+  ["metodos", "Metodos de pago"],
+  ["documentos", "Documentos"],
+  ["actividad", "Actividad"]
+] as const;
+
+type AdminTab = typeof adminTabs[number][0];
+
+function getAdminTab(tab?: string): AdminTab {
+  return adminTabs.some(([key]) => key === tab) ? tab as AdminTab : "resumen";
+}
+
 export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
   const data = await getAdminDashboardData(searchParams?.user);
   const selected = searchParams?.user ? data.users.find((user) => user.id === searchParams.user) ?? null : null;
+  const activeTab = getAdminTab(searchParams?.tab);
 
   return (
     <div className={selected ? "adminDashboard hasDetail" : "adminDashboard"}>
+      <AdminRealtimeRefresh />
       <section className="adminMain">
         <header className="adminTopbar">
           <div>
@@ -124,71 +144,42 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
           </div>
 
           <div className="adminTabs">
-            <span className="active">Resumen</span>
-            <span>Inversiones</span>
-            <span>Bonos</span>
-            <span>Wallet</span>
-            <span>Metodos de pago</span>
-            <span>Documentos</span>
-            <span>Actividad</span>
+            {adminTabs.map(([key, label]) => (
+              <Link className={activeTab === key ? "active" : ""} href={`/admin/dashboard?user=${selected.id}&tab=${key}`} key={key}>
+                {label}
+              </Link>
+            ))}
           </div>
 
-          <AdminInfo title="Informacion general" rows={[
-            ["Pais", selected.country],
-            ["Ciudad", selected.city],
-            ["Fecha nacimiento", selected.birthDate ? dateTime.format(selected.birthDate) : "-"],
-            ["Fecha registro", dateTime.format(selected.registeredAt)],
-            ["Estado conexion", selected.connection],
-            ["Ultimo acceso", dateTime.format(selected.lastAccessAt)]
-          ]} />
+          {activeTab === "resumen" ? (
+            <>
+              <AdminInfo title="Informacion general" rows={[
+                ["Pais", selected.country],
+                ["Ciudad", selected.city],
+                ["Fecha nacimiento", selected.birthDate ? dateTime.format(selected.birthDate) : "-"],
+                ["Fecha registro", dateTime.format(selected.registeredAt)],
+                ["Estado conexion", selected.connection],
+                ["Ultimo acceso", dateTime.format(selected.lastAccessAt)]
+              ]} />
 
-          <section className="adminInfoCard">
-            <h3>Resumen financiero</h3>
-            <div className="adminMiniGrid">
-              <AdminMini label="Inversion total" value={money.format(selected.totalInvested)} />
-              <AdminMini label="Cobrado total" value={money.format(selected.totalPaid)} />
-              <AdminMini label="Grupos activos" value={String(selected.activeGroups)} />
-              <AdminMini label="Referidos totales" value={selected.referralSummary} />
-            </div>
-          </section>
+              <section className="adminInfoCard">
+                <h3>Resumen financiero</h3>
+                <div className="adminMiniGrid">
+                  <AdminMini label="Inversion total" value={money.format(selected.totalInvested)} />
+                  <AdminMini label="Cobrado total" value={money.format(selected.totalPaid)} />
+                  <AdminMini label="Grupos activos" value={String(selected.activeGroups)} />
+                  <AdminMini label="Referidos totales" value={selected.referralSummary} />
+                </div>
+              </section>
+            </>
+          ) : null}
 
-          <section className="adminInfoCard">
-            <h3>Bonos generados</h3>
-            <div className="adminMiniGrid adminMiniGridCompact">
-              <AdminMini label="Total bonos" value={money.format(selected.bonuses)} />
-              <AdminMini label="Referidos activos" value={String(selected.activeReferrals)} />
-            </div>
-          </section>
-
-          <AdminPaymentMethods methods={selected.payoutMethods} />
-
-          <section className="adminInfoCard">
-            <h3>Registro de retiro</h3>
-            {selected.lastWithdrawal ? (
-              <>
-                <AdminInfoRows rows={[
-                  ["Fecha solicitud", dateTime.format(selected.lastWithdrawal.date)],
-                  ["Metodo", selected.lastWithdrawal.method.label],
-                  ["Monto solicitado", money.format(selected.lastWithdrawal.amount)],
-                  ["Estado", selected.lastWithdrawal.status]
-                ]} />
-                {selected.lastWithdrawal.status === "Pendiente" ? (
-                  <div className="adminWithdrawalActions">
-                    <form action={declineWithdrawal}>
-                      <input name="paymentId" type="hidden" value={selected.lastWithdrawal.id} />
-                      <button className="decline" type="submit">Declinar pago</button>
-                    </form>
-                    <form action={confirmWithdrawal}>
-                      <input name="paymentId" type="hidden" value={selected.lastWithdrawal.id} />
-                      <button className="confirm" type="submit">Confirmar pago</button>
-                    </form>
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <p className="adminEmpty">Sin retiros registrados.</p>
-            )}
-          </section>
+          {activeTab === "inversiones" ? <AdminInvestments investments={selected.investments} /> : null}
+          {activeTab === "bonos" ? <AdminBonuses bonuses={selected.bonusItems} total={selected.bonuses} /> : null}
+          {activeTab === "wallet" ? <AdminWallet selected={selected} /> : null}
+          {activeTab === "metodos" ? <AdminPaymentMethods methods={selected.payoutMethods} /> : null}
+          {activeTab === "documentos" ? <AdminDocuments investorId={selected.id} verification={selected.identityVerification} /> : null}
+          {activeTab === "actividad" ? <AdminActivity notifications={selected.notifications} /> : null}
 
           <div className="adminDetailActions">
             <form action={toggleInvestorStatus}>
@@ -297,6 +288,207 @@ function AdminPaymentMethods({ methods }: { methods: AdminPaymentMethod[] }) {
       )}
     </section>
   );
+}
+
+function AdminInvestments({ investments }: { investments: Array<Record<string, any>> }) {
+  return (
+    <section className="adminInfoCard">
+      <h3>Inversiones</h3>
+      {investments.length ? (
+        <div className="adminMovementList">
+          {investments.map((investment) => (
+            <article className="adminMovementCard" key={investment.id}>
+              <div>
+                <strong>{investment.group}</strong>
+                <span>Semana {investment.week}</span>
+              </div>
+              <div>
+                <small>{investment.type}</small>
+                <b>{money.format(investment.principal)}</b>
+              </div>
+              <em className={investment.type === "Reinversion" ? "adminMovementTag reinvestment" : "adminMovementTag investment"}>
+                {investment.type}
+              </em>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="adminEmpty">Sin inversiones registradas.</p>
+      )}
+    </section>
+  );
+}
+
+function AdminBonuses({ bonuses, total }: { bonuses: Array<Record<string, any>>; total: number }) {
+  return (
+    <section className="adminInfoCard">
+      <h3>Bonos</h3>
+      <AdminMini label="Total bonos" value={money.format(total)} />
+      {bonuses.length ? (
+        <div className="adminMovementList">
+          {bonuses.map((bonus, index) => (
+            <article className="adminMovementCard" key={`${bonus.referredName}-${index}`}>
+              <div>
+                <strong>{bonus.referredName}</strong>
+                <span>{bonus.group} · Semana {bonus.week}</span>
+              </div>
+              <b>{money.format(bonus.amount)}</b>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="adminEmpty">Sin bonos registrados.</p>
+      )}
+    </section>
+  );
+}
+
+function AdminWallet({ selected }: { selected: Record<string, any> }) {
+  return (
+    <>
+      <section className="adminInfoCard">
+        <h3>Wallet</h3>
+        <AdminMini label="Saldo en wallet" value={money.format(selected.walletBalance)} />
+      </section>
+
+      <section className="adminInfoCard">
+        <h3>Registro de retiro</h3>
+        {selected.lastWithdrawal ? (
+          <>
+            <AdminInfoRows rows={[
+              ["Fecha solicitud", dateTime.format(selected.lastWithdrawal.date)],
+              ["Metodo", selected.lastWithdrawal.method.label],
+              ["Monto solicitado", money.format(Math.abs(selected.lastWithdrawal.amount))],
+              ["Estado", selected.lastWithdrawal.status]
+            ]} />
+            {selected.lastWithdrawal.status === "Pendiente" ? (
+              <div className="adminWithdrawalActions">
+                <form action={declineWithdrawal}>
+                  <input name="paymentId" type="hidden" value={selected.lastWithdrawal.id} />
+                  <button className="decline" type="submit">Declinar pago</button>
+                </form>
+                <form action={confirmWithdrawal}>
+                  <input name="paymentId" type="hidden" value={selected.lastWithdrawal.id} />
+                  <button className="confirm" type="submit">Confirmar pago</button>
+                </form>
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <p className="adminEmpty">Sin retiros registrados.</p>
+        )}
+      </section>
+    </>
+  );
+}
+
+function AdminDocuments({ investorId, verification }: { investorId: string; verification: unknown }) {
+  const record = verification && typeof verification === "object" ? verification as Record<string, any> : null;
+  const documents = [
+    {
+      key: "official",
+      title: "Identificacion oficial",
+      status: record?.status,
+      files: [
+        ["Anverso", record?.officialIdFront],
+        ["Reverso", record?.officialIdBack]
+      ] as Array<[string, string | undefined]>
+    },
+    {
+      key: "proof",
+      title: "Comprobante de domicilio",
+      status: record?.proofOfAddressStatus,
+      files: [["Archivo", record?.proofOfAddressFile]] as Array<[string, string | undefined]>
+    },
+    {
+      key: "selfie",
+      title: "Selfie",
+      status: record?.selfieStatus,
+      files: [["Selfie", record?.selfieImage]] as Array<[string, string | undefined]>
+    }
+  ];
+
+  return (
+    <section className="adminInfoCard">
+      <h3>Documentos</h3>
+      <div className="adminDocumentList">
+        {documents.map((document) => (
+          <article className="adminDocumentCard" key={document.key}>
+            <div className="adminDocumentTop">
+              <strong>{document.title}</strong>
+              <AdminPill tone={String(document.status ?? "pendiente").toLowerCase()}>{getDocumentLabel(document.status)}</AdminPill>
+            </div>
+            <div className="adminDocumentPreviews">
+              {document.files.map(([label, src]) => <AdminDocumentPreview key={label} label={label} src={src} />)}
+            </div>
+            {document.files.some(([, src]) => src) ? (
+              <div className="adminWithdrawalActions">
+                <form action={updateKycDocumentStatus}>
+                  <input name="investorId" type="hidden" value={investorId} />
+                  <input name="document" type="hidden" value={document.key} />
+                  <input name="status" type="hidden" value="REJECTED" />
+                  <button className="decline" type="submit">Rechazar</button>
+                </form>
+                <form action={updateKycDocumentStatus}>
+                  <input name="investorId" type="hidden" value={investorId} />
+                  <input name="document" type="hidden" value={document.key} />
+                  <input name="status" type="hidden" value="VERIFIED" />
+                  <button className="confirm" type="submit">Aprobar</button>
+                </form>
+              </div>
+            ) : null}
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AdminDocumentPreview({ label, src }: { label: string; src?: string }) {
+  if (!src) {
+    return <div className="adminDocumentPreview empty">{label}: sin archivo</div>;
+  }
+
+  if (src.startsWith("data:image")) {
+    return (
+      <figure className="adminDocumentPreview">
+        <img src={src} alt={label} />
+        <figcaption>{label}</figcaption>
+      </figure>
+    );
+  }
+
+  return <a className="adminDocumentPreview file" href={src} target="_blank" rel="noreferrer">{label}: ver archivo</a>;
+}
+
+function AdminActivity({ notifications }: { notifications: Array<{ id: string; title: string; message: string; createdAt: Date }> }) {
+  return (
+    <section className="adminInfoCard">
+      <h3>Actividad</h3>
+      {notifications.length ? (
+        <div className="adminMovementList">
+          {notifications.map((notification) => (
+            <article className="adminMovementCard" key={notification.id}>
+              <div>
+                <strong>{notification.title}</strong>
+                <span>{notification.message}</span>
+              </div>
+              <small>{timeAgo(notification.createdAt)}</small>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="adminEmpty">Sin actividad reciente.</p>
+      )}
+    </section>
+  );
+}
+
+function getDocumentLabel(status?: string) {
+  if (status === "VERIFIED") return "Aprobado";
+  if (status === "REJECTED") return "Rechazado";
+  if (status === "SUBMITTED") return "Validacion";
+  return "Pendiente";
 }
 
 function AdminMini({ label, value }: { label: string; value: string }) {
