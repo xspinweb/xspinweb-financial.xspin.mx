@@ -491,29 +491,38 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
               icon={<DocumentIcon />}
               title="Identificacion oficial"
               subtitle={isIdentityLoading ? "Consultando estado de verificacion." : identity.frontImage && identity.backImage ? "Anverso y reverso capturados correctamente." : "INE, Pasaporte o Licencia de conducir"}
-              action={isIdentityLoading ? "Cargando" : identity.status === "SUBMITTED" ? "Validacion" : identity.status === "VERIFIED" ? "Verificado" : identity.status === "REJECTED" ? "Rechazado" : "Capturar"}
-              actionIcon={isIdentityLoading || identity.status === "SUBMITTED" || identity.status === "VERIFIED" || identity.status === "REJECTED" ? undefined : <CameraIcon />}
-              actionTone={isIdentityLoading ? "purple" : identity.status === "SUBMITTED" ? "orange" : identity.status === "VERIFIED" ? "green" : identity.status === "REJECTED" ? "orange" : "purple"}
-              disabled={isIdentityLoading || identity.status === "SUBMITTED" || identity.status === "VERIFIED" || identity.status === "REJECTED"}
+              status={getIdentityStatusLabel(identity.status, isIdentityLoading)}
+              statusMark={getIdentityStatusMark(identity.status)}
+              statusTone={getIdentityStatusTone(identity.status, isIdentityLoading)}
+              action={!isIdentityLoading && (identity.status === "PENDING" || identity.status === "REJECTED") ? "Capturar" : undefined}
+              actionIcon={<CameraIcon />}
+              actionTone={identity.status === "REJECTED" ? "orange" : "purple"}
+              disabled={isIdentityLoading}
               onAction={() => setIdentityModalMode("id")}
             />
             <ProfileRow
               icon={<UserCheckIcon />}
               title="Selfie"
               subtitle={isIdentityLoading ? "Consultando estado de selfie." : identity.selfieImage ? "Selfie capturada correctamente." : "Foto frontal para validar que eres tu."}
-              action={isIdentityLoading ? "Cargando" : identity.selfieStatus === "SUBMITTED" ? "Validacion" : identity.selfieStatus === "VERIFIED" ? "Verificado" : identity.selfieStatus === "REJECTED" ? "Rechazado" : "Capturar"}
-              actionIcon={isIdentityLoading || identity.selfieStatus === "SUBMITTED" || identity.selfieStatus === "VERIFIED" || identity.selfieStatus === "REJECTED" ? undefined : <CameraIcon />}
-              actionTone={isIdentityLoading ? "purple" : identity.selfieStatus === "SUBMITTED" ? "orange" : identity.selfieStatus === "VERIFIED" ? "green" : identity.selfieStatus === "REJECTED" ? "orange" : "purple"}
-              disabled={isIdentityLoading || identity.selfieStatus === "SUBMITTED" || identity.selfieStatus === "VERIFIED" || identity.selfieStatus === "REJECTED"}
+              status={getIdentityStatusLabel(identity.selfieStatus, isIdentityLoading)}
+              statusMark={getIdentityStatusMark(identity.selfieStatus)}
+              statusTone={getIdentityStatusTone(identity.selfieStatus, isIdentityLoading)}
+              action={!isIdentityLoading && (identity.selfieStatus === "PENDING" || identity.selfieStatus === "REJECTED") ? "Capturar" : undefined}
+              actionIcon={<CameraIcon />}
+              actionTone={identity.selfieStatus === "REJECTED" ? "orange" : "purple"}
+              disabled={isIdentityLoading}
               onAction={() => setIdentityModalMode("selfie")}
             />
             <ProfileRow
               icon={<ReceiptIcon />}
               title="Comprobante de domicilio"
               subtitle={isIdentityLoading ? "Consultando comprobante." : identity.proofOfAddressFileName || "Recibo de luz, agua, gas o estado de cuenta"}
-              action={isIdentityLoading ? "Cargando" : identity.proofOfAddressStatus === "SUBMITTED" ? "Validacion" : identity.proofOfAddressStatus === "VERIFIED" ? "Verificado" : identity.proofOfAddressStatus === "REJECTED" ? "Rechazado" : isUploadingProof ? "Subiendo" : "Pendiente"}
-              actionTone={isIdentityLoading ? "purple" : identity.proofOfAddressStatus === "SUBMITTED" ? "orange" : identity.proofOfAddressStatus === "VERIFIED" ? "green" : identity.proofOfAddressStatus === "REJECTED" ? "orange" : "yellow"}
-              disabled={isIdentityLoading || isUploadingProof || identity.proofOfAddressStatus === "SUBMITTED" || identity.proofOfAddressStatus === "VERIFIED" || identity.proofOfAddressStatus === "REJECTED"}
+              status={getIdentityStatusLabel(identity.proofOfAddressStatus, isIdentityLoading)}
+              statusMark={getIdentityStatusMark(identity.proofOfAddressStatus)}
+              statusTone={getIdentityStatusTone(identity.proofOfAddressStatus, isIdentityLoading)}
+              action={!isIdentityLoading && (identity.proofOfAddressStatus === "PENDING" || identity.proofOfAddressStatus === "REJECTED") ? isUploadingProof ? "Subiendo" : "Subir" : undefined}
+              actionTone={identity.proofOfAddressStatus === "REJECTED" ? "orange" : "yellow"}
+              disabled={isIdentityLoading || isUploadingProof}
               onAction={() => proofInputRef.current?.click()}
             />
           </div>
@@ -602,6 +611,28 @@ function ProfileField({
   );
 }
 
+function getIdentityStatusLabel(status: IdentityVerification["status"], isLoading: boolean): string | undefined {
+  if (isLoading) return "Cargando";
+  if (status === "SUBMITTED") return "Validacion";
+  if (status === "VERIFIED") return "Verificado";
+  if (status === "REJECTED") return "Rechazado";
+  return undefined;
+}
+
+function getIdentityStatusTone(status: IdentityVerification["status"], isLoading: boolean): "green" | "orange" | "purple" | "red" | "yellow" {
+  if (isLoading) return "purple";
+  if (status === "SUBMITTED") return "orange";
+  if (status === "VERIFIED") return "green";
+  if (status === "REJECTED") return "red";
+  return "yellow";
+}
+
+function getIdentityStatusMark(status: IdentityVerification["status"]) {
+  if (status === "VERIFIED") return "/verificacion.png";
+  if (status === "REJECTED") return "/rechazado.png";
+  return undefined;
+}
+
 function ProfileRow({
   action,
   actionIcon,
@@ -611,6 +642,7 @@ function ProfileRow({
   onAction,
   onSwitch,
   status,
+  statusMark,
   statusTone = "green",
   subtitle,
   switchActive = false,
@@ -625,7 +657,8 @@ function ProfileRow({
   onAction?: () => void;
   onSwitch?: () => void;
   status?: string;
-  statusTone?: "green" | "yellow";
+  statusMark?: string;
+  statusTone?: "green" | "orange" | "purple" | "red" | "yellow";
   subtitle: string;
   switchActive?: boolean;
   switchLabel?: string;
@@ -638,7 +671,12 @@ function ProfileRow({
         <strong>{title}</strong>
         <small>{subtitle}</small>
       </div>
-      {status ? <em className={`profileStatus ${statusTone}`}>{status}</em> : null}
+      {status ? (
+        <em className={`profileStatus ${statusTone}`}>
+          {statusMark ? <img className="profileStatusMark" src={statusMark} alt="" /> : null}
+          {status}
+        </em>
+      ) : null}
       {switchLabel ? (
         <button className={switchActive ? "profileSwitch active" : "profileSwitch"} type="button" onClick={onSwitch} disabled={disabled}>
           <i />
@@ -647,8 +685,6 @@ function ProfileRow({
       ) : null}
       {action ? (
         <button className={`profileActionButton ${actionTone}`} type="button" onClick={onAction} disabled={disabled}>
-          {action === "Verificado" ? <img className="profileVerificationMark" src="/verificacion.png" alt="" /> : null}
-          {action === "Rechazado" ? <img className="profileVerificationMark" src="/rechazado.png" alt="" /> : null}
           {actionIcon}
           {action}
           {actionIcon ? null : <ChevronIcon />}

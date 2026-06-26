@@ -451,10 +451,11 @@ function AdminDocumentPreview({ label, src }: { label: string; src?: string }) {
 
   if (src.startsWith("data:image")) {
     return (
-      <figure className="adminDocumentPreview">
+      <a className="adminDocumentPreview image" href={src} target="_blank" rel="noreferrer" title={`Ver ${label} en grande`}>
         <img src={src} alt={label} />
-        <figcaption>{label}</figcaption>
-      </figure>
+        <span>{label}</span>
+        <b>Ver grande</b>
+      </a>
     );
   }
 
