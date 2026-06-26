@@ -207,7 +207,7 @@ function AdminAvatar({ name, src, size }: { name: string; src?: string | null; s
 
   if (src) {
     return (
-      <span className={className}>
+      <span className={`${className} hasImage`}>
         <img src={src} alt="" referrerPolicy="no-referrer" />
       </span>
     );

@@ -70,7 +70,7 @@ export default async function AdminUsersPage() {
 function AdminAvatar({ name, src }: { name: string; src?: string | null }) {
   if (src) {
     return (
-      <span className="adminUserAvatar">
+      <span className="adminUserAvatar hasImage">
         <img src={src} alt="" referrerPolicy="no-referrer" />
       </span>
     );

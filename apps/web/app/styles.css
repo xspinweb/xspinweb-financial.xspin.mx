@@ -10519,6 +10519,12 @@ a {
   overflow: hidden;
 }
 
+.adminUserAvatar.hasImage,
+.adminAvatar.hasImage {
+  background: transparent;
+  color: transparent;
+}
+
 .adminUserAvatar {
   height: 26px;
   width: 26px;
