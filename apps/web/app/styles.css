@@ -5620,6 +5620,13 @@ a {
   padding: 8px 12px;
 }
 
+.profileStatus.markOnly {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
 .profileStatus.orange {
   background: rgba(251, 146, 60, 0.12);
   color: #fb923c;
@@ -5642,9 +5649,14 @@ a {
 
 .profileStatusMark {
   display: block;
-  height: 22px;
+  height: 34px;
   object-fit: contain;
-  width: 22px;
+  width: 34px;
+}
+
+.profileStatus.markOnly .profileStatusMark {
+  height: 42px;
+  width: 42px;
 }
 
 .verifyDocumentsAction {
@@ -8712,30 +8724,40 @@ a {
   .notificationsPanel {
     position: fixed;
     top: calc(env(safe-area-inset-top) + 70px);
-    right: 18px;
+    right: 14px;
     bottom: auto;
-    left: 18px;
+    left: 14px;
     width: auto;
-    max-height: min(62vh, 520px);
-    border-radius: 22px;
-    gap: 14px;
-    padding: 18px 16px;
+    max-height: min(64vh, 520px);
+    border-radius: 24px;
+    gap: 12px;
+    padding: 16px 14px 14px;
     transform: none;
   }
 
-  .notificationsList {
+  .notificationsPanelHeader {
+    align-items: flex-start;
     gap: 10px;
-    max-height: min(46vh, 370px);
+  }
+
+  .notificationsList {
+    gap: 9px;
+    max-height: min(48vh, 378px);
+    padding-right: 0;
   }
 
   .notificationsPanelHeader strong {
-    font-size: 19px;
+    font-size: 18px;
+  }
+
+  .notificationsPanelHeader span {
+    font-size: 13px;
   }
 
   .notificationsPanelHeader button {
     gap: 6px;
-    font-size: 11px;
-    padding: 8px 10px;
+    font-size: 10px;
+    padding: 7px 9px;
   }
 
   .notificationsMarkIcon,
@@ -8745,26 +8767,32 @@ a {
   }
 
   .notificationCard {
-    grid-template-columns: 10px 48px minmax(0, 1fr);
-    gap: 12px;
-    min-height: 96px;
-    padding: 14px;
+    grid-template-columns: 8px 42px minmax(0, 1fr) auto;
+    gap: 10px;
+    min-height: 82px;
+    padding: 12px;
+    border-radius: 17px;
+  }
+
+  .notificationCard::after {
+    inset: 7px 7px 7px auto;
+    min-width: 84px;
   }
 
   .notificationUnreadDot {
-    height: 9px;
-    width: 9px;
+    height: 8px;
+    width: 8px;
   }
 
   .notificationIcon {
-    border-radius: 14px;
-    height: 48px;
-    width: 48px;
+    border-radius: 13px;
+    height: 42px;
+    width: 42px;
   }
 
   .notificationIcon svg {
-    height: 27px;
-    width: 27px;
+    height: 23px;
+    width: 23px;
   }
 
   .notificationBody {
@@ -8772,17 +8800,20 @@ a {
   }
 
   .notificationBody strong {
-    font-size: 14px;
+    font-size: 13px;
+    line-height: 1.18;
   }
 
   .notificationBody > span {
-    font-size: 12px !important;
+    font-size: 11px !important;
+    line-height: 1.35;
   }
 
   .notificationTime {
-    grid-column: 3;
-    font-size: 11px;
-    justify-self: start;
+    align-self: start;
+    font-size: 10px;
+    justify-self: end;
+    white-space: nowrap;
   }
 
   .notificationDots {
@@ -10416,6 +10447,18 @@ a {
   width: 100%;
 }
 
+.adminSearch button {
+  background: transparent;
+  border: 0;
+  color: #35e4a6;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  min-height: 44px;
+  padding: 0 2px 0 10px;
+  text-transform: uppercase;
+}
+
 .adminKpiGrid {
   display: grid;
   gap: 14px;
@@ -11102,6 +11145,7 @@ a {
 
 .adminDetailActions a,
 .adminDetailActions button {
+  cursor: pointer;
   flex: 1;
   text-align: center;
 }
@@ -11131,6 +11175,7 @@ a {
 
 .adminWithdrawalActions button {
   border-radius: 10px;
+  cursor: pointer;
   font-size: 12px;
   font-weight: 900;
   min-height: 42px;

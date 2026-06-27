@@ -19,6 +19,13 @@ function getString(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
+function getKycDocumentLabel(document: string) {
+  if (document === "official") return "Identificacion oficial";
+  if (document === "proof") return "Comprobante de domicilio";
+  if (document === "selfie") return "Selfie";
+  return "Documento";
+}
+
 export async function confirmWithdrawal(formData: FormData) {
   await requireAdmin();
   const paymentId = getString(formData, "paymentId");
@@ -108,6 +115,7 @@ export async function updateKycDocumentStatus(formData: FormData) {
   if (document === "selfie") data.selfieStatus = status;
 
   if (!Object.keys(data).length) return;
+  const documentLabel = getKycDocumentLabel(document);
 
   await prisma.identityVerification.update({
     where: { investorId },
@@ -118,10 +126,10 @@ export async function updateKycDocumentStatus(formData: FormData) {
     type: status === "VERIFIED" ? "kyc_document_approved" : "kyc_document_rejected",
     category: "SECURITY",
     icon: status === "VERIFIED" ? "shield-check" : "shield-alert",
-    title: status === "VERIFIED" ? "Documento aprobado" : "Documento rechazado",
+    title: status === "VERIFIED" ? `${documentLabel}: aprobado` : `${documentLabel}: rechazado`,
     message: status === "VERIFIED"
-      ? "Uno de tus documentos fue aprobado por el equipo de validacion."
-      : "Uno de tus documentos fue rechazado. Revisa tu verificacion de identidad."
+      ? `El documento ${documentLabel.toLowerCase()} fue aprobado por el equipo de validacion.`
+      : `El documento ${documentLabel.toLowerCase()} fue rechazado. Corrige la informacion y envialo nuevamente.`
   });
 
   revalidatePath("/admin/dashboard");

@@ -9,6 +9,7 @@ type AdminDashboardPageProps = {
   searchParams?: {
     user?: string;
     tab?: string;
+    query?: string;
   };
 };
 
@@ -42,6 +43,20 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
   const data = await getAdminDashboardData(searchParams?.user);
   const selected = searchParams?.user ? data.users.find((user) => user.id === searchParams.user) ?? null : null;
   const activeTab = getAdminTab(searchParams?.tab);
+  const searchQuery = (searchParams?.query ?? "").trim().toLowerCase();
+  const queryParam = searchParams?.query ? `&query=${encodeURIComponent(searchParams.query)}` : "";
+  const visibleUsers = searchQuery
+    ? data.users.filter((user) => [
+      user.labelId,
+      user.fullName,
+      user.userName,
+      user.email,
+      user.phone,
+      user.country,
+      user.city,
+      user.level
+    ].some((value) => String(value ?? "").toLowerCase().includes(searchQuery)))
+    : data.users;
 
   return (
     <div className={selected ? "adminDashboard hasDetail" : "adminDashboard"}>
@@ -52,10 +67,10 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
             <span>Administrador</span>
             <h1>Panel general</h1>
           </div>
-          <label className="adminSearch">
-            <input placeholder="Buscar usuario..." />
-            <span>Buscar</span>
-          </label>
+          <form action="/admin/dashboard" className="adminSearch">
+            <input defaultValue={searchParams?.query ?? ""} name="query" placeholder="Buscar usuario..." />
+            <button type="submit">Buscar</button>
+          </form>
         </header>
 
         <section className="adminKpiGrid">
@@ -72,11 +87,6 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
         <section className="adminPanel adminUsersPanel">
           <div className="adminPanelHeader">
             <h2>Usuarios recientes</h2>
-            <div className="adminTableActions">
-              <Link href="/admin/usuarios">Todos los usuarios</Link>
-              <button type="button">Filtros</button>
-              <button className="primary" type="button">Exportar</button>
-            </div>
           </div>
           <div className="adminTableWrap">
             <table className="adminTable">
@@ -96,7 +106,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                 </tr>
               </thead>
               <tbody>
-                {data.users.length ? data.users.map((user) => (
+                {visibleUsers.length ? visibleUsers.map((user) => (
                   <tr className={selected?.id === user.id ? "selected" : ""} key={user.id}>
                     <td>{user.labelId}</td>
                     <td>
@@ -113,11 +123,11 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                     <td><AdminStatus status={user.connection} /></td>
                     <td><AdminPill tone={user.kyc.toLowerCase()}>{user.kyc}</AdminPill></td>
                     <td>{timeAgo(user.lastAccessAt)}</td>
-                    <td><Link className="adminIconLink" href={`/admin/dashboard?user=${user.id}`}>Ver</Link></td>
+                    <td><Link className="adminIconLink" href={`/admin/dashboard?user=${user.id}${queryParam}`}>Ver</Link></td>
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan={11}>Aun no hay usuarios registrados.</td>
+                    <td colSpan={11}>{searchQuery ? "No encontramos usuarios con esa busqueda." : "Aun no hay usuarios registrados."}</td>
                   </tr>
                 )}
               </tbody>
@@ -128,7 +138,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
 
       {selected ? (
         <aside className="adminDetailPanel">
-          <Link className="adminDetailClose" href="/admin/dashboard" aria-label="Cerrar detalle">x</Link>
+          <Link className="adminDetailClose" href={`/admin/dashboard${searchParams?.query ? `?query=${encodeURIComponent(searchParams.query)}` : ""}`} aria-label="Cerrar detalle">x</Link>
           <div className="adminDetailHeader">
             <AdminAvatar name={selected.fullName} src={selected.profileImage} size="lg" />
             <div>
@@ -140,12 +150,11 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                 <AdminPill tone="id">ID: {selected.labelId}</AdminPill>
               </div>
             </div>
-            <AdminStatus status={selected.connection} />
           </div>
 
           <div className="adminTabs">
             {adminTabs.map(([key, label]) => (
-              <Link className={activeTab === key ? "active" : ""} href={`/admin/dashboard?user=${selected.id}&tab=${key}`} key={key}>
+              <Link className={activeTab === key ? "active" : ""} href={`/admin/dashboard?user=${selected.id}&tab=${key}${queryParam}`} key={key}>
                 {label}
               </Link>
             ))}
@@ -454,7 +463,6 @@ function AdminDocumentPreview({ label, src }: { label: string; src?: string }) {
       <a className="adminDocumentPreview image" href={src} target="_blank" rel="noreferrer" title={`Ver ${label} en grande`}>
         <img src={src} alt={label} />
         <span>{label}</span>
-        <b>Ver grande</b>
       </a>
     );
   }

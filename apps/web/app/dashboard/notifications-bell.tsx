@@ -286,8 +286,10 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                       cardTouchStartRef.current = null;
                       const deltaX = touch.clientX - start.x;
                       const deltaY = touch.clientY - start.y;
+                      const cardWidth = event.currentTarget.getBoundingClientRect().width;
+                      const deleteThreshold = Math.max(220, cardWidth * 0.74);
 
-                      if (deltaX < -64 && Math.abs(deltaY) < 48) {
+                      if (deltaX <= -deleteThreshold && Math.abs(deltaY) < 48) {
                         event.preventDefault();
                         event.stopPropagation();
                         ignoredClickRef.current = notification.id;
@@ -311,11 +313,12 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
 
                       const deltaX = touch.clientX - start.x;
                       const deltaY = touch.clientY - start.y;
+                      const cardWidth = event.currentTarget.getBoundingClientRect().width;
 
                       if (deltaX < -8 && Math.abs(deltaX) > Math.abs(deltaY)) {
                         setDragOffsets((current) => ({
                           ...current,
-                          [notification.id]: Math.max(deltaX, -126)
+                          [notification.id]: Math.max(deltaX, -(cardWidth - 34))
                         }));
                       }
                     }}

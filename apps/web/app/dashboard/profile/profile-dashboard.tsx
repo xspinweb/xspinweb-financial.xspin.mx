@@ -490,7 +490,7 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
             <ProfileRow
               icon={<DocumentIcon />}
               title="Identificacion oficial"
-              subtitle={isIdentityLoading ? "Consultando estado de verificacion." : identity.frontImage && identity.backImage ? "Anverso y reverso capturados correctamente." : "INE, Pasaporte o Licencia de conducir"}
+              subtitle=""
               status={getIdentityStatusLabel(identity.status, isIdentityLoading)}
               statusMark={getIdentityStatusMark(identity.status)}
               statusTone={getIdentityStatusTone(identity.status, isIdentityLoading)}
@@ -503,7 +503,7 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
             <ProfileRow
               icon={<UserCheckIcon />}
               title="Selfie"
-              subtitle={isIdentityLoading ? "Consultando estado de selfie." : identity.selfieImage ? "Selfie capturada correctamente." : "Foto frontal para validar que eres tu."}
+              subtitle=""
               status={getIdentityStatusLabel(identity.selfieStatus, isIdentityLoading)}
               statusMark={getIdentityStatusMark(identity.selfieStatus)}
               statusTone={getIdentityStatusTone(identity.selfieStatus, isIdentityLoading)}
@@ -516,7 +516,7 @@ export function ProfileDashboard({ userEmail, userName }: ProfileDashboardProps)
             <ProfileRow
               icon={<ReceiptIcon />}
               title="Comprobante de domicilio"
-              subtitle={isIdentityLoading ? "Consultando comprobante." : identity.proofOfAddressFileName || "Recibo de luz, agua, gas o estado de cuenta"}
+              subtitle=""
               status={getIdentityStatusLabel(identity.proofOfAddressStatus, isIdentityLoading)}
               statusMark={getIdentityStatusMark(identity.proofOfAddressStatus)}
               statusTone={getIdentityStatusTone(identity.proofOfAddressStatus, isIdentityLoading)}
@@ -614,8 +614,6 @@ function ProfileField({
 function getIdentityStatusLabel(status: IdentityVerification["status"], isLoading: boolean): string | undefined {
   if (isLoading) return "Cargando";
   if (status === "SUBMITTED") return "Validacion";
-  if (status === "VERIFIED") return "Verificado";
-  if (status === "REJECTED") return "Rechazado";
   return undefined;
 }
 
@@ -669,12 +667,12 @@ function ProfileRow({
       <span className="profileRowIcon">{icon}</span>
       <div>
         <strong>{title}</strong>
-        <small>{subtitle}</small>
+        {subtitle ? <small>{subtitle}</small> : null}
       </div>
-      {status ? (
-        <em className={`profileStatus ${statusTone}`}>
+      {status || statusMark ? (
+        <em className={`profileStatus ${statusTone} ${statusMark && !status ? "markOnly" : ""}`}>
           {statusMark ? <img className="profileStatusMark" src={statusMark} alt="" /> : null}
-          {status}
+          {status ? <span>{status}</span> : null}
         </em>
       ) : null}
       {switchLabel ? (
