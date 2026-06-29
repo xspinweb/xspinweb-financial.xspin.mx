@@ -266,6 +266,16 @@ type StripeCheckoutSession = {
   url?: string;
 };
 
+type StripeWebhookEvent = {
+  data?: {
+    object?: {
+      id?: string;
+    };
+  };
+  id?: string;
+  type?: string;
+};
+
 const notificationCategories = [
   { label: "Inversiones", value: "INVESTMENTS" },
   { label: "Comunidad", value: "COMMUNITY" },
@@ -544,6 +554,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
       ok: true,
       service: "pay-financial-api"
     });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/stripe/webhook") {
+    const result = await handleStripeWebhook(req);
+    sendJson(res, 200, result);
     return;
   }
 
@@ -1927,6 +1943,32 @@ async function confirmStripeInvestmentCheckout(sessionId: string) {
   };
 }
 
+async function handleStripeWebhook(req: IncomingMessage) {
+  if (!config.stripeWebhookSecret) {
+    throw new Error("Stripe webhook no esta configurado en el servidor.");
+  }
+
+  const rawBody = await readRawBody(req);
+  verifyStripeWebhookSignature(rawBody, req.headers["stripe-signature"]);
+
+  const event = JSON.parse(rawBody) as StripeWebhookEvent;
+
+  if (event.type === "checkout.session.completed") {
+    const sessionId = event.data?.object?.id;
+
+    if (!sessionId) {
+      throw new Error("Stripe no envio el ID de la sesion.");
+    }
+
+    await confirmStripeInvestmentCheckout(sessionId);
+  }
+
+  return {
+    received: true,
+    type: event.type ?? null
+  };
+}
+
 async function reinvestInvestment(investmentId: string, input: z.infer<typeof reinvestSchema>) {
   const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const investment = await tx.investment.findUniqueOrThrow({
@@ -2738,14 +2780,49 @@ async function stripeRequest<T>(path: string, payload?: Record<string, string>, 
 }
 
 async function readJson(req: IncomingMessage) {
+  const body = await readRawBody(req);
+  return body ? JSON.parse(body) : {};
+}
+
+async function readRawBody(req: IncomingMessage) {
   const chunks: Buffer[] = [];
 
   for await (const chunk of req) {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
 
-  const body = Buffer.concat(chunks).toString("utf8");
-  return body ? JSON.parse(body) : {};
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+function verifyStripeWebhookSignature(rawBody: string, signatureHeader: string | string[] | undefined) {
+  const signature = Array.isArray(signatureHeader) ? signatureHeader[0] : signatureHeader;
+
+  if (!signature) {
+    throw new Error("Stripe no envio firma del webhook.");
+  }
+
+  const timestamp = signature
+    .split(",")
+    .find((part) => part.startsWith("t="))
+    ?.slice(2);
+  const receivedSignature = signature
+    .split(",")
+    .find((part) => part.startsWith("v1="))
+    ?.slice(3);
+
+  if (!timestamp || !receivedSignature) {
+    throw new Error("Firma de Stripe invalida.");
+  }
+
+  const expectedSignature = createHmac("sha256", config.stripeWebhookSecret)
+    .update(`${timestamp}.${rawBody}`)
+    .digest("hex");
+  const expected = Buffer.from(expectedSignature, "hex");
+  const received = Buffer.from(receivedSignature, "hex");
+
+  if (expected.length !== received.length || !timingSafeEqual(expected, received)) {
+    throw new Error("Firma de Stripe no coincide.");
+  }
 }
 
 function sendJson(res: ServerResponse, statusCode: number, payload: unknown) {
