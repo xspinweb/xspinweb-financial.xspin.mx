@@ -338,7 +338,6 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                         <span>{notification.message}</span>
                       </span>
                       <span className="notificationTime">{formatRelativeDate(notification.createdAt)}</span>
-                      <span className="notificationChevron" aria-hidden="true">{">"}</span>
                     </button>
                   </div>
                 ))

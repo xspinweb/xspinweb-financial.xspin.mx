@@ -2687,22 +2687,6 @@ a {
   white-space: nowrap;
 }
 
-.notificationChevron {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-size: 30px;
-  font-weight: 500;
-  line-height: 1;
-  opacity: 0.85;
-}
-
-.notificationCard.dragging .notificationChevron,
-.notificationCard.removing .notificationChevron {
-  opacity: 0;
-}
-
 .notificationsEmpty {
   border: 1px dashed rgba(159, 178, 196, 0.18);
   border-radius: 16px;
@@ -8779,12 +8763,12 @@ a {
   }
 
   .notificationsPanel {
-    position: fixed;
-    top: calc(env(safe-area-inset-top, 0px) + 92px);
-    right: 16px;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
     bottom: auto;
-    left: 16px;
-    width: auto;
+    left: auto;
+    width: min(380px, calc(100vw - 32px));
     max-height: min(66vh, 560px);
     border-radius: 22px;
     gap: 12px;
@@ -8890,7 +8874,7 @@ a {
     grid-area: body;
     gap: 4px;
     min-width: 0;
-    padding-right: 42px;
+    padding-right: 34px;
   }
 
   .notificationBody strong {
@@ -8914,14 +8898,6 @@ a {
     right: 26px;
     top: 13px;
     white-space: nowrap;
-  }
-
-  .notificationChevron {
-    font-size: 15px;
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
   }
 
   .dashboardHero {
