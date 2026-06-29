@@ -68,6 +68,11 @@ type PortfolioResponse = {
   investments: Investment[];
 };
 
+type IdentityVerificationResponse = {
+  selfieStatus: "PENDING" | "SUBMITTED" | "VERIFIED" | "REJECTED";
+  status: "PENDING" | "SUBMITTED" | "VERIFIED" | "REJECTED";
+};
+
 type InvestorLevel = {
   current: {
     key: LevelKey;
@@ -98,13 +103,16 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [investorCode, setInvestorCode] = useState("");
   const [investorLevel, setInvestorLevel] = useState<InvestorLevel | null>(null);
+  const [isIdentityVerified, setIsIdentityVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedInvestmentId, setSelectedInvestmentId] = useState("");
 
   useEffect(() => {
     void loadPortfolio();
+    void loadIdentityVerification();
     const interval = window.setInterval(() => {
       void loadPortfolio();
+      void loadIdentityVerification();
     }, 10000);
 
     return () => window.clearInterval(interval);
@@ -136,6 +144,23 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
       sortedInvestments.some((investment) => investment.id === currentId) ? currentId : sortedInvestments[0]?.id ?? ""
     );
     setIsLoading(false);
+  }
+
+  async function loadIdentityVerification() {
+    if (!userEmail) {
+      setIsIdentityVerified(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/investor/identity?email=${encodeURIComponent(userEmail)}`, {
+        cache: "no-store"
+      });
+      const identity = (await response.json()) as IdentityVerificationResponse;
+      setIsIdentityVerified(identity.status === "VERIFIED" && identity.selfieStatus === "VERIFIED");
+    } catch {
+      setIsIdentityVerified(false);
+    }
   }
 
   const primaryInvestment = investments.find((investment) => investment.id === selectedInvestmentId) ?? investments[0];
@@ -274,7 +299,12 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
       <section className="wealthGroupsPanel">
         <div className="wealthSectionHeader">
           <h2>Mis grupos de inversion</h2>
-          <NewInvestmentModal maxInvestment={maxInvestmentByLevel} onInvestmentCreated={handleInvestmentCreated} />
+          <NewInvestmentModal
+            identityRequirementMessage="Para invertir debes tener verificada tu identificacion oficial y selfie."
+            isIdentityVerified={isIdentityVerified}
+            maxInvestment={maxInvestmentByLevel}
+            onInvestmentCreated={handleInvestmentCreated}
+          />
         </div>
 
         {isLoading ? (

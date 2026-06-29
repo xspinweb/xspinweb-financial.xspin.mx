@@ -35,7 +35,6 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
   const [dragOffsets, setDragOffsets] = useState<Record<string, number>>({});
   const [unreadCount, setUnreadCount] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
-  const touchStartYRef = useRef<number | null>(null);
   const cardTouchStartRef = useRef<{ id: string; x: number; y: number } | null>(null);
   const ignoredClickRef = useRef<string | null>(null);
 
@@ -74,30 +73,16 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
       return;
     }
 
-    function handleClick(event: MouseEvent) {
-      if (!panelRef.current?.contains(event.target as Node)) {
-        closeNotifications();
-      }
-    }
-
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         closeNotifications();
       }
     }
 
-    function handleScroll() {
-      closeNotifications();
-    }
-
-    document.addEventListener("mousedown", handleClick);
     document.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      document.removeEventListener("mousedown", handleClick);
       document.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("scroll", handleScroll);
     };
   }, [isOpen]);
 
@@ -154,7 +139,6 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
 
   function closeNotifications() {
     setIsOpen(false);
-    touchStartYRef.current = null;
     cardTouchStartRef.current = null;
     setDragOffsets({});
   }
@@ -221,23 +205,6 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
           className="notificationsPanel"
           role="dialog"
           aria-label="Notificaciones recientes"
-          onTouchStart={(event) => {
-            touchStartYRef.current = event.touches[0]?.clientY ?? null;
-          }}
-          onTouchMove={(event) => {
-            const startY = touchStartYRef.current;
-
-            if (startY === null) {
-              return;
-            }
-
-            const currentY = event.touches[0]?.clientY ?? startY;
-
-            if (currentY - startY > 42) {
-              touchStartYRef.current = null;
-              closeNotifications();
-            }
-          }}
         >
           <header className="notificationsPanelHeader">
             <div>
@@ -287,9 +254,9 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                       const deltaX = touch.clientX - start.x;
                       const deltaY = touch.clientY - start.y;
                       const cardWidth = event.currentTarget.getBoundingClientRect().width;
-                      const deleteThreshold = Math.max(220, cardWidth * 0.74);
+                      const deleteThreshold = Math.max(260, cardWidth * 0.84);
 
-                      if (deltaX <= -deleteThreshold && Math.abs(deltaY) < 48) {
+                      if (deltaX <= -deleteThreshold && Math.abs(deltaY) < 30) {
                         event.preventDefault();
                         event.stopPropagation();
                         ignoredClickRef.current = notification.id;
@@ -315,10 +282,11 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                       const deltaY = touch.clientY - start.y;
                       const cardWidth = event.currentTarget.getBoundingClientRect().width;
 
-                      if (deltaX < -8 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                      if (deltaX < -24 && Math.abs(deltaX) > Math.abs(deltaY) * 1.45) {
+                        event.preventDefault();
                         setDragOffsets((current) => ({
                           ...current,
-                          [notification.id]: Math.max(deltaX, -(cardWidth - 34))
+                          [notification.id]: Math.max(deltaX, -(cardWidth - 48))
                         }));
                       }
                     }}

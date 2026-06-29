@@ -7,11 +7,13 @@ const minInvestment = 20;
 const investmentStep = 10;
 
 type NewInvestmentModalProps = {
+  identityRequirementMessage?: string;
+  isIdentityVerified: boolean;
   maxInvestment: number;
   onInvestmentCreated: (amount: number) => Promise<void>;
 };
 
-export function NewInvestmentModal({ maxInvestment, onInvestmentCreated }: NewInvestmentModalProps) {
+export function NewInvestmentModal({ identityRequirementMessage, isIdentityVerified, maxInvestment, onInvestmentCreated }: NewInvestmentModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState(minInvestment);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -26,7 +28,7 @@ export function NewInvestmentModal({ maxInvestment, onInvestmentCreated }: NewIn
   );
   const hasValidAmount = amount >= minInvestment && amount <= effectiveMaxInvestment;
   const showAmountError = !hasValidAmount;
-  const canSubmit = hasValidAmount && acceptedTerms && !isSubmitting;
+  const canSubmit = isIdentityVerified && hasValidAmount && acceptedTerms && !isSubmitting;
 
   useEffect(() => {
     setIsMounted(true);
@@ -130,6 +132,9 @@ export function NewInvestmentModal({ maxInvestment, onInvestmentCreated }: NewIn
               </label>
 
               {showAmountError ? <p className="formError">Monto permitido: de $20 a {formatMoney(effectiveMaxInvestment)} MXN.</p> : null}
+              {!isIdentityVerified ? (
+                <p className="formError">{identityRequirementMessage ?? "Verifica tu identificacion oficial y selfie antes de invertir."}</p>
+              ) : null}
               {submitError ? <p className="formError">{submitError}</p> : null}
 
               <label className="termsCheck">
@@ -152,7 +157,13 @@ export function NewInvestmentModal({ maxInvestment, onInvestmentCreated }: NewIn
 
   return (
     <>
-      <button className="headerIconAction" type="button" aria-label="Nueva inversion" title="Nueva inversion" onClick={openModal}>
+      <button
+        className="headerIconAction"
+        type="button"
+        aria-label="Nueva inversion"
+        title={isIdentityVerified ? "Nueva inversion" : identityRequirementMessage ?? "Verifica tu identidad para invertir"}
+        onClick={openModal}
+      >
         <InvestIcon />
         <span>Nueva inversion</span>
       </button>

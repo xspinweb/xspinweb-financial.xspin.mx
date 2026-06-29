@@ -695,6 +695,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
 
   if (req.method === "POST" && url.pathname === "/investments") {
     const input = createInvestmentSchema.parse(await readJson(req));
+    await assertIdentityVerifiedForInvestment(input.email);
     await assertReferralTargetOpen(input.referredByCode, input.sourceInvestmentId);
     const result = await createInvestment(input);
     sendJson(res, 201, result);
@@ -703,6 +704,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
 
   if (req.method === "POST" && url.pathname === "/checkout/investment") {
     const input = createInvestmentSchema.parse(await readJson(req));
+    await assertIdentityVerifiedForInvestment(input.email);
     await assertReferralTargetOpen(input.referredByCode, input.sourceInvestmentId);
     const result = await createStripeInvestmentCheckout(input);
     sendJson(res, 201, result);
@@ -1846,6 +1848,25 @@ async function assertInvestmentAmountAllowed(email: string, amount: number) {
 
   if (amount > investmentLimit) {
     throw new Error(`Tu nivel actual permite invertir hasta ${formatNotificationAmount(investmentLimit)}.`);
+  }
+}
+
+async function assertIdentityVerifiedForInvestment(email: string) {
+  const investor = await prisma.investor.findUnique({
+    select: {
+      identityVerification: {
+        select: {
+          selfieStatus: true,
+          status: true
+        }
+      }
+    },
+    where: { email }
+  });
+  const identity = investor?.identityVerification;
+
+  if (identity?.status !== "VERIFIED" || identity.selfieStatus !== "VERIFIED") {
+    throw new Error("Para invertir debes tener verificada tu identificacion oficial y selfie.");
   }
 }
 
