@@ -209,7 +209,7 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
           <header className="notificationsPanelHeader">
             <div>
               <strong>Notificaciones</strong>
-              <span>{unreadCount > 0 ? `${unreadCount} sin leer` : "Todo al dia"}</span>
+              <span>{unreadCount > 0 ? `Tienes ${unreadCount} sin leer` : "Todo al dia"}</span>
             </div>
             <button type="button" onClick={markAllAsRead} disabled={unreadCount === 0}>
               <span className="notificationsMarkIcon" aria-hidden="true">
@@ -271,7 +271,7 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                         const deltaX = touch.clientX - start.x;
                         const deltaY = touch.clientY - start.y;
                         const cardWidth = event.currentTarget.getBoundingClientRect().width;
-                        const deleteThreshold = cardWidth * 0.74;
+                        const deleteThreshold = cardWidth * 0.6;
 
                         if (deltaX <= -deleteThreshold && Math.abs(deltaY) < 34) {
                           event.preventDefault();
@@ -303,7 +303,7 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                           event.preventDefault();
                           setDragOffsets((current) => ({
                             ...current,
-                            [notification.id]: Math.max(deltaX, -(cardWidth * 0.8))
+                            [notification.id]: Math.max(deltaX, -(cardWidth * 0.72))
                           }));
                         }
                       }}
@@ -327,6 +327,9 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                       type="button"
                     >
                       <span className={`notificationUnreadDot ${notification.isRead ? "" : "active"}`} aria-hidden="true" />
+                      <span className={`notificationIcon notificationIcon-${getNotificationTone(notification)}`} aria-hidden="true">
+                        <NotificationGlyph notification={notification} />
+                      </span>
                       <span className="notificationBody">
                         <strong>
                           {notification.title}
@@ -335,11 +338,7 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                         <span>{notification.message}</span>
                       </span>
                       <span className="notificationTime">{formatRelativeDate(notification.createdAt)}</span>
-                      <span className="notificationDots" aria-hidden="true">
-                        <i />
-                        <i />
-                        <i />
-                      </span>
+                      <span className="notificationChevron" aria-hidden="true">{">"}</span>
                     </button>
                   </div>
                 ))
@@ -360,20 +359,83 @@ function formatRelativeDate(value: string) {
   const year = 365 * 24 * hour;
 
   if (diff < hour) {
-    return `hace ${Math.max(1, Math.floor(diff / minute))} min`;
+    return `Hace ${Math.max(1, Math.floor(diff / minute))} min`;
   }
 
   if (diff < 24 * hour) {
-    return `hace ${Math.floor(diff / hour)} h`;
+    return `Hace ${Math.floor(diff / hour)} h`;
   }
 
   if (diff < month) {
-    return `hace ${Math.floor(diff / week) || 1} sem`;
+    return `Hace ${Math.floor(diff / week) || 1} sem`;
   }
 
   if (diff < year) {
-    return `hace ${Math.floor(diff / month)} m`;
+    return `Hace ${Math.floor(diff / month)} m`;
   }
 
-  return `hace ${Math.floor(diff / year)} a`;
+  return `Hace ${Math.floor(diff / year)} a`;
+}
+
+function getNotificationTone(notification: NotificationItem) {
+  const text = `${notification.title} ${notification.message} ${notification.category}`.toLowerCase();
+
+  if (text.includes("referido")) {
+    return "purple";
+  }
+
+  if (text.includes("bono") || text.includes("nivel")) {
+    return "blue";
+  }
+
+  if (text.includes("retiro") || text.includes("wallet") || text.includes("pago")) {
+    return "yellow";
+  }
+
+  return "green";
+}
+
+function NotificationGlyph({ notification }: { notification: NotificationItem }) {
+  const tone = getNotificationTone(notification);
+
+  if (tone === "purple") {
+    return (
+      <svg viewBox="0 0 24 24">
+        <path d="M15 19a6 6 0 0 0-12 0" />
+        <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+        <path d="M19 8v6" />
+        <path d="M16 11h6" />
+      </svg>
+    );
+  }
+
+  if (tone === "blue") {
+    return (
+      <svg viewBox="0 0 24 24">
+        <path d="M20 12v8H4v-8" />
+        <path d="M22 7H2v5h20V7Z" />
+        <path d="M12 7v13" />
+        <path d="M12 7H7.5A2.5 2.5 0 1 1 10 4.5C10 6 12 7 12 7Z" />
+        <path d="M12 7h4.5A2.5 2.5 0 1 0 14 4.5C14 6 12 7 12 7Z" />
+      </svg>
+    );
+  }
+
+  if (tone === "yellow") {
+    return (
+      <svg viewBox="0 0 24 24">
+        <path d="M4 7h16v12H4z" />
+        <path d="M4 10h16" />
+        <path d="M16 15h2" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24">
+      <path d="M4 7h16v12H4z" />
+      <path d="M4 7l3-3h13v3" />
+      <path d="M16 14h3v3h-3z" />
+    </svg>
+  );
 }
