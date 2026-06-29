@@ -1868,14 +1868,9 @@ async function assertInvestmentAmountAllowed(email: string, amount: number) {
 }
 
 async function assertIdentityVerifiedForInvestment(email: string) {
-  const investor = await prisma.investor.findUnique({
-    select: {
-      identityVerification: {
-        select: {
-          selfieStatus: true,
-          status: true
-        }
-      }
+  const investor = await prisma.investor.findFirst({
+    include: {
+      identityVerification: true
     },
     where: { email }
   });
