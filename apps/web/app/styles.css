@@ -2323,6 +2323,7 @@ a {
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 
 .notificationButton {
@@ -2376,19 +2377,21 @@ a {
 }
 
 .notificationsMenu {
-  position: relative;
+  position: static;
 }
 
 .notificationsPanel {
-  position: fixed;
-  top: 112px;
-  left: 50%;
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  left: auto;
   z-index: 80;
   width: min(880px, calc(100vw - 44px));
   max-height: min(700px, calc(100vh - 136px));
   display: grid;
   gap: 24px;
   overflow: hidden;
+  overflow-x: hidden;
   border: 1px solid rgba(53, 224, 161, 0.2);
   border-radius: 30px;
   background:
@@ -2402,7 +2405,7 @@ a {
     inset 0 0 0 1px rgba(255, 255, 255, 0.02);
   overscroll-behavior: contain;
   padding: 30px 34px;
-  transform: translateX(-50%);
+  transform: none;
 }
 
 .notificationsPanelHeader {
@@ -2473,13 +2476,17 @@ a {
   display: grid;
   gap: 12px;
   max-height: 505px;
+  min-width: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
   padding-right: 2px;
 }
 
 .notificationCard {
   --notification-drag-x: 0px;
+  box-sizing: border-box;
+  max-width: 100%;
   width: 100%;
   display: grid;
   grid-template-columns: 18px 78px minmax(0, 1fr) auto 72px;
@@ -8734,15 +8741,17 @@ a {
   }
 
   .notificationsPanel {
-    position: fixed;
-    top: calc(env(safe-area-inset-top) + 70px);
-    right: 18px;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
     bottom: auto;
-    left: 18px;
-    width: auto;
+    left: auto;
+    width: min(420px, calc(100vw - 36px));
     max-height: min(56vh, 420px);
     border-radius: 20px;
     gap: 10px;
+    overflow: hidden;
+    overflow-x: hidden;
     padding: 14px;
     transform: none;
   }
@@ -8755,6 +8764,8 @@ a {
   .notificationsList {
     gap: 9px;
     max-height: min(42vh, 330px);
+    overflow-x: hidden;
+    overscroll-behavior: contain;
     padding-right: 0;
   }
 
@@ -8786,14 +8797,15 @@ a {
       ". icon time";
     column-gap: 9px;
     row-gap: 4px;
+    max-width: 100%;
     min-height: 0;
     padding: 10px;
     border-radius: 16px;
+    transform: none !important;
   }
 
   .notificationCard::after {
-    inset: 6px 6px 6px auto;
-    min-width: 62px;
+    display: none;
   }
 
   .notificationUnreadDot {
@@ -8822,6 +8834,7 @@ a {
   }
 
   .notificationBody strong {
+    display: block !important;
     font-size: 12px;
     line-height: 1.18;
     overflow-wrap: anywhere;

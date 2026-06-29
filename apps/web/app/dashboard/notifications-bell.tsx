@@ -38,6 +38,10 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
   const cardTouchStartRef = useRef<{ id: string; x: number; y: number } | null>(null);
   const ignoredClickRef = useRef<string | null>(null);
 
+  function canUseSwipeDelete() {
+    return typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches;
+  }
+
   useEffect(() => {
     void loadNotifications();
   }, [userEmail]);
@@ -243,6 +247,16 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                       openNotification(notification);
                     }}
                     onTouchEnd={(event) => {
+                      if (!canUseSwipeDelete()) {
+                        cardTouchStartRef.current = null;
+                        setDragOffsets((current) => {
+                          const next = { ...current };
+                          delete next[notification.id];
+                          return next;
+                        });
+                        return;
+                      }
+
                       const start = cardTouchStartRef.current;
                       const touch = event.changedTouches[0];
 
@@ -271,6 +285,10 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
                       });
                     }}
                     onTouchMove={(event) => {
+                      if (!canUseSwipeDelete()) {
+                        return;
+                      }
+
                       const start = cardTouchStartRef.current;
                       const touch = event.touches[0];
 
