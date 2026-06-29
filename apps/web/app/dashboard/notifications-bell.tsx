@@ -38,10 +38,6 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
   const cardTouchStartRef = useRef<{ id: string; x: number; y: number } | null>(null);
   const ignoredClickRef = useRef<string | null>(null);
 
-  function canUseSwipeDelete() {
-    return typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches;
-  }
-
   useEffect(() => {
     void loadNotifications();
   }, [userEmail]);
@@ -231,120 +227,124 @@ export function NotificationsBell({ userEmail }: NotificationsBellProps) {
             {!isLoading && notifications.length === 0 ? <p className="notificationsEmpty">Sin notificaciones recientes.</p> : null}
             {!isLoading
               ? notifications.map((notification) => (
-                  <button
+                  <div
                     className={[
-                      notification.isRead ? "notificationCard" : "notificationCard unread",
+                      "notificationSwipeRow",
                       dragOffsets[notification.id] ? "dragging" : "",
                       deletingNotificationIds.includes(notification.id) ? "removing" : ""
                     ].filter(Boolean).join(" ")}
                     key={notification.id}
-                    onClick={() => {
-                      if (ignoredClickRef.current === notification.id) {
-                        ignoredClickRef.current = null;
-                        return;
-                      }
-
-                      openNotification(notification);
-                    }}
-                    onTouchEnd={(event) => {
-                      if (!canUseSwipeDelete()) {
-                        cardTouchStartRef.current = null;
-                        setDragOffsets((current) => {
-                          const next = { ...current };
-                          delete next[notification.id];
-                          return next;
-                        });
-                        return;
-                      }
-
-                      const start = cardTouchStartRef.current;
-                      const touch = event.changedTouches[0];
-
-                      if (!start || !touch || start.id !== notification.id) {
-                        return;
-                      }
-
-                      cardTouchStartRef.current = null;
-                      const deltaX = touch.clientX - start.x;
-                      const deltaY = touch.clientY - start.y;
-                      const cardWidth = event.currentTarget.getBoundingClientRect().width;
-                      const deleteThreshold = Math.max(260, cardWidth * 0.84);
-
-                      if (deltaX <= -deleteThreshold && Math.abs(deltaY) < 30) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        ignoredClickRef.current = notification.id;
-                        void deleteNotification(notification);
-                        return;
-                      }
-
-                      setDragOffsets((current) => {
-                        const next = { ...current };
-                        delete next[notification.id];
-                        return next;
-                      });
-                    }}
-                    onTouchMove={(event) => {
-                      if (!canUseSwipeDelete()) {
-                        return;
-                      }
-
-                      const start = cardTouchStartRef.current;
-                      const touch = event.touches[0];
-
-                      if (!start || !touch || start.id !== notification.id) {
-                        return;
-                      }
-
-                      const deltaX = touch.clientX - start.x;
-                      const deltaY = touch.clientY - start.y;
-                      const cardWidth = event.currentTarget.getBoundingClientRect().width;
-
-                      if (deltaX < -24 && Math.abs(deltaX) > Math.abs(deltaY) * 1.45) {
-                        event.preventDefault();
-                        setDragOffsets((current) => ({
-                          ...current,
-                          [notification.id]: Math.max(deltaX, -(cardWidth - 48))
-                        }));
-                      }
-                    }}
-                    onTouchStart={(event) => {
-                      const touch = event.touches[0];
-
-                      if (touch) {
-                        cardTouchStartRef.current = {
-                          id: notification.id,
-                          x: touch.clientX,
-                          y: touch.clientY
-                        };
-                        setDragOffsets((current) => {
-                          const next = { ...current };
-                          delete next[notification.id];
-                          return next;
-                        });
-                      }
-                    }}
-                    style={{ "--notification-drag-x": `${dragOffsets[notification.id] ?? 0}px` } as CSSProperties}
-                    type="button"
                   >
-                    <span className={`notificationUnreadDot ${notification.isRead ? "" : "active"}`} aria-hidden="true" />
-                    <span className={`notificationIcon notificationIcon-${getNotificationTone(notification)}`} aria-hidden="true">
-                      <NotificationGlyph notification={notification} />
+                    <span className="notificationDeleteReveal" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M4 7h16" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                        <path d="M6 7l1 14h10l1-14" />
+                        <path d="M9 7V4h6v3" />
+                      </svg>
+                      Eliminar
                     </span>
-                    <span className="notificationBody">
-                      <strong>
-                        {notification.title}
-                        {notification.groupCount > 1 ? <em>{notification.groupCount}</em> : null}
-                      </strong>
-                      <span>{notification.message}</span>
-                    </span>
-                    <span className="notificationTime">{formatRelativeDate(notification.createdAt)}</span>
-                    <span className="notificationDots" aria-hidden="true">
-                      <i />
-                      <i />
-                      <i />
-                    </span>
-                  </button>
+                    <button
+                      className={[
+                        notification.isRead ? "notificationCard" : "notificationCard unread",
+                        dragOffsets[notification.id] ? "dragging" : "",
+                        deletingNotificationIds.includes(notification.id) ? "removing" : ""
+                      ].filter(Boolean).join(" ")}
+                      onClick={() => {
+                        if (ignoredClickRef.current === notification.id) {
+                          ignoredClickRef.current = null;
+                          return;
+                        }
+
+                        openNotification(notification);
+                      }}
+                      onTouchEnd={(event) => {
+                        const start = cardTouchStartRef.current;
+                        const touch = event.changedTouches[0];
+
+                        if (!start || !touch || start.id !== notification.id) {
+                          return;
+                        }
+
+                        cardTouchStartRef.current = null;
+                        const deltaX = touch.clientX - start.x;
+                        const deltaY = touch.clientY - start.y;
+                        const cardWidth = event.currentTarget.getBoundingClientRect().width;
+                        const deleteThreshold = cardWidth * 0.74;
+
+                        if (deltaX <= -deleteThreshold && Math.abs(deltaY) < 34) {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          ignoredClickRef.current = notification.id;
+                          void deleteNotification(notification);
+                          return;
+                        }
+
+                        setDragOffsets((current) => {
+                          const next = { ...current };
+                          delete next[notification.id];
+                          return next;
+                        });
+                      }}
+                      onTouchMove={(event) => {
+                        const start = cardTouchStartRef.current;
+                        const touch = event.touches[0];
+
+                        if (!start || !touch || start.id !== notification.id) {
+                          return;
+                        }
+
+                        const deltaX = touch.clientX - start.x;
+                        const deltaY = touch.clientY - start.y;
+                        const cardWidth = event.currentTarget.getBoundingClientRect().width;
+
+                        if (deltaX < -18 && Math.abs(deltaX) > Math.abs(deltaY) * 1.35) {
+                          event.preventDefault();
+                          setDragOffsets((current) => ({
+                            ...current,
+                            [notification.id]: Math.max(deltaX, -(cardWidth * 0.8))
+                          }));
+                        }
+                      }}
+                      onTouchStart={(event) => {
+                        const touch = event.touches[0];
+
+                        if (touch) {
+                          cardTouchStartRef.current = {
+                            id: notification.id,
+                            x: touch.clientX,
+                            y: touch.clientY
+                          };
+                          setDragOffsets((current) => {
+                            const next = { ...current };
+                            delete next[notification.id];
+                            return next;
+                          });
+                        }
+                      }}
+                      style={{ "--notification-drag-x": `${dragOffsets[notification.id] ?? 0}px` } as CSSProperties}
+                      type="button"
+                    >
+                      <span className={`notificationUnreadDot ${notification.isRead ? "" : "active"}`} aria-hidden="true" />
+                      <span className={`notificationIcon notificationIcon-${getNotificationTone(notification)}`} aria-hidden="true">
+                        <NotificationGlyph notification={notification} />
+                      </span>
+                      <span className="notificationBody">
+                        <strong>
+                          {notification.title}
+                          {notification.groupCount > 1 ? <em>{notification.groupCount}</em> : null}
+                        </strong>
+                        <span>{notification.message}</span>
+                      </span>
+                      <span className="notificationTime">{formatRelativeDate(notification.createdAt)}</span>
+                      <span className="notificationDots" aria-hidden="true">
+                        <i />
+                        <i />
+                        <i />
+                      </span>
+                    </button>
+                  </div>
                 ))
               : null}
           </div>

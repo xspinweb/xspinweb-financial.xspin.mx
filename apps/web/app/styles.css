@@ -2483,6 +2483,56 @@ a {
   padding-right: 2px;
 }
 
+.notificationSwipeRow {
+  border-radius: 18px;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+  position: relative;
+  touch-action: pan-y;
+}
+
+.notificationDeleteReveal {
+  align-items: center;
+  background: linear-gradient(135deg, #ff4e68, #ff334f);
+  border-radius: 18px;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 15px;
+  font-weight: 950;
+  gap: 10px;
+  inset: 0 0 0 auto;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(12px);
+  transition: opacity 160ms ease, transform 160ms ease;
+  width: min(230px, 38%);
+}
+
+.notificationDeleteReveal svg {
+  fill: none;
+  height: 22px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+  width: 22px;
+}
+
+.notificationSwipeRow.dragging .notificationDeleteReveal,
+.notificationSwipeRow.removing .notificationDeleteReveal {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.notificationSwipeRow.removing {
+  opacity: 0;
+  transform: translateX(-12px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
 .notificationCard {
   --notification-drag-x: 0px;
   box-sizing: border-box;
@@ -2500,8 +2550,8 @@ a {
   color: inherit;
   cursor: pointer;
   font: inherit;
-  min-height: 116px;
-  padding: 22px 24px;
+  min-height: 0;
+  padding: 18px 20px;
   position: relative;
   text-align: left;
   transform: translateX(var(--notification-drag-x));
@@ -2564,38 +2614,16 @@ a {
 }
 
 .notificationCard::after {
-  align-items: center;
-  background: linear-gradient(135deg, rgba(255, 95, 129, 0.28), rgba(255, 95, 129, 0.08));
-  border: 1px solid rgba(255, 95, 129, 0.34);
-  border-radius: 14px;
-  color: #ff7191;
-  content: "Eliminar";
-  display: flex;
-  font-size: 10px;
-  font-weight: 900;
-  inset: 8px 8px 8px auto;
-  justify-content: center;
-  min-width: 76px;
-  opacity: 0;
-  padding: 0 12px;
-  pointer-events: none;
-  position: absolute;
-  text-transform: uppercase;
-  transform: translateX(calc(100% + 18px));
+  content: none;
+  display: none;
 }
 
 .notificationCard.dragging {
   transition: border-color 160ms ease, background 160ms ease;
 }
 
-.notificationCard.dragging::after,
-.notificationCard.removing::after {
-  opacity: 1;
-}
-
 .notificationCard.removing {
-  opacity: 0;
-  transform: translateX(-120%);
+  transform: translateX(-100%);
 }
 
 .notificationCard.unread {
@@ -8765,6 +8793,7 @@ a {
     gap: 9px;
     max-height: min(42vh, 330px);
     overflow-x: hidden;
+    overflow-y: auto;
     overscroll-behavior: contain;
     padding-right: 0;
   }
@@ -8789,6 +8818,22 @@ a {
     width: 10px;
   }
 
+  .notificationSwipeRow {
+    border-radius: 14px;
+  }
+
+  .notificationDeleteReveal {
+    border-radius: 14px;
+    font-size: 12px;
+    gap: 6px;
+    width: 38%;
+  }
+
+  .notificationDeleteReveal svg {
+    height: 16px;
+    width: 16px;
+  }
+
   .notificationCard {
     align-items: center;
     grid-template-columns: 6px 36px minmax(0, 1fr);
@@ -8801,7 +8846,7 @@ a {
     min-height: 0;
     padding: 10px;
     border-radius: 16px;
-    transform: none !important;
+    transform: translateX(var(--notification-drag-x)) !important;
   }
 
   .notificationCard::after {
@@ -8841,13 +8886,11 @@ a {
   }
 
   .notificationBody > span {
-    display: -webkit-box;
+    display: block;
     font-size: 10.5px !important;
     line-height: 1.28;
-    overflow: hidden;
+    overflow: visible;
     overflow-wrap: anywhere;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
   }
 
   .notificationTime {
