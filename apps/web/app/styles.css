@@ -2739,9 +2739,9 @@ a {
 
 .userMenu {
   position: relative;
-  display: grid;
-  justify-items: center;
-  gap: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .userMenuTrigger {
@@ -2823,6 +2823,9 @@ a {
 }
 
 .installAppButton {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
   min-width: 118px;
   height: 30px;
   display: inline-flex;
@@ -2890,6 +2893,10 @@ a {
     0 0 22px rgba(185, 46, 245, 0.25),
     inset 0 0 14px rgba(25, 225, 246, 0.18);
   transform: translateY(-1px);
+}
+
+.userMenu:has(.installAppButton) .userDropdown {
+  top: calc(100% + 48px);
 }
 
 .installHelpBackdrop {
@@ -8800,11 +8807,11 @@ a {
   }
 
   .userMenu {
-    gap: 8px;
     justify-content: flex-start;
   }
 
   .installAppButton {
+    right: 0;
     min-width: 104px;
     height: 28px;
     gap: 6px;
@@ -8925,6 +8932,13 @@ a {
   .notificationButton {
     height: 34px;
     width: 34px;
+  }
+
+  .installAppButton {
+    top: calc(100% + 8px);
+    min-width: 100px;
+    height: 27px;
+    font-size: 9px;
   }
 
   .notificationButton svg {

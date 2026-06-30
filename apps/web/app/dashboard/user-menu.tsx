@@ -33,7 +33,8 @@ export function UserMenu({ avatar, userName }: UserMenuProps) {
       return;
     }
 
-    setCanInstall(true);
+    const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    setCanInstall(isIos);
 
     function handleBeforeInstallPrompt(event: Event) {
       event.preventDefault();
@@ -125,7 +126,7 @@ export function UserMenu({ avatar, userName }: UserMenuProps) {
             <path d="M5 17a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z" />
           </svg>
           <span>Instalar <em>App</em></span>
-          <i aria-hidden="true">›</i>
+          <i aria-hidden="true">&gt;</i>
         </button>
       ) : null}
 
@@ -141,7 +142,7 @@ export function UserMenu({ avatar, userName }: UserMenuProps) {
         <div className="installHelpBackdrop" role="presentation">
           <section className="installHelpSheet" role="dialog" aria-modal="true" aria-labelledby="install-help-title">
             <button className="installHelpClose" type="button" aria-label="Cerrar" onClick={() => setShowInstallHelp(false)}>
-              ×
+              x
             </button>
             <strong id="install-help-title">Instalar XSpin</strong>
             <p>En iPhone toca Compartir y despues Agregar a inicio.</p>
