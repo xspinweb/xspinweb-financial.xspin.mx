@@ -13,11 +13,149 @@ type UserMenuProps = {
   userName: string;
 };
 
+type InstallPlatform = "ios" | "android";
+type InstallStepIcon = "menu" | "download" | "logo" | "phone" | "share" | "plus";
+
+type InstallStep = {
+  number: string;
+  icon: InstallStepIcon;
+  lines: Array<{ text: string; highlight?: boolean }>;
+};
+
+const androidInstallSteps: InstallStep[] = [
+  {
+    number: "1",
+    icon: "menu",
+    lines: [
+      { text: "Toca el menu" },
+      { text: "( : )", highlight: true },
+    ],
+  },
+  {
+    number: "2",
+    icon: "download",
+    lines: [
+      { text: "Selecciona" },
+      { text: "Instalar app", highlight: true },
+    ],
+  },
+  {
+    number: "3",
+    icon: "logo",
+    lines: [
+      { text: "Toca" },
+      { text: "Instalar", highlight: true },
+    ],
+  },
+  {
+    number: "4",
+    icon: "phone",
+    lines: [
+      { text: "Listo! XSpin ya esta" },
+      { text: "en tu pantalla de inicio." },
+    ],
+  },
+];
+
+const iosInstallSteps: InstallStep[] = [
+  {
+    number: "1",
+    icon: "share",
+    lines: [
+      { text: "Toca el boton" },
+      { text: "Compartir", highlight: true },
+    ],
+  },
+  {
+    number: "2",
+    icon: "plus",
+    lines: [
+      { text: "Selecciona" },
+      { text: "Agregar a inicio", highlight: true },
+    ],
+  },
+  {
+    number: "3",
+    icon: "logo",
+    lines: [
+      { text: "Toca" },
+      { text: "Agregar", highlight: true },
+    ],
+  },
+  {
+    number: "4",
+    icon: "phone",
+    lines: [
+      { text: "Listo! XSpin ya esta" },
+      { text: "en tu pantalla de inicio." },
+    ],
+  },
+];
+
+function getInstallPlatform(): InstallPlatform {
+  if (typeof window === "undefined") {
+    return "android";
+  }
+
+  return /iphone|ipad|ipod/i.test(window.navigator.userAgent) ? "ios" : "android";
+}
+
+function InstallGuideIcon({ type }: { type: InstallStepIcon }) {
+  if (type === "logo") {
+    return <img className="installStepLogoImage" src="/logos/xspin-icon-192.png" alt="" />;
+  }
+
+  if (type === "phone") {
+    return (
+      <span className="installStepPhone" aria-hidden="true">
+        <span />
+        <img src="/logos/xspin-icon-192.png" alt="" />
+      </span>
+    );
+  }
+
+  if (type === "menu") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 7.3h.01M12 12h.01M12 16.7h.01" />
+      </svg>
+    );
+  }
+
+  if (type === "download") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 4v11" />
+        <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
+        <path d="M5 18.5h14" />
+      </svg>
+    );
+  }
+
+  if (type === "share") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 15V4" />
+        <path d="m8.5 7.5 3.5-3.5 3.5 3.5" />
+        <path d="M7 10H5.8A1.8 1.8 0 0 0 4 11.8v6.4A1.8 1.8 0 0 0 5.8 20h12.4a1.8 1.8 0 0 0 1.8-1.8v-6.4a1.8 1.8 0 0 0-1.8-1.8H17" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
 export function UserMenu({ avatar, userName }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [canInstall, setCanInstall] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
+  const [installHelpPlatform, setInstallHelpPlatform] = useState<InstallPlatform>("android");
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,8 +171,8 @@ export function UserMenu({ avatar, userName }: UserMenuProps) {
       return;
     }
 
-    const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-    setCanInstall(isIos);
+    setInstallHelpPlatform(getInstallPlatform());
+    setCanInstall(true);
 
     function handleBeforeInstallPrompt(event: Event) {
       event.preventDefault();
@@ -84,6 +222,8 @@ export function UserMenu({ avatar, userName }: UserMenuProps) {
   }, [isOpen]);
 
   async function handleInstallApp() {
+    setInstallHelpPlatform(getInstallPlatform());
+
     if (installPrompt) {
       await installPrompt.prompt();
       const choice = await installPrompt.userChoice.catch(() => null);
@@ -98,6 +238,8 @@ export function UserMenu({ avatar, userName }: UserMenuProps) {
 
     setShowInstallHelp(true);
   }
+
+  const installSteps = installHelpPlatform === "ios" ? iosInstallSteps : androidInstallSteps;
 
   return (
     <div className="userMenu" ref={menuRef}>
@@ -140,13 +282,31 @@ export function UserMenu({ avatar, userName }: UserMenuProps) {
 
       {showInstallHelp ? (
         <div className="installHelpBackdrop" role="presentation">
-          <section className="installHelpSheet" role="dialog" aria-modal="true" aria-labelledby="install-help-title">
+          <section className="installHelpSheet installHelpGuide" role="dialog" aria-modal="true" aria-labelledby="install-help-title">
             <button className="installHelpClose" type="button" aria-label="Cerrar" onClick={() => setShowInstallHelp(false)}>
               x
             </button>
-            <strong id="install-help-title">Instalar XSpin</strong>
-            <p>En iPhone toca Compartir y despues Agregar a inicio.</p>
-            <p>En Android abre el menu del navegador y toca Instalar app.</p>
+            <img className="installHelpLogo" src="/logos/xspin-logo-full.png" alt="XSpin" />
+            <strong id="install-help-title" className="installHelpTitle">
+              Instala <span>XSpin</span>
+            </strong>
+            <div className="installSteps" aria-label={installHelpPlatform === "ios" ? "Pasos para instalar en iOS" : "Pasos para instalar en Android"}>
+              {installSteps.map((step) => (
+                <article className="installStep" key={`${installHelpPlatform}-${step.number}`}>
+                  <span className="installStepNumber">{step.number}</span>
+                  <span className="installStepIcon">
+                    <InstallGuideIcon type={step.icon} />
+                  </span>
+                  <p className="installStepText">
+                    {step.lines.map((line) => (
+                      <span className={line.highlight ? "highlight" : undefined} key={line.text}>
+                        {line.text}
+                      </span>
+                    ))}
+                  </p>
+                </article>
+              ))}
+            </div>
           </section>
         </div>
       ) : null}

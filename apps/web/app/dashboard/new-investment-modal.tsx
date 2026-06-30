@@ -20,6 +20,7 @@ export function NewInvestmentModal({ identityRequirementMessage, identityStatus,
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [isMounted, setIsMounted] = useState(false);
+  const [showIdentityNote, setShowIdentityNote] = useState(false);
 
   const effectiveMaxInvestment = Math.max(minInvestment, maxInvestment);
   const amountProgress = useMemo(
@@ -69,9 +70,11 @@ export function NewInvestmentModal({ identityRequirementMessage, identityStatus,
 
   function openModal() {
     if (!isIdentityVerified) {
+      setShowIdentityNote(true);
       return;
     }
 
+    setShowIdentityNote(false);
     setAmount((current) => Math.min(Math.max(current, minInvestment), effectiveMaxInvestment));
     setIsOpen(true);
   }
@@ -177,12 +180,24 @@ export function NewInvestmentModal({ identityRequirementMessage, identityStatus,
         >
           <InvestIcon />
           <span>Nueva inversion</span>
-          {!isIdentityVerified ? (
-            <b className="identityRequiredMark" aria-label={identityTooltip}>
-              !
-            </b>
-          ) : null}
         </button>
+        {!isIdentityVerified ? (
+          <>
+            <button
+              aria-label={identityTooltip}
+              className="identityRequiredMark"
+              onClick={() => setShowIdentityNote((current) => !current)}
+              type="button"
+            >
+              !
+            </button>
+            {showIdentityNote ? (
+              <span className="identityRequirementNote" role="note">
+                {identityTooltip}
+              </span>
+            ) : null}
+          </>
+        ) : null}
       </span>
 
       {isMounted && modal ? createPortal(modal, document.body) : null}
