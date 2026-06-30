@@ -166,22 +166,24 @@ export function NewInvestmentModal({ identityRequirementMessage, identityStatus,
 
   return (
     <>
-      <button
-        className="headerIconAction"
-        disabled={!isIdentityVerified}
-        type="button"
-        aria-label="Nueva inversion"
-        title={isIdentityVerified ? "Nueva inversion" : identityTooltip}
-        onClick={openModal}
-      >
-        <InvestIcon />
-        <span>Nueva inversion</span>
-        {!isIdentityVerified ? (
-          <b className="identityRequiredMark" title={identityTooltip} aria-label={identityTooltip}>
-            !
-          </b>
-        ) : null}
-      </button>
+      <span className="newInvestmentGate" data-state={identityStatus} title={isIdentityVerified ? "Nueva inversion" : identityTooltip}>
+        <button
+          aria-disabled={!isIdentityVerified}
+          aria-label="Nueva inversion"
+          className="headerIconAction"
+          disabled={!isIdentityVerified}
+          onClick={openModal}
+          type="button"
+        >
+          <InvestIcon />
+          <span>Nueva inversion</span>
+          {!isIdentityVerified ? (
+            <b className="identityRequiredMark" aria-label={identityTooltip}>
+              !
+            </b>
+          ) : null}
+        </button>
+      </span>
 
       {isMounted && modal ? createPortal(modal, document.body) : null}
     </>
