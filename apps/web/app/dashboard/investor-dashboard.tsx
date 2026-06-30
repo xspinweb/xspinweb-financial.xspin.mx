@@ -73,6 +73,8 @@ type IdentityVerificationResponse = {
   status: "PENDING" | "SUBMITTED" | "VERIFIED" | "REJECTED";
 };
 
+type IdentityGateStatus = "loading" | "verified" | "blocked";
+
 type InvestorLevel = {
   current: {
     key: LevelKey;
@@ -103,7 +105,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [investorCode, setInvestorCode] = useState("");
   const [investorLevel, setInvestorLevel] = useState<InvestorLevel | null>(null);
-  const [isIdentityVerified, setIsIdentityVerified] = useState(false);
+  const [identityGateStatus, setIdentityGateStatus] = useState<IdentityGateStatus>("loading");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedInvestmentId, setSelectedInvestmentId] = useState("");
 
@@ -148,7 +150,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
 
   async function loadIdentityVerification() {
     if (!userEmail) {
-      setIsIdentityVerified(false);
+      setIdentityGateStatus("blocked");
       return;
     }
 
@@ -156,10 +158,13 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
       const response = await fetch(`/api/investor/identity?email=${encodeURIComponent(userEmail)}`, {
         cache: "no-store"
       });
+      if (!response.ok) {
+        throw new Error("No se pudo consultar la verificacion de identidad.");
+      }
       const identity = (await response.json()) as IdentityVerificationResponse;
-      setIsIdentityVerified(identity.status === "VERIFIED" && identity.selfieStatus === "VERIFIED");
+      setIdentityGateStatus(identity.status === "VERIFIED" && identity.selfieStatus === "VERIFIED" ? "verified" : "blocked");
     } catch {
-      setIsIdentityVerified(false);
+      setIdentityGateStatus((current) => current === "verified" ? current : "blocked");
     }
   }
 
@@ -301,7 +306,7 @@ export function InvestorDashboard({ userEmail, userName }: InvestorDashboardProp
           <h2>Mis grupos de inversion</h2>
           <NewInvestmentModal
             identityRequirementMessage="Para invertir debes tener verificada tu identificacion oficial y selfie."
-            isIdentityVerified={isIdentityVerified}
+            identityStatus={identityGateStatus}
             maxInvestment={maxInvestmentByLevel}
             onInvestmentCreated={handleInvestmentCreated}
           />

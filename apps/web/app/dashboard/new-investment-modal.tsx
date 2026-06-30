@@ -8,12 +8,12 @@ const investmentStep = 10;
 
 type NewInvestmentModalProps = {
   identityRequirementMessage?: string;
-  isIdentityVerified: boolean;
+  identityStatus: "loading" | "verified" | "blocked";
   maxInvestment: number;
   onInvestmentCreated: (amount: number) => Promise<void>;
 };
 
-export function NewInvestmentModal({ identityRequirementMessage, isIdentityVerified, maxInvestment, onInvestmentCreated }: NewInvestmentModalProps) {
+export function NewInvestmentModal({ identityRequirementMessage, identityStatus, maxInvestment, onInvestmentCreated }: NewInvestmentModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState(minInvestment);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -28,6 +28,11 @@ export function NewInvestmentModal({ identityRequirementMessage, isIdentityVerif
   );
   const hasValidAmount = amount >= minInvestment && amount <= effectiveMaxInvestment;
   const showAmountError = !hasValidAmount;
+  const isIdentityVerified = identityStatus === "verified";
+  const isIdentityLoading = identityStatus === "loading";
+  const identityTooltip = isIdentityLoading
+    ? "Estamos validando tu identidad."
+    : identityRequirementMessage ?? "Primero debes verificar tu identidad.";
   const canSubmit = isIdentityVerified && hasValidAmount && acceptedTerms && !isSubmitting;
 
   useEffect(() => {
@@ -63,6 +68,10 @@ export function NewInvestmentModal({ identityRequirementMessage, isIdentityVerif
   }, [isOpen]);
 
   function openModal() {
+    if (!isIdentityVerified) {
+      return;
+    }
+
     setAmount((current) => Math.min(Math.max(current, minInvestment), effectiveMaxInvestment));
     setIsOpen(true);
   }
@@ -133,7 +142,7 @@ export function NewInvestmentModal({ identityRequirementMessage, isIdentityVerif
 
               {showAmountError ? <p className="formError">Monto permitido: de $20 a {formatMoney(effectiveMaxInvestment)} MXN.</p> : null}
               {!isIdentityVerified ? (
-                <p className="formError">{identityRequirementMessage ?? "Verifica tu identificacion oficial y selfie antes de invertir."}</p>
+                <p className="formError">{identityTooltip}</p>
               ) : null}
               {submitError ? <p className="formError">{submitError}</p> : null}
 
@@ -159,13 +168,19 @@ export function NewInvestmentModal({ identityRequirementMessage, isIdentityVerif
     <>
       <button
         className="headerIconAction"
+        disabled={!isIdentityVerified}
         type="button"
         aria-label="Nueva inversion"
-        title={isIdentityVerified ? "Nueva inversion" : identityRequirementMessage ?? "Verifica tu identidad para invertir"}
+        title={isIdentityVerified ? "Nueva inversion" : identityTooltip}
         onClick={openModal}
       >
         <InvestIcon />
         <span>Nueva inversion</span>
+        {!isIdentityVerified ? (
+          <b className="identityRequiredMark" title={identityTooltip} aria-label={identityTooltip}>
+            !
+          </b>
+        ) : null}
       </button>
 
       {isMounted && modal ? createPortal(modal, document.body) : null}

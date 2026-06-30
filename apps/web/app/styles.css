@@ -2738,6 +2738,9 @@ a {
 
 .userMenu {
   position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
 }
 
 .userMenuTrigger {
@@ -2816,6 +2819,130 @@ a {
 .userDropdown button:hover {
   background: rgba(53, 224, 161, 0.12);
   color: var(--green);
+}
+
+.installAppButton {
+  min-width: 118px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid rgba(33, 229, 255, 0.88);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(2, 178, 205, 0.28), rgba(8, 16, 27, 0.92) 42%, rgba(165, 36, 202, 0.32)),
+    rgba(5, 12, 22, 0.9);
+  box-shadow:
+    0 0 18px rgba(28, 215, 238, 0.32),
+    0 0 16px rgba(185, 46, 245, 0.18),
+    inset 0 0 12px rgba(25, 225, 246, 0.14);
+  color: #f4fbff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0;
+  padding: 0 9px;
+  white-space: nowrap;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.installAppButton svg {
+  width: 16px;
+  height: 16px;
+  color: #1ee7ff;
+  fill: currentColor;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 0 7px rgba(30, 231, 255, 0.55));
+}
+
+.installAppButton span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  line-height: 1;
+  padding-left: 8px;
+}
+
+.installAppButton em {
+  background: linear-gradient(90deg, #21d9ff, #e54cff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-style: normal;
+}
+
+.installAppButton i {
+  color: #f05cff;
+  font-size: 20px;
+  font-style: normal;
+  line-height: 1;
+}
+
+.installAppButton:hover {
+  border-color: rgba(228, 76, 255, 0.9);
+  box-shadow:
+    0 0 22px rgba(28, 215, 238, 0.38),
+    0 0 22px rgba(185, 46, 245, 0.25),
+    inset 0 0 14px rgba(25, 225, 246, 0.18);
+  transform: translateY(-1px);
+}
+
+.installHelpBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: end center;
+  background: rgba(1, 6, 12, 0.56);
+  padding: 18px;
+}
+
+.installHelpSheet {
+  width: min(420px, 100%);
+  position: relative;
+  border: 1px solid rgba(53, 224, 161, 0.22);
+  border-radius: 20px;
+  background:
+    linear-gradient(150deg, rgba(9, 23, 35, 0.98), rgba(6, 13, 24, 0.96)),
+    rgba(6, 13, 24, 0.94);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.58), 0 0 28px rgba(53, 224, 161, 0.13);
+  color: var(--ink);
+  padding: 20px;
+}
+
+.installHelpSheet strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 950;
+  margin-bottom: 10px;
+}
+
+.installHelpSheet p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 7px 34px 0 0;
+}
+
+.installHelpClose {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .roleBadge {
@@ -3481,10 +3608,35 @@ a {
   transform: translateY(-1px);
 }
 
+.headerIconAction:disabled {
+  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 35, 0.62);
+  box-shadow: none;
+  color: rgba(174, 190, 211, 0.72);
+  cursor: not-allowed;
+  transform: none;
+}
+
 .headerIconAction svg {
   width: 24px;
   height: 24px;
   fill: currentColor;
+}
+
+.identityRequiredMark {
+  align-items: center;
+  background: rgba(255, 203, 74, 0.14);
+  border: 1px solid rgba(255, 203, 74, 0.58);
+  border-radius: 999px;
+  color: #ffcb4a;
+  display: inline-flex;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 950;
+  height: 18px;
+  justify-content: center;
+  line-height: 1;
+  width: 18px;
 }
 
 .modalOverlay {
@@ -8649,6 +8801,23 @@ a {
   .userMenu {
     gap: 8px;
     justify-content: flex-start;
+  }
+
+  .installAppButton {
+    min-width: 104px;
+    height: 28px;
+    gap: 6px;
+    font-size: 10px;
+    padding: 0 8px;
+  }
+
+  .installAppButton svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .installAppButton span {
+    padding-left: 7px;
   }
 
   .userMenuTrigger strong {
