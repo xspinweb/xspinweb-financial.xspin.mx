@@ -9006,100 +9006,111 @@ a {
   }
 
   .installHelpBackdrop {
-    place-items: center;
-    padding: 12px;
+    align-items: center;
+    justify-items: center;
+    padding: 14px 10px calc(var(--bottom-nav-height, 98px) + 14px);
   }
 
   .installHelpSheet {
-    width: min(356px, calc(100vw - 24px));
-    max-height: calc(100dvh - 112px);
-    overflow-y: auto;
-    border-radius: 24px;
-    padding: 18px 16px 20px;
+    width: min(392px, calc(100vw - 20px));
+    max-height: calc(100dvh - var(--bottom-nav-height, 98px) - 28px);
+    overflow: hidden;
+    border-radius: 22px;
+    padding: 16px 14px 18px;
   }
 
   .installHelpClose {
-    top: 12px;
-    right: 12px;
-    width: 32px;
-    height: 32px;
-    font-size: 18px;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    font-size: 17px;
   }
 
   .installHelpLogo {
-    width: 104px;
-    margin-bottom: 8px;
+    width: 118px;
+    margin-bottom: 7px;
   }
 
   .installHelpTitle {
-    font-size: 30px;
+    font-size: 28px;
+    white-space: nowrap;
   }
 
   .installSteps {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 10px;
-    margin-top: 16px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 15px;
   }
 
   .installStep {
+    align-content: start;
     justify-items: center;
     min-height: 0;
-    padding: 0;
+    padding: 10px 4px 8px;
+    border: 1px solid rgba(165, 191, 224, 0.12);
+    border-radius: 16px;
+    background: rgba(8, 18, 32, 0.46);
     text-align: center;
   }
 
   .installStep:not(:last-child)::after {
-    display: none;
+    display: block;
+    top: 32px;
+    right: -8px;
+    z-index: 2;
+    font-size: 20px;
+    color: rgba(194, 207, 228, 0.62);
   }
 
   .installStepNumber {
-    top: -8px;
-    left: calc(50% - 38px);
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
+    top: -7px;
+    left: 7px;
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
   }
 
   .installStepIcon {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
   }
 
   .installStepIcon svg {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
   }
 
   .installStepLogoImage {
-    width: 33px;
-    height: 33px;
-    border-radius: 8px;
+    width: 27px;
+    height: 27px;
+    border-radius: 7px;
   }
 
   .installStepPhone {
-    width: 30px;
-    height: 48px;
-    border-radius: 10px;
+    width: 25px;
+    height: 40px;
+    border-radius: 9px;
   }
 
   .installStepPhone span {
-    top: 4px;
-    width: 10px;
+    top: 3px;
+    width: 8px;
     height: 2px;
   }
 
   .installStepPhone img {
-    width: 19px;
-    height: 19px;
-    border-radius: 5px;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
   }
 
   .installStepText {
-    min-height: 34px;
-    margin: 10px 0 0;
-    font-size: 12px;
-    line-height: 1.22;
+    min-height: 38px;
+    margin: 8px 0 0;
+    font-size: 9.8px;
+    line-height: 1.14;
   }
 
   .userMenuTrigger strong {
