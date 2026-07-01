@@ -3110,13 +3110,14 @@ a {
 }
 
 .installHelpImageSheet {
-  width: min(1060px, calc(100vw - 32px));
-  max-height: calc(100dvh - 42px);
+  width: min(798px, calc(100vw - 28px));
+  max-height: calc(100dvh - 28px);
   padding: 0;
   overflow: visible;
   border: 0;
   background: transparent;
   box-shadow: none;
+  border-radius: 0;
 }
 
 .installHelpImageSheet::before {
@@ -3127,18 +3128,10 @@ a {
   display: block;
   width: 100%;
   height: auto;
-  max-height: calc(100dvh - 42px);
+  max-height: calc(100dvh - 28px);
   object-fit: contain;
-  border-radius: 24px;
-  box-shadow:
-    0 26px 90px rgba(0, 0, 0, 0.48),
-    0 0 36px rgba(35, 224, 255, 0.16);
-}
-
-.installHelpImageSheet .installHelpClose {
-  top: 18px;
-  right: 18px;
-  z-index: 2;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .roleBadge {
@@ -9146,26 +9139,19 @@ a {
   }
 
   .installHelpImageSheet {
-    width: min(390px, calc(100vw - 18px));
+    width: min(798px, calc(100vw - 18px));
     max-height: calc(100dvh - var(--bottom-nav-height, 98px) - 24px);
     padding: 0;
     overflow: visible;
     border: 0;
     background: transparent;
     box-shadow: none;
+    border-radius: 0;
   }
 
   .installHelpImage {
     max-height: calc(100dvh - var(--bottom-nav-height, 98px) - 24px);
-    border-radius: 20px;
-  }
-
-  .installHelpImageSheet .installHelpClose {
-    top: 8px;
-    right: 8px;
-    width: 30px;
-    height: 30px;
-    font-size: 15px;
+    border-radius: 0;
   }
 
   .userMenuTrigger strong {

@@ -156,11 +156,14 @@ export function UserMenu({ avatar, userName }: UserMenuProps) {
       ) : null}
 
       {showInstallHelp ? (
-        <div className="installHelpBackdrop" role="presentation">
-          <section className="installHelpSheet installHelpGuide installHelpImageSheet" role="dialog" aria-modal="true" aria-label={installGuideLabel}>
-            <button className="installHelpClose" type="button" aria-label="Cerrar" onClick={() => setShowInstallHelp(false)}>
-              x
-            </button>
+        <div className="installHelpBackdrop" role="presentation" onClick={() => setShowInstallHelp(false)}>
+          <section
+            className="installHelpSheet installHelpGuide installHelpImageSheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label={installGuideLabel}
+            onClick={(event) => event.stopPropagation()}
+          >
             <img className="installHelpImage" src={installGuideImage} alt={installGuideLabel} />
           </section>
         </div>
