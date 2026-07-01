@@ -28,7 +28,7 @@ const androidInstallSteps: InstallStep[] = [
     icon: "menu",
     lines: [
       { text: "Toca el menu" },
-      { text: "( : )", highlight: true },
+      { text: "del navegador", highlight: true },
     ],
   },
   {
@@ -117,7 +117,9 @@ function InstallGuideIcon({ type }: { type: InstallStepIcon }) {
   if (type === "menu") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 7.3h.01M12 12h.01M12 16.7h.01" />
+        <circle cx="12" cy="6.8" r="1.45" />
+        <circle cx="12" cy="12" r="1.45" />
+        <circle cx="12" cy="17.2" r="1.45" />
       </svg>
     );
   }
