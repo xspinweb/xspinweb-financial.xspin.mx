@@ -3110,7 +3110,7 @@ a {
 }
 
 .installHelpImageSheet {
-  width: min(798px, calc(100vw - 28px));
+  width: min(1536px, calc(100vw - 28px));
   max-height: calc(100dvh - 28px);
   padding: 0;
   overflow: visible;
@@ -9139,7 +9139,7 @@ a {
   }
 
   .installHelpImageSheet {
-    width: min(798px, calc(100vw - 18px));
+    width: min(1536px, calc(100vw - 18px));
     max-height: calc(100dvh - var(--bottom-nav-height, 98px) - 24px);
     padding: 0;
     overflow: visible;
