@@ -14,83 +14,6 @@ type UserMenuProps = {
 };
 
 type InstallPlatform = "ios" | "android";
-type InstallStepIcon = "menu" | "download" | "logo" | "phone" | "share" | "plus";
-
-type InstallStep = {
-  number: string;
-  icon: InstallStepIcon;
-  lines: Array<{ text: string; highlight?: boolean }>;
-};
-
-const androidInstallSteps: InstallStep[] = [
-  {
-    number: "1",
-    icon: "menu",
-    lines: [
-      { text: "Toca el menu" },
-      { text: "del navegador", highlight: true },
-    ],
-  },
-  {
-    number: "2",
-    icon: "download",
-    lines: [
-      { text: "Selecciona" },
-      { text: "Instalar app", highlight: true },
-    ],
-  },
-  {
-    number: "3",
-    icon: "logo",
-    lines: [
-      { text: "Toca" },
-      { text: "Instalar", highlight: true },
-    ],
-  },
-  {
-    number: "4",
-    icon: "phone",
-    lines: [
-      { text: "Listo! XSpin ya esta" },
-      { text: "en tu pantalla de inicio." },
-    ],
-  },
-];
-
-const iosInstallSteps: InstallStep[] = [
-  {
-    number: "1",
-    icon: "share",
-    lines: [
-      { text: "Toca el boton" },
-      { text: "Compartir", highlight: true },
-    ],
-  },
-  {
-    number: "2",
-    icon: "plus",
-    lines: [
-      { text: "Selecciona" },
-      { text: "Agregar a inicio", highlight: true },
-    ],
-  },
-  {
-    number: "3",
-    icon: "logo",
-    lines: [
-      { text: "Toca" },
-      { text: "Agregar", highlight: true },
-    ],
-  },
-  {
-    number: "4",
-    icon: "phone",
-    lines: [
-      { text: "Listo! XSpin ya esta" },
-      { text: "en tu pantalla de inicio." },
-    ],
-  },
-];
 
 function getInstallPlatform(): InstallPlatform {
   if (typeof window === "undefined") {
@@ -98,58 +21,6 @@ function getInstallPlatform(): InstallPlatform {
   }
 
   return /iphone|ipad|ipod/i.test(window.navigator.userAgent) ? "ios" : "android";
-}
-
-function InstallGuideIcon({ type }: { type: InstallStepIcon }) {
-  if (type === "logo") {
-    return <img className="installStepLogoImage" src="/logos/xspin-icon-192.png" alt="" />;
-  }
-
-  if (type === "phone") {
-    return (
-      <span className="installStepPhone" aria-hidden="true">
-        <span />
-        <img src="/logos/xspin-icon-192.png" alt="" />
-      </span>
-    );
-  }
-
-  if (type === "menu") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="6.8" r="1.45" />
-        <circle cx="12" cy="12" r="1.45" />
-        <circle cx="12" cy="17.2" r="1.45" />
-      </svg>
-    );
-  }
-
-  if (type === "download") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 4v11" />
-        <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
-        <path d="M5 18.5h14" />
-      </svg>
-    );
-  }
-
-  if (type === "share") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 15V4" />
-        <path d="m8.5 7.5 3.5-3.5 3.5 3.5" />
-        <path d="M7 10H5.8A1.8 1.8 0 0 0 4 11.8v6.4A1.8 1.8 0 0 0 5.8 20h12.4a1.8 1.8 0 0 0 1.8-1.8v-6.4a1.8 1.8 0 0 0-1.8-1.8H17" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
-    </svg>
-  );
 }
 
 export function UserMenu({ avatar, userName }: UserMenuProps) {
@@ -241,7 +112,9 @@ export function UserMenu({ avatar, userName }: UserMenuProps) {
     setShowInstallHelp(true);
   }
 
-  const installSteps = installHelpPlatform === "ios" ? iosInstallSteps : androidInstallSteps;
+  const installGuideImage = installHelpPlatform === "ios" ? "/install/ios.png" : "/install/android.png";
+  const installGuideLabel =
+    installHelpPlatform === "ios" ? "Instrucciones para instalar XSpin en iOS" : "Instrucciones para instalar XSpin en Android";
 
   return (
     <div className="userMenu" ref={menuRef}>
@@ -284,31 +157,11 @@ export function UserMenu({ avatar, userName }: UserMenuProps) {
 
       {showInstallHelp ? (
         <div className="installHelpBackdrop" role="presentation">
-          <section className="installHelpSheet installHelpGuide" role="dialog" aria-modal="true" aria-labelledby="install-help-title">
+          <section className="installHelpSheet installHelpGuide installHelpImageSheet" role="dialog" aria-modal="true" aria-label={installGuideLabel}>
             <button className="installHelpClose" type="button" aria-label="Cerrar" onClick={() => setShowInstallHelp(false)}>
               x
             </button>
-            <img className="installHelpLogo" src="/logos/xspin-logo-full.png" alt="XSpin" />
-            <strong id="install-help-title" className="installHelpTitle">
-              Instala <span>XSpin</span>
-            </strong>
-            <div className="installSteps" aria-label={installHelpPlatform === "ios" ? "Pasos para instalar en iOS" : "Pasos para instalar en Android"}>
-              {installSteps.map((step) => (
-                <article className="installStep" key={`${installHelpPlatform}-${step.number}`}>
-                  <span className="installStepNumber">{step.number}</span>
-                  <span className="installStepIcon">
-                    <InstallGuideIcon type={step.icon} />
-                  </span>
-                  <p className="installStepText">
-                    {step.lines.map((line) => (
-                      <span className={line.highlight ? "highlight" : undefined} key={line.text}>
-                        {line.text}
-                      </span>
-                    ))}
-                  </p>
-                </article>
-              ))}
-            </div>
+            <img className="installHelpImage" src={installGuideImage} alt={installGuideLabel} />
           </section>
         </div>
       ) : null}
